@@ -12,12 +12,35 @@ pub use super::stream::StreamWriter;
 /// Provides access to state, context, store, streaming, and other
 /// runtime information. The `runtime` parameter is automatically
 /// injected by the executor and is not exposed to the LLM schema.
+///
+/// # Long-term Memory
+///
+/// Tools can access long-term memory through the `store()` method.
+/// If the store implements `EnhancedToolStore`, tools can use advanced
+/// features like vector search and metadata filtering:
+///
+/// ```rust,ignore
+/// use langchain_rust::tools::long_term_memory::EnhancedToolStore;
+///
+/// async fn my_tool(runtime: &ToolRuntime) -> Result<String, Box<dyn Error>> {
+///     // Check if store supports enhanced features
+///     let store = runtime.store();
+///     if let Some(enhanced_store) = store.as_any().downcast_ref::<Arc<dyn EnhancedToolStore>>() {
+///         // Use enhanced features like search
+///         let results = enhanced_store.search(&["users"], Some("query"), None, 5).await?;
+///     }
+///     Ok("done".to_string())
+/// }
+/// ```
 pub struct ToolRuntime {
     /// Mutable agent state (messages, custom fields)
     pub state: Arc<Mutex<AgentState>>,
     /// Immutable context (user IDs, session details, configuration)
     pub context: Arc<dyn ToolContext>,
     /// Persistent store for long-term memory
+    ///
+    /// This store can implement both `ToolStore` (basic operations)
+    /// and `EnhancedToolStore` (vector search, metadata, filtering).
     pub store: Arc<dyn ToolStore>,
     /// Optional stream writer for real-time updates
     pub stream_writer: Option<Arc<dyn StreamWriter>>,
@@ -59,6 +82,21 @@ impl ToolRuntime {
     /// Get a reference to the store
     pub fn store(&self) -> &dyn ToolStore {
         self.store.as_ref()
+    }
+
+    /// Try to get the store as an EnhancedToolStore
+    ///
+    /// This allows tools to access enhanced features like vector search
+    /// if the store supports them. Returns None if the store doesn't
+    /// implement EnhancedToolStore.
+    ///
+    /// Note: Due to Rust's type system, this requires the store to be
+    /// wrapped in a way that allows downcasting. For best results, use
+    /// `EnhancedInMemoryStore` directly when creating the agent.
+    pub fn enhanced_store(&self) -> Option<&dyn crate::tools::long_term_memory::EnhancedToolStore> {
+        // This is a limitation - we can't easily downcast from trait object
+        // Tools should check the store type or use a helper wrapper
+        None
     }
 
     /// Write a stream update if stream writer is available

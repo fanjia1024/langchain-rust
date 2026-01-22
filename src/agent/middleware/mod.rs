@@ -8,6 +8,8 @@ use crate::{
     language_models::GenerateResult,
     prompt::PromptArgs,
     schemas::agent::{AgentAction, AgentEvent, AgentFinish},
+    agent::runtime::{Runtime, RuntimeRequest},
+    agent::context_engineering::{ModelRequest, ModelResponse},
 };
 
 /// Context information available to middleware during execution.
@@ -181,6 +183,113 @@ pub trait Middleware: Send + Sync {
     ) -> Result<(), MiddlewareError> {
         let _ = (finish, result, context);
         Ok(())
+    }
+
+    // ===== Runtime-aware hooks (optional, for middleware that needs runtime access) =====
+
+    /// Called before the agent plans its next action (with runtime access).
+    ///
+    /// This is an optional hook that provides access to runtime information.
+    /// Default implementation calls the non-runtime version for backward compatibility.
+    async fn before_agent_plan_with_runtime(
+        &self,
+        request: &RuntimeRequest,
+        steps: &[(AgentAction, String)],
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<PromptArgs>, MiddlewareError> {
+        // Default implementation calls the non-runtime version
+        self.before_agent_plan(&request.input, steps, context).await
+    }
+
+    /// Called after the agent plans its next action (with runtime access).
+    async fn after_agent_plan_with_runtime(
+        &self,
+        request: &RuntimeRequest,
+        event: &AgentEvent,
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<AgentEvent>, MiddlewareError> {
+        // Default implementation calls the non-runtime version
+        self.after_agent_plan(&request.input, event, context).await
+    }
+
+    /// Called before a tool is executed (with runtime access).
+    async fn before_tool_call_with_runtime(
+        &self,
+        action: &AgentAction,
+        runtime: Option<&Runtime>,
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<AgentAction>, MiddlewareError> {
+        // Default implementation calls the non-runtime version
+        self.before_tool_call(action, context).await
+    }
+
+    /// Called after a tool is executed (with runtime access).
+    async fn after_tool_call_with_runtime(
+        &self,
+        action: &AgentAction,
+        observation: &str,
+        runtime: Option<&Runtime>,
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<String>, MiddlewareError> {
+        // Default implementation calls the non-runtime version
+        self.after_tool_call(action, observation, context).await
+    }
+
+    /// Called before the agent finishes (with runtime access).
+    async fn before_finish_with_runtime(
+        &self,
+        finish: &AgentFinish,
+        runtime: Option<&Runtime>,
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<AgentFinish>, MiddlewareError> {
+        // Default implementation calls the non-runtime version
+        self.before_finish(finish, context).await
+    }
+
+    /// Called after the agent finishes (with runtime access).
+    async fn after_finish_with_runtime(
+        &self,
+        finish: &AgentFinish,
+        result: &GenerateResult,
+        runtime: Option<&Runtime>,
+        context: &mut MiddlewareContext,
+    ) -> Result<(), MiddlewareError> {
+        // Default implementation calls the non-runtime version
+        self.after_finish(finish, result, context).await
+    }
+
+    // ===== Model call hooks (for context engineering) =====
+
+    /// Called before a model call is made.
+    ///
+    /// This hook allows middleware to modify the model request, including:
+    /// - Messages (inject context, modify history)
+    /// - Tools (filter or add tools)
+    /// - Model (switch to different model)
+    /// - Response format (change output schema)
+    ///
+    /// Return `Ok(None)` to use original request, or `Ok(Some(modified_request))` to replace it.
+    async fn before_model_call(
+        &self,
+        request: &ModelRequest,
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<ModelRequest>, MiddlewareError> {
+        let _ = (request, context);
+        Ok(None)
+    }
+
+    /// Called after a model call is made.
+    ///
+    /// This hook allows middleware to modify the model response or add metadata.
+    /// Return `Ok(None)` to use original response, or `Ok(Some(modified_response))` to replace it.
+    async fn after_model_call(
+        &self,
+        request: &ModelRequest,
+        response: &ModelResponse,
+        context: &mut MiddlewareContext,
+    ) -> Result<Option<ModelResponse>, MiddlewareError> {
+        let _ = (request, response, context);
+        Ok(None)
     }
 }
 

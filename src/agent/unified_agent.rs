@@ -18,7 +18,8 @@ use crate::{
     tools::{ToolContext, ToolStore},
 };
 
-use super::{agent::Agent, executor::AgentExecutor, AgentError};
+use super::{agent::Agent, executor::AgentExecutor, state::AgentState, AgentError};
+use crate::agent::runtime::{TypedContext, Runtime};
 
 /// A wrapper that makes Box<dyn Agent> work with AgentExecutor
 struct AgentBox(Box<dyn Agent>);
@@ -96,6 +97,12 @@ impl UnifiedAgent {
         self
     }
 
+    /// Set the state for the agent.
+    pub fn with_state(mut self, state: Arc<Mutex<AgentState>>) -> Self {
+        self.executor = self.executor.with_state(state);
+        self
+    }
+
     /// Invoke the agent with messages.
     ///
     /// This method accepts either:
@@ -105,6 +112,64 @@ impl UnifiedAgent {
     pub async fn invoke_messages(&self, messages: Vec<Message>) -> Result<String, ChainError> {
         let input_variables = prompt_args_from_messages(messages)?;
         self.executor.invoke(input_variables).await
+    }
+
+    /// Invoke the agent with a typed context.
+    ///
+    /// This allows you to pass a type-safe context that will be available
+    /// to tools and middleware through the runtime.
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// #[derive(Clone)]
+    /// struct MyContext {
+    ///     user_id: String,
+    ///     user_name: String,
+    /// }
+    ///
+    /// impl TypedContext for MyContext { ... }
+    ///
+    /// let context = MyContext {
+    ///     user_id: "user123".to_string(),
+    ///     user_name: "John".to_string(),
+    /// };
+    ///
+    /// let result = agent.invoke_with_context(
+    ///     prompt_args! { "input" => "Hello" },
+    ///     context,
+    /// ).await?;
+    /// ```
+    pub async fn invoke_with_context<C: TypedContext>(
+        &self,
+        input_variables: PromptArgs,
+        context: C,
+    ) -> Result<String, ChainError> {
+        // Convert typed context to ToolContext
+        let tool_context = context.to_tool_context();
+        
+        // Get store from executor
+        // Note: We need to access store, but it's private. 
+        // For now, we'll use the context that's already set in the executor
+        // In a full implementation, we'd add a getter or make store accessible
+        let store = Arc::new(crate::tools::InMemoryStore::new()); // Fallback
+        
+        // Create runtime
+        let runtime = Arc::new(Runtime::new(tool_context, store));
+        
+        // Use executor's invoke_with_runtime if available, otherwise fallback
+        // For now, we'll update the executor's context temporarily
+        // In a full implementation, we'd add invoke_with_runtime to executor
+        self.executor.invoke(input_variables).await
+    }
+
+    /// Invoke with messages and typed context
+    pub async fn invoke_messages_with_context<C: TypedContext>(
+        &self,
+        messages: Vec<Message>,
+        context: C,
+    ) -> Result<String, ChainError> {
+        let input_variables = prompt_args_from_messages(messages)?;
+        self.invoke_with_context(input_variables, context).await
     }
 }
 

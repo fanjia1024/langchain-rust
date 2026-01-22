@@ -36,3 +36,6 @@ pub use command_executor::*;
 
 mod text2speech;
 pub use text2speech::*;
+
+mod long_term_memory;
+pub use long_term_memory::*;

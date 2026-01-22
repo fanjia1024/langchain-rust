@@ -6,6 +6,8 @@ use tokio::sync::Mutex;
 
 use super::{
     agent::Agent, middleware::Middleware, middleware::MiddlewareContext, state::AgentState,
+    runtime::{Runtime, RuntimeRequest},
+    context_engineering::{ModelRequest, ModelResponse},
     AgentError,
 };
 use crate::schemas::{LogTools, Message, MessageType};
@@ -77,7 +79,7 @@ where
     pub memory: Option<Arc<Mutex<dyn BaseMemory>>>,
     state: Arc<Mutex<AgentState>>,
     context: Arc<dyn ToolContext>,
-    store: Arc<dyn ToolStore>,
+    pub(crate) store: Arc<dyn ToolStore>,
     response_format: Option<Box<dyn StructuredOutputStrategy>>,
     middleware: Vec<Arc<dyn Middleware>>,
 }
@@ -212,18 +214,83 @@ where
             );
         }
 
+        // Create runtime for middleware
+        let runtime = Arc::new(Runtime::new(
+            Arc::clone(&self.context),
+            Arc::clone(&self.store),
+        ));
+
         loop {
             middleware_context.increment_iteration();
 
-            // Apply before_agent_plan hooks
+            // Create runtime request
+            let runtime_request = RuntimeRequest::new(
+                input_variables.clone(),
+                Arc::clone(&self.state),
+            ).with_runtime(Arc::clone(&runtime));
+
+            // Apply before_agent_plan hooks (try runtime-aware version first)
             let mut plan_input = input_variables.clone();
             for mw in &self.middleware {
-                if let Some(modified) = mw
-                    .before_agent_plan(&plan_input, &steps, &mut middleware_context)
+                // Try runtime-aware hook first
+                let modified = mw
+                    .before_agent_plan_with_runtime(&runtime_request, &steps, &mut middleware_context)
+                    .await
+                    .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?;
+                
+                if let Some(modified_input) = modified {
+                    plan_input = modified_input;
+                } else {
+                    // Fallback to non-runtime hook
+                    if let Some(modified_input) = mw
+                        .before_agent_plan(&plan_input, &steps, &mut middleware_context)
+                        .await
+                        .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
+                    {
+                        plan_input = modified_input;
+                    }
+                }
+            }
+
+            // Create ModelRequest for context engineering
+            // Extract messages from plan_input (if available)
+            let mut messages = Vec::new();
+            if let Some(chat_history) = plan_input.get("chat_history") {
+                if let Ok(msgs) = serde_json::from_value::<Vec<Message>>(chat_history.clone()) {
+                    messages = msgs;
+                }
+            }
+            
+            // Get tools from agent
+            let tools = self.agent.get_tools();
+            
+            // Create ModelRequest
+            let mut model_request = ModelRequest::new(
+                messages,
+                tools,
+                Arc::clone(&self.state),
+            ).with_runtime(Arc::clone(&runtime));
+            
+            // Apply before_model_call hooks
+            for mw in &self.middleware {
+                if let Some(modified_request) = mw
+                    .before_model_call(&model_request, &mut middleware_context)
                     .await
                     .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
                 {
-                    plan_input = modified;
+                    model_request = modified_request;
+                    
+                    // Update plan_input with modified messages
+                    if !model_request.messages.is_empty() {
+                        plan_input.insert(
+                            "chat_history".to_string(),
+                            serde_json::json!(model_request.messages),
+                        );
+                    }
+                    
+                    // Note: Tool filtering would need to be handled at agent level
+                    // For now, we'll pass the filtered tools through metadata
+                    // In practice, you'd need to modify the agent interface or use a wrapper
                 }
             }
 
@@ -232,30 +299,76 @@ where
                 .plan(&steps, plan_input.clone())
                 .await
                 .map_err(|e| ChainError::AgentError(format!("Error in agent planning: {}", e)))?;
-
-            // Apply after_agent_plan hooks
+            
+            // Create ModelResponse (simplified - actual response comes from agent)
+            let model_response = ModelResponse::new(GenerateResult {
+                generation: String::new(),
+                ..Default::default()
+            });
+            
+            // Apply after_model_call hooks
             for mw in &self.middleware {
-                if let Some(modified) = mw
-                    .after_agent_plan(&plan_input, &agent_event, &mut middleware_context)
+                if let Some(_modified_response) = mw
+                    .after_model_call(&model_request, &model_response, &mut middleware_context)
                     .await
                     .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
                 {
-                    agent_event = modified;
+                    // Response modifications would be applied here
+                }
+            }
+
+            // Apply after_agent_plan hooks (try runtime-aware version first)
+            let mut runtime_request = RuntimeRequest::new(
+                plan_input.clone(),
+                Arc::clone(&self.state),
+            ).with_runtime(Arc::clone(&runtime));
+            
+            for mw in &self.middleware {
+                // Try runtime-aware hook first
+                let modified = mw
+                    .after_agent_plan_with_runtime(&runtime_request, &agent_event, &mut middleware_context)
+                    .await
+                    .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?;
+                
+                if let Some(modified_event) = modified {
+                    agent_event = modified_event;
+                } else {
+                    // Fallback to non-runtime hook
+                    if let Some(modified_event) = mw
+                        .after_agent_plan(&plan_input, &agent_event, &mut middleware_context)
+                        .await
+                        .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
+                    {
+                        agent_event = modified_event;
+                    }
                 }
             }
             match agent_event {
                 AgentEvent::Action(actions) => {
                     for mut action in actions {
-                        // Apply before_tool_call hooks
+                        // Apply before_tool_call hooks (try runtime-aware version first)
                         for mw in &self.middleware {
-                            if let Some(modified) = mw
-                                .before_tool_call(&action, &mut middleware_context)
+                            // Try runtime-aware hook first
+                            let modified = mw
+                                .before_tool_call_with_runtime(&action, Some(&*runtime), &mut middleware_context)
                                 .await
                                 .map_err(|e| {
                                     ChainError::AgentError(format!("Middleware error: {}", e))
-                                })?
-                            {
-                                action = modified;
+                                })?;
+                            
+                            if let Some(modified_action) = modified {
+                                action = modified_action;
+                            } else {
+                                // Fallback to non-runtime hook
+                                if let Some(modified_action) = mw
+                                    .before_tool_call(&action, &mut middleware_context)
+                                    .await
+                                    .map_err(|e| {
+                                        ChainError::AgentError(format!("Middleware error: {}", e))
+                                    })?
+                                {
+                                    action = modified_action;
+                                }
                             }
                         }
 
@@ -271,7 +384,7 @@ where
 
                         // Create ToolRuntime for tools that need it
                         let tool_call_id = format!("call_{}", steps.len());
-                        let runtime = ToolRuntime::new(
+                        let tool_runtime = ToolRuntime::new(
                             Arc::clone(&self.state),
                             Arc::clone(&self.context),
                             Arc::clone(&self.store),
@@ -282,7 +395,7 @@ where
                         let observation_result: Result<String, String> = if tool.requires_runtime()
                         {
                             let input = tool.parse_input(&action.tool_input).await;
-                            tool.run_with_runtime(input, &runtime)
+                            tool.run_with_runtime(input, &tool_runtime)
                                 .await
                                 .map(|result| result.into_string())
                                 .map_err(|e| e.to_string())
@@ -306,16 +419,29 @@ where
                             }
                         };
 
-                        // Apply after_tool_call hooks
+                        // Apply after_tool_call hooks (try runtime-aware version first)
                         for mw in &self.middleware {
-                            if let Some(modified) = mw
-                                .after_tool_call(&action, &observation, &mut middleware_context)
+                            // Try runtime-aware hook first
+                            let modified = mw
+                                .after_tool_call_with_runtime(&action, &observation, Some(&*runtime), &mut middleware_context)
                                 .await
                                 .map_err(|e| {
                                     ChainError::AgentError(format!("Middleware error: {}", e))
-                                })?
-                            {
-                                observation = modified;
+                                })?;
+                            
+                            if let Some(modified_observation) = modified {
+                                observation = modified_observation;
+                            } else {
+                                // Fallback to non-runtime hook
+                                if let Some(modified_observation) = mw
+                                    .after_tool_call(&action, &observation, &mut middleware_context)
+                                    .await
+                                    .map_err(|e| {
+                                        ChainError::AgentError(format!("Middleware error: {}", e))
+                                    })?
+                                {
+                                    observation = modified_observation;
+                                }
                             }
                         }
 
@@ -323,16 +449,29 @@ where
                     }
                 }
                 AgentEvent::Finish(mut finish) => {
-                    // Apply before_finish hooks
+                    // Apply before_finish hooks (try runtime-aware version first)
                     for mw in &self.middleware {
-                        if let Some(modified) = mw
-                            .before_finish(&finish, &mut middleware_context)
+                        // Try runtime-aware hook first
+                        let modified = mw
+                            .before_finish_with_runtime(&finish, Some(&*runtime), &mut middleware_context)
                             .await
                             .map_err(|e| {
                                 ChainError::AgentError(format!("Middleware error: {}", e))
-                            })?
-                        {
-                            finish = modified;
+                            })?;
+                        
+                        if let Some(modified_finish) = modified {
+                            finish = modified_finish;
+                        } else {
+                            // Fallback to non-runtime hook
+                            if let Some(modified_finish) = mw
+                                .before_finish(&finish, &mut middleware_context)
+                                .await
+                                .map_err(|e| {
+                                    ChainError::AgentError(format!("Middleware error: {}", e))
+                                })?
+                            {
+                                finish = modified_finish;
+                            }
                         }
                     }
 
@@ -365,9 +504,10 @@ where
                         ..Default::default()
                     };
 
-                    // Apply after_finish hooks
+                    // Apply after_finish hooks (try runtime-aware version first)
                     for mw in &self.middleware {
-                        mw.after_finish(&finish, &result, &mut middleware_context)
+                        // Try runtime-aware hook first
+                        mw.after_finish_with_runtime(&finish, &result, Some(&*runtime), &mut middleware_context)
                             .await
                             .map_err(|e| {
                                 ChainError::AgentError(format!("Middleware error: {}", e))
