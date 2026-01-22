@@ -4,6 +4,10 @@ use std::string::String;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 
+use crate::agent::Command;
+
+use super::runtime::ToolRuntime;
+
 #[async_trait]
 pub trait Tool: Send + Sync {
     /// Returns the name of the tool.
@@ -60,6 +64,45 @@ pub trait Tool: Send + Sync {
     /// ```
     async fn run(&self, input: Value) -> Result<String, Box<dyn Error>>;
 
+    /// Executes the tool with runtime access (state, context, store, etc.).
+    ///
+    /// This method is called when the tool needs access to runtime information.
+    /// The default implementation calls `run()` for backward compatibility.
+    ///
+    /// Tools that need runtime access should override this method.
+    /// Tools can return a `Command` to update agent state.
+    ///
+    /// Example implementation:
+    /// ```rust,ignore
+    /// async fn run_with_runtime(
+    ///     &self,
+    ///     input: Value,
+    ///     runtime: &ToolRuntime,
+    /// ) -> Result<ToolResult, Box<dyn Error>> {
+    ///     let state = runtime.state().await;
+    ///     let messages = &state.messages;
+    ///     // Use runtime information
+    ///     Ok(ToolResult::Text("result".to_string()))
+    /// }
+    /// ```
+    async fn run_with_runtime(
+        &self,
+        input: Value,
+        _runtime: &ToolRuntime,
+    ) -> Result<ToolResult, Box<dyn Error>> {
+        // Default implementation calls run() for backward compatibility
+        let result = self.run(input).await?;
+        Ok(ToolResult::Text(result))
+    }
+
+    /// Check if this tool requires runtime access.
+    ///
+    /// Returns `true` if the tool needs access to runtime information
+    /// (state, context, store, etc.). Default is `false`.
+    fn requires_runtime(&self) -> bool {
+        false
+    }
+
     /// Parses the input string, which could be a JSON value or a raw string, depending on the LLM model.
     ///
     /// Implement this function to extract the parameters needed for your tool. If a simple
@@ -76,5 +119,43 @@ pub trait Tool: Send + Sync {
             }
             Err(_) => Value::String(input.to_string()),
         }
+    }
+}
+
+/// Result type for tool execution that can return either text or a command.
+#[derive(Debug)]
+pub enum ToolResult {
+    /// Simple text result (backward compatible)
+    Text(String),
+    /// Result with a command to update state
+    WithCommand {
+        text: String,
+        command: Option<Command>,
+    },
+}
+
+impl ToolResult {
+    pub fn text(text: String) -> Self {
+        Self::Text(text)
+    }
+
+    pub fn with_command(text: String, command: Command) -> Self {
+        Self::WithCommand {
+            text,
+            command: Some(command),
+        }
+    }
+
+    pub fn into_string(self) -> String {
+        match self {
+            Self::Text(s) => s,
+            Self::WithCommand { text, .. } => text,
+        }
+    }
+}
+
+impl From<String> for ToolResult {
+    fn from(s: String) -> Self {
+        Self::Text(s)
     }
 }

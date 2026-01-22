@@ -4,9 +4,20 @@ use serde::{Deserialize, Serialize};
 
 pub mod llm;
 pub mod options;
+pub mod model_parser;
+pub mod invocation_config;
+pub mod usage;
+pub mod init;
+pub mod configurable;
 
 mod error;
 pub use error::*;
+
+pub use model_parser::{parse_model_string, ParsedModel};
+pub use invocation_config::InvocationConfig;
+pub use usage::{UsageMetadata, UsageCallback, CollectingUsageCallback};
+pub use init::init_chat_model;
+pub use configurable::ConfigurableModel;
 
 //TODO: check if its this should have a data:serde::Value to save all other things, like OpenAI
 //function responses

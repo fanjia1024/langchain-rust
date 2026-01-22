@@ -28,6 +28,10 @@ pub struct CallOptions {
     pub function_call_behavior: Option<FunctionCallBehavior>,
     pub response_format: Option<ResponseFormat>,
     pub stream_usage: Option<bool>,
+    pub timeout: Option<u64>,
+    pub max_retries: Option<u32>,
+    pub api_key: Option<String>,
+    pub base_url: Option<String>,
 }
 
 impl Default for CallOptions {
@@ -56,6 +60,10 @@ impl CallOptions {
             function_call_behavior: None,
             response_format: None,
             stream_usage: None,
+            timeout: None,
+            max_retries: None,
+            api_key: None,
+            base_url: None,
         }
     }
 
@@ -161,6 +169,26 @@ impl CallOptions {
         self
     }
 
+    pub fn with_timeout(mut self, timeout: u64) -> Self {
+        self.timeout = Some(timeout);
+        self
+    }
+
+    pub fn with_max_retries(mut self, max_retries: u32) -> Self {
+        self.max_retries = Some(max_retries);
+        self
+    }
+
+    pub fn with_api_key<S: Into<String>>(mut self, api_key: S) -> Self {
+        self.api_key = Some(api_key.into());
+        self
+    }
+
+    pub fn with_base_url<S: Into<String>>(mut self, base_url: S) -> Self {
+        self.base_url = Some(base_url.into());
+        self
+    }
+
     pub fn merge_options(&mut self, incoming_options: CallOptions) {
         // For simple scalar types wrapped in Option, prefer incoming option if it is Some
         self.candidate_count = incoming_options.candidate_count.or(self.candidate_count);
@@ -186,6 +214,10 @@ impl CallOptions {
             .response_format
             .or(self.response_format.clone());
         self.stream_usage = incoming_options.stream_usage.or(self.stream_usage);
+        self.timeout = incoming_options.timeout.or(self.timeout);
+        self.max_retries = incoming_options.max_retries.or(self.max_retries);
+        self.api_key = incoming_options.api_key.or(self.api_key.clone());
+        self.base_url = incoming_options.base_url.or(self.base_url.clone());
 
         // For `Vec<String>`, merge if both are Some; prefer incoming if only incoming is Some
         if let Some(mut new_stop_words) = incoming_options.stop_words {

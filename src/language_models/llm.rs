@@ -5,7 +5,7 @@ use futures::Stream;
 
 use crate::schemas::{Message, StreamData};
 
-use super::{options::CallOptions, GenerateResult, LLMError};
+use super::{options::CallOptions, invocation_config::InvocationConfig, GenerateResult, LLMError};
 
 #[async_trait]
 pub trait LLM: Sync + Send + LLMClone {
@@ -32,6 +32,59 @@ pub trait LLM: Sync + Send + LLMClone {
             .map(|m| format!("{:?}: {}", m.message_type, m.content))
             .collect::<Vec<String>>()
             .join("\n")
+    }
+
+    /// Invoke the model with a prompt and optional invocation config.
+    ///
+    /// This is a convenience method that combines `invoke()` with invocation config.
+    /// The default implementation ignores the config and calls `invoke()`.
+    /// Individual model implementations can override this to use the config.
+    async fn invoke_with_config(
+        &self,
+        prompt: &str,
+        _config: Option<&InvocationConfig>,
+    ) -> Result<String, LLMError> {
+        self.invoke(prompt).await
+    }
+
+    /// Generate a response with optional invocation config.
+    ///
+    /// The default implementation ignores the config and calls `generate()`.
+    /// Individual model implementations can override this to use the config.
+    async fn generate_with_config(
+        &self,
+        messages: &[Message],
+        _config: Option<&InvocationConfig>,
+    ) -> Result<GenerateResult, LLMError> {
+        self.generate(messages).await
+    }
+
+    /// Batch process multiple prompts.
+    ///
+    /// Processes multiple prompts in sequence and returns their results.
+    /// For parallel processing, implementations can override this method.
+    async fn batch(&self, prompts: &[&str]) -> Result<Vec<Result<String, LLMError>>, LLMError> {
+        let mut results = Vec::new();
+        for prompt in prompts {
+            let result = self.invoke(prompt).await;
+            results.push(result);
+        }
+        Ok(results)
+    }
+
+    /// Batch process multiple message sets.
+    ///
+    /// Processes multiple message sets in sequence and returns their results.
+    async fn batch_generate(
+        &self,
+        message_sets: &[&[Message]],
+    ) -> Result<Vec<Result<GenerateResult, LLMError>>, LLMError> {
+        let mut results = Vec::new();
+        for messages in message_sets {
+            let result = self.generate(messages).await;
+            results.push(result);
+        }
+        Ok(results)
     }
 }
 

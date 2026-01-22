@@ -4,8 +4,11 @@ use async_trait::async_trait;
 use serde_json::json;
 use tokio::sync::Mutex;
 
-use super::{agent::Agent, AgentError};
-use crate::schemas::{LogTools, Message};
+use super::{
+    agent::Agent, middleware::Middleware, middleware::MiddlewareContext, state::AgentState,
+    AgentError,
+};
+use crate::schemas::{LogTools, Message, MessageType};
 use crate::{
     chain::{chain_trait::Chain, ChainError},
     language_models::GenerateResult,
@@ -14,9 +17,55 @@ use crate::{
     schemas::{
         agent::{AgentAction, AgentEvent},
         memory::BaseMemory,
+        StructuredOutputStrategy,
     },
-    tools::Tool,
+    tools::{Tool, ToolContext, ToolRuntime, ToolStore},
 };
+
+/// Convert message-based input format to standard prompt args.
+fn convert_messages_to_prompt_args(input_variables: PromptArgs) -> Result<PromptArgs, ChainError> {
+    let messages_value = input_variables
+        .get("messages")
+        .ok_or_else(|| ChainError::OtherError("Missing 'messages' key".to_string()))?;
+
+    let messages: Vec<Message> = serde_json::from_value(messages_value.clone())
+        .map_err(|e| ChainError::OtherError(format!("Failed to parse messages: {}", e)))?;
+
+    // Extract the last user/human message as input
+    let input = messages
+        .iter()
+        .rev()
+        .find(|m| matches!(m.message_type, MessageType::HumanMessage))
+        .map(|m| m.content.clone())
+        .unwrap_or_else(|| {
+            messages
+                .last()
+                .map(|m| m.content.clone())
+                .unwrap_or_default()
+        });
+
+    let mut prompt_args = PromptArgs::new();
+    prompt_args.insert("input".to_string(), json!(input));
+
+    // Preserve chat history if it exists, otherwise use messages
+    if input_variables.contains_key("chat_history") {
+        prompt_args.insert(
+            "chat_history".to_string(),
+            input_variables["chat_history"].clone(),
+        );
+    } else {
+        prompt_args.insert("chat_history".to_string(), json!(messages));
+    }
+
+    // Copy any other keys
+    for (key, value) in input_variables {
+        if key != "messages" && key != "chat_history" {
+            prompt_args.insert(key, value);
+        }
+    }
+
+    Ok(prompt_args)
+}
 
 pub struct AgentExecutor<A>
 where
@@ -26,6 +75,11 @@ where
     max_iterations: Option<i32>,
     break_if_error: bool,
     pub memory: Option<Arc<Mutex<dyn BaseMemory>>>,
+    state: Arc<Mutex<AgentState>>,
+    context: Arc<dyn ToolContext>,
+    store: Arc<dyn ToolStore>,
+    response_format: Option<Box<dyn StructuredOutputStrategy>>,
+    middleware: Vec<Arc<dyn Middleware>>,
 }
 
 impl<A> AgentExecutor<A>
@@ -38,7 +92,27 @@ where
             max_iterations: Some(10),
             break_if_error: false,
             memory: None,
+            state: Arc::new(Mutex::new(AgentState::new())),
+            context: Arc::new(crate::tools::EmptyContext),
+            store: Arc::new(crate::tools::InMemoryStore::new()),
+            response_format: None,
+            middleware: Vec::new(),
         }
+    }
+
+    pub fn with_context(mut self, context: Arc<dyn ToolContext>) -> Self {
+        self.context = context;
+        self
+    }
+
+    pub fn with_store(mut self, store: Arc<dyn ToolStore>) -> Self {
+        self.store = store;
+        self
+    }
+
+    pub fn with_state(mut self, state: Arc<Mutex<AgentState>>) -> Self {
+        self.state = state;
+        self
     }
 
     pub fn with_max_iterations(mut self, max_iterations: i32) -> Self {
@@ -56,6 +130,19 @@ where
         self
     }
 
+    pub fn with_response_format(
+        mut self,
+        response_format: Box<dyn StructuredOutputStrategy>,
+    ) -> Self {
+        self.response_format = Some(response_format);
+        self
+    }
+
+    pub fn with_middleware(mut self, middleware: Vec<Arc<dyn Middleware>>) -> Self {
+        self.middleware = middleware;
+        self
+    }
+
     fn get_name_to_tools(&self) -> HashMap<String, Arc<dyn Tool>> {
         let mut name_to_tool = HashMap::new();
         for tool in self.agent.get_tools().iter() {
@@ -63,6 +150,39 @@ where
             name_to_tool.insert(tool.name().trim().replace(" ", "_"), tool.clone());
         }
         name_to_tool
+    }
+
+    async fn handle_command(
+        &self,
+        command: crate::agent::state::Command,
+    ) -> Result<(), ChainError> {
+        let mut state = self.state.lock().await;
+        match command {
+            crate::agent::state::Command::UpdateState { fields } => {
+                for (key, value) in fields {
+                    state.set_field(key, value);
+                }
+            }
+            crate::agent::state::Command::RemoveMessages { ids } => {
+                state.messages.retain(|msg| {
+                    !ids.contains(
+                        &msg.id
+                            .as_ref()
+                            .map(|s| s.as_str())
+                            .unwrap_or("")
+                            .to_string(),
+                    )
+                });
+            }
+            crate::agent::state::Command::ClearMessages => {
+                state.messages.clear();
+            }
+            crate::agent::state::Command::ClearState => {
+                state.messages.clear();
+                state.custom_fields.clear();
+            }
+        }
+        Ok(())
     }
 }
 
@@ -72,9 +192,15 @@ where
     A: Agent + Send + Sync,
 {
     async fn call(&self, input_variables: PromptArgs) -> Result<GenerateResult, ChainError> {
-        let mut input_variables = input_variables.clone();
+        // Check if input is message-based format and convert if needed
+        let mut input_variables = if input_variables.contains_key("messages") {
+            convert_messages_to_prompt_args(input_variables)?
+        } else {
+            input_variables.clone()
+        };
         let name_to_tools = self.get_name_to_tools();
         let mut steps: Vec<(AgentAction, String)> = Vec::new();
+        let mut middleware_context = MiddlewareContext::new();
         log::debug!("steps: {:?}", steps);
         if let Some(memory) = &self.memory {
             let memory = memory.lock().await;
@@ -87,15 +213,55 @@ where
         }
 
         loop {
-            let agent_event = self
+            middleware_context.increment_iteration();
+
+            // Apply before_agent_plan hooks
+            let mut plan_input = input_variables.clone();
+            for mw in &self.middleware {
+                if let Some(modified) = mw
+                    .before_agent_plan(&plan_input, &steps, &mut middleware_context)
+                    .await
+                    .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
+                {
+                    plan_input = modified;
+                }
+            }
+
+            let mut agent_event = self
                 .agent
-                .plan(&steps, input_variables.clone())
+                .plan(&steps, plan_input.clone())
                 .await
                 .map_err(|e| ChainError::AgentError(format!("Error in agent planning: {}", e)))?;
+
+            // Apply after_agent_plan hooks
+            for mw in &self.middleware {
+                if let Some(modified) = mw
+                    .after_agent_plan(&plan_input, &agent_event, &mut middleware_context)
+                    .await
+                    .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
+                {
+                    agent_event = modified;
+                }
+            }
             match agent_event {
                 AgentEvent::Action(actions) => {
-                    for action in actions {
+                    for mut action in actions {
+                        // Apply before_tool_call hooks
+                        for mw in &self.middleware {
+                            if let Some(modified) = mw
+                                .before_tool_call(&action, &mut middleware_context)
+                                .await
+                                .map_err(|e| {
+                                    ChainError::AgentError(format!("Middleware error: {}", e))
+                                })?
+                            {
+                                action = modified;
+                            }
+                        }
+
                         log::debug!("Action: {:?}", action.tool_input);
+                        middleware_context.increment_tool_call_count();
+
                         let tool = name_to_tools
                             .get(&action.tool.trim().replace(" ", "_"))
                             .ok_or_else(|| {
@@ -103,29 +269,73 @@ where
                             })
                             .map_err(|e| ChainError::AgentError(e.to_string()))?;
 
-                        let observation_result = tool.call(&action.tool_input).await;
+                        // Create ToolRuntime for tools that need it
+                        let tool_call_id = format!("call_{}", steps.len());
+                        let runtime = ToolRuntime::new(
+                            Arc::clone(&self.state),
+                            Arc::clone(&self.context),
+                            Arc::clone(&self.store),
+                            tool_call_id,
+                        );
 
-                        let observation = match observation_result {
+                        // Check if tool requires runtime
+                        let observation_result: Result<String, String> = if tool.requires_runtime()
+                        {
+                            let input = tool.parse_input(&action.tool_input).await;
+                            tool.run_with_runtime(input, &runtime)
+                                .await
+                                .map(|result| result.into_string())
+                                .map_err(|e| e.to_string())
+                        } else {
+                            tool.call(&action.tool_input)
+                                .await
+                                .map_err(|e| e.to_string())
+                        };
+
+                        let mut observation = match observation_result {
                             Ok(result) => result,
-                            Err(err) => {
-                                log::info!(
-                                    "The tool return the following error: {}",
-                                    err.to_string()
-                                );
+                            Err(error_msg) => {
+                                log::info!("The tool return the following error: {}", error_msg);
                                 if self.break_if_error {
                                     return Err(ChainError::AgentError(
-                                        AgentError::ToolError(err.to_string()).to_string(),
+                                        AgentError::ToolError(error_msg.clone()).to_string(),
                                     ));
                                 } else {
-                                    format!("The tool return the following error: {}", err)
+                                    format!("The tool return the following error: {}", error_msg)
                                 }
                             }
                         };
 
+                        // Apply after_tool_call hooks
+                        for mw in &self.middleware {
+                            if let Some(modified) = mw
+                                .after_tool_call(&action, &observation, &mut middleware_context)
+                                .await
+                                .map_err(|e| {
+                                    ChainError::AgentError(format!("Middleware error: {}", e))
+                                })?
+                            {
+                                observation = modified;
+                            }
+                        }
+
                         steps.push((action, observation));
                     }
                 }
-                AgentEvent::Finish(finish) => {
+                AgentEvent::Finish(mut finish) => {
+                    // Apply before_finish hooks
+                    for mw in &self.middleware {
+                        if let Some(modified) = mw
+                            .before_finish(&finish, &mut middleware_context)
+                            .await
+                            .map_err(|e| {
+                                ChainError::AgentError(format!("Middleware error: {}", e))
+                            })?
+                        {
+                            finish = modified;
+                        }
+                    }
+
                     if let Some(memory) = &self.memory {
                         let mut memory = memory.lock().await;
 
@@ -149,10 +359,22 @@ where
 
                         memory.add_ai_message(&finish.output);
                     }
-                    return Ok(GenerateResult {
-                        generation: finish.output,
+
+                    let result = GenerateResult {
+                        generation: finish.output.clone(),
                         ..Default::default()
-                    });
+                    };
+
+                    // Apply after_finish hooks
+                    for mw in &self.middleware {
+                        mw.after_finish(&finish, &result, &mut middleware_context)
+                            .await
+                            .map_err(|e| {
+                                ChainError::AgentError(format!("Middleware error: {}", e))
+                            })?;
+                    }
+
+                    return Ok(result);
                 }
             }
 
@@ -170,5 +392,45 @@ where
     async fn invoke(&self, input_variables: PromptArgs) -> Result<String, ChainError> {
         let result = self.call(input_variables).await?;
         Ok(result.generation)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_convert_messages_to_prompt_args() {
+        let mut input_vars = PromptArgs::new();
+        input_vars.insert(
+            "messages".to_string(),
+            json!([
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there!"}
+            ]),
+        );
+
+        let result = convert_messages_to_prompt_args(input_vars);
+        assert!(result.is_ok());
+        let args = result.unwrap();
+        assert!(args.contains_key("input"));
+        assert!(args.contains_key("chat_history"));
+        assert_eq!(args["input"], json!("Hello"));
+    }
+
+    #[test]
+    fn test_convert_messages_preserves_other_keys() {
+        let mut input_vars = PromptArgs::new();
+        input_vars.insert(
+            "messages".to_string(),
+            json!([{"role": "user", "content": "Hello"}]),
+        );
+        input_vars.insert("custom_key".to_string(), json!("custom_value"));
+
+        let result = convert_messages_to_prompt_args(input_vars);
+        assert!(result.is_ok());
+        let args = result.unwrap();
+        assert!(args.contains_key("custom_key"));
+        assert_eq!(args["custom_key"], json!("custom_value"));
     }
 }
