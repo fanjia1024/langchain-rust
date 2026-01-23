@@ -12,211 +12,24 @@
 
 ## 🤔 What is this?
 
-This is the Rust language implementation of [LangChain](https://github.com/langchain-ai/langchain).
+This is the Rust language implementation of [LangChain](https://github.com/langchain-ai/langchain), providing a powerful and type-safe way to build LLM applications in Rust.
 
-## Current Features
+## ✨ Key Features
 
-- LLMs
+- 🚀 **Multiple LLM Providers**: Support for OpenAI, Azure OpenAI, Anthropic Claude, MistralAI, Google Gemini, AWS Bedrock, HuggingFace, Alibaba Qwen, DeepSeek, and Ollama
+- 🔗 **Chains**: LLM chains, conversational chains, sequential chains, Q&A chains, SQL chains, and more
+- 🤖 **Agents**: Chat agents with tools, multi-agent systems (router, subagents, skills, handoffs)
+- 📚 **RAG**: Agentic RAG, Hybrid RAG, and two-step RAG implementations
+- 🧠 **Memory**: Simple memory, conversational memory, and long-term memory with metadata
+- 🛠️ **Tools**: Search tools, command line, Wolfram Alpha, text-to-speech, and more
+- 📄 **Document Loaders**: PDF, HTML, CSV, Git commits, source code, and more
+- 🗄️ **Vector Stores**: PostgreSQL (pgvector), Qdrant, SQLite (VSS/Vec), SurrealDB, OpenSearch
+- 🎯 **Embeddings**: OpenAI, Azure OpenAI, Ollama, FastEmbed, MistralAI
+- 🔧 **Middleware**: Logging, PII detection, content filtering, rate limiting, retry, and custom middleware
+- 🎨 **Structured Output**: JSON schema validation and structured response generation
+- ⚙️ **Runtime Context**: Dynamic prompts, typed context, and runtime-aware middleware
 
-  - [x] [OpenAi](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/llm_openai.rs)
-  - [x] [Azure OpenAi](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/llm_azure_open_ai.rs)
-  - [x] [Ollama](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/llm_ollama.rs)
-  - [x] [Anthropic Claude](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/llm_anthropic_claude.rs)
-
-- Embeddings
-
-  - [x] [OpenAi](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/embedding_openai.rs)
-  - [x] [Azure OpenAi](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/embedding_azure_open_ai.rs)
-  - [x] [Ollama](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/embedding_ollama.rs)
-  - [x] [Local FastEmbed](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/embedding_fastembed.rs)
-  - [x] [MistralAI](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/embedding_mistralai.rs)
-
-- VectorStores
-
-  - [x] [OpenSearch](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/vector_store_opensearch.rs)
-  - [x] [Postgres](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/vector_store_postgres.rs)
-  - [x] [Qdrant](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/vector_store_qdrant.rs)
-  - [x] [Sqlite](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/vector_store_sqlite_vss.rs)
-  - [x] [SurrealDB](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/vector_store_surrealdb/src/main.rs)
-
-- Chain
-
-  - [x] [LLM Chain](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/llm_chain.rs)
-  - [x] [Conversational Chain](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/conversational_chain.rs)
-  - [x] [Conversational Retriever Simple](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/conversational_retriever_simple_chain.rs)
-  - [x] [Conversational Retriever With Vector Store](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/conversational_retriever_chain_with_vector_store.rs)
-  - [x] [Sequential Chain](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/sequential_chain.rs)
-  - [x] [Q&A Chain](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/qa_chain.rs)
-  - [x] [SQL Chain](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/sql_chain.rs)
-
-- Agents
-
-  - [x] [Chat Agent with Tools](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/agent.rs)
-  - [x] [Open AI Compatible Tools Agent](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/open_ai_tools_agent.rs)
-
-- Tools
-
-  - [x] Serpapi/Google
-  - [x] DuckDuckGo Search
-  - [x] [Wolfram/Math](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/wolfram_tool.rs)
-  - [x] Command line
-  - [x] [Text2Speech](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/speech2text_openai.rs)
-
-- Semantic Routing
-
-  - [x] [Static Routing](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/semantic_routes.rs)
-  - [x] [Dynamic Routing](https://github.com/Abraxas-365/langchain-rust/blob/main/examples/dynamic_semantic_routes.rs)
-
-- Document Loaders
-
-  - [x] PDF
-
-    ```rust
-    use futures_util::StreamExt;
-
-    async fn main() {
-        let path = "./src/document_loaders/test_data/sample.pdf";
-
-        let loader = PdfExtractLoader::from_path(path).expect("Failed to create PdfExtractLoader");
-        // let loader = LoPdfLoader::from_path(path).expect("Failed to create LoPdfLoader");
-
-        let docs = loader
-            .load()
-            .await
-            .unwrap()
-            .map(|d| d.unwrap())
-            .collect::<Vec<_>>()
-            .await;
-
-    }
-    ```
-
-  - [x] Pandoc
-
-    ```rust
-    use futures_util::StreamExt;
-
-    async fn main() {
-
-        let path = "./src/document_loaders/test_data/sample.docx";
-
-        let loader = PandocLoader::from_path(InputFormat::Docx.to_string(), path)
-            .await
-            .expect("Failed to create PandocLoader");
-
-        let docs = loader
-            .load()
-            .await
-            .unwrap()
-            .map(|d| d.unwrap())
-            .collect::<Vec<_>>()
-            .await;
-    }
-    ```
-
-  - [x] HTML
-
-    ```rust
-    use futures_util::StreamExt;
-    use url::Url;
-
-    async fn main() {
-        let path = "./src/document_loaders/test_data/example.html";
-        let html_loader = HtmlLoader::from_path(path, Url::parse("https://example.com/").unwrap())
-            .expect("Failed to create html loader");
-
-        let documents = html_loader
-            .load()
-            .await
-            .unwrap()
-            .map(|x| x.unwrap())
-            .collect::<Vec<_>>()
-            .await;
-    }
-    ```
-
-  - [x] HTML To Markdown
-
-    ```rust
-    use futures_util::StreamExt;
-    use url::Url;
-
-    async fn main() {
-        let path = "./src/document_loaders/test_data/example.html";
-        let html_to_markdown_loader = HtmlToMarkdownLoader::from_path(path, Url::parse("https://example.com/").unwrap(), HtmlToMarkdownOptions::default().with_skip_tags(vec!["figure".to_string()]))
-            .expect("Failed to create html to markdown loader");
-
-        let documents = html_to_markdown_loader
-            .load()
-            .await
-            .unwrap()
-            .map(|x| x.unwrap())
-            .collect::<Vec<_>>()
-            .await;
-    }
-    ```
-
-  - [x] CSV
-
-    ```rust
-    use futures_util::StreamExt;
-
-    async fn main() {
-        let path = "./src/document_loaders/test_data/test.csv";
-        let columns = vec![
-            "name".to_string(),
-            "age".to_string(),
-            "city".to_string(),
-            "country".to_string(),
-        ];
-        let csv_loader = CsvLoader::from_path(path, columns).expect("Failed to create csv loader");
-
-        let documents = csv_loader
-            .load()
-            .await
-            .unwrap()
-            .map(|x| x.unwrap())
-            .collect::<Vec<_>>()
-            .await;
-    }
-    ```
-
-  - [x] Git commits
-
-    ```rust
-    use futures_util::StreamExt;
-
-    async fn main() {
-        let path = "/path/to/git/repo";
-        let git_commit_loader = GitCommitLoader::from_path(path).expect("Failed to create git commit loader");
-
-        let documents = csv_loader
-            .load()
-            .await
-            .unwrap()
-            .map(|x| x.unwrap())
-            .collect::<Vec<_>>()
-            .await;
-    }
-    ```
-
-  - [x] Source code
-
-    ```rust
-
-    let loader_with_dir =
-    SourceCodeLoader::from_path("./src/document_loaders/test_data".to_string())
-    .with_dir_loader_options(DirLoaderOptions {
-    glob: None,
-    suffixes: Some(vec!["rs".to_string()]),
-    exclude: None,
-    });
-
-    let stream = loader_with_dir.load().await.unwrap();
-    let documents = stream.map(|x| x.unwrap()).collect::<Vec<_>>().await;
-    ```
-
-## Installation
+## 📦 Installation
 
 This library heavily relies on `serde_json` for its operation.
 
@@ -238,9 +51,21 @@ Then, you can add `langchain-rust` to your Rust project.
 cargo add langchain-rust
 ```
 
-#### With Sqlite
+#### With Vector Stores
 
-##### sqlite-vss
+##### PostgreSQL (pgvector)
+
+```bash
+cargo add langchain-rust --features postgres
+```
+
+##### Qdrant
+
+```bash
+cargo add langchain-rust --features qdrant
+```
+
+##### SQLite (VSS)
 
 Download additional sqlite_vss libraries from <https://github.com/asg017/sqlite-vss>
 
@@ -248,7 +73,7 @@ Download additional sqlite_vss libraries from <https://github.com/asg017/sqlite-
 cargo add langchain-rust --features sqlite-vss
 ```
 
-##### sqlite-vec
+##### SQLite (Vec)
 
 Download additional sqlite_vec libraries from <https://github.com/asg017/sqlite-vec>
 
@@ -256,41 +81,129 @@ Download additional sqlite_vec libraries from <https://github.com/asg017/sqlite-
 cargo add langchain-rust --features sqlite-vec
 ```
 
-
-#### With Postgres
-
-```bash
-cargo add langchain-rust --features postgres
-```
-
-#### With SurrialDB
+##### SurrealDB
 
 ```bash
 cargo add langchain-rust --features surrealdb
 ```
 
-#### With Qdrant
+##### OpenSearch
 
 ```bash
-cargo add langchain-rust --features qdrant
+cargo add langchain-rust --features opensearch
 ```
 
-Please remember to replace the feature flags `sqlite`, `postgres` or `surrealdb` based on your
-specific use case.
+#### With LLM Providers
 
-This will add both `serde_json` and `langchain-rust` as dependencies in your `Cargo.toml`
-file. Now, when you build your project, both dependencies will be fetched and compiled, and will be available for use in your project.
+##### Ollama
 
-Remember, `serde_json` is a necessary dependencies, and `sqlite`, `postgres` and `surrealdb`
-are optional features that may be added according to project needs.
+```bash
+cargo add langchain-rust --features ollama
+```
 
-### Quick Start Conversational Chain
+##### MistralAI
+
+```bash
+cargo add langchain-rust --features mistralai
+```
+
+##### Google Gemini
+
+```bash
+cargo add langchain-rust --features gemini
+```
+
+##### AWS Bedrock
+
+```bash
+cargo add langchain-rust --features bedrock
+```
+
+#### With Document Loaders
+
+##### PDF (pdf-extract)
+
+```bash
+cargo add langchain-rust --features pdf-extract
+```
+
+##### PDF (lopdf)
+
+```bash
+cargo add langchain-rust --features lopdf
+```
+
+##### HTML to Markdown
+
+```bash
+cargo add langchain-rust --features html-to-markdown
+```
+
+#### With Code Parsing
+
+##### Tree-sitter (for source code parsing)
+
+```bash
+cargo add langchain-rust --features tree-sitter
+```
+
+#### With FastEmbed (Local Embeddings)
+
+```bash
+cargo add langchain-rust --features fastembed
+```
+
+## 🚀 Quick Start
+
+### Simple LLM Invocation
+
+```rust
+use langchain_rust::llm::openai::{OpenAI, OpenAIModel};
+
+#[tokio::main]
+async fn main() {
+    let llm = OpenAI::default().with_model(OpenAIModel::Gpt4oMini.to_string());
+    let response = llm.invoke("What is Rust?").await.unwrap();
+    println!("{}", response);
+}
+```
+
+### Using init_chat_model (Recommended)
+
+The `init_chat_model` function provides a unified interface to initialize any supported LLM:
+
+```rust
+use langchain_rust::language_models::init_chat_model;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize any supported model
+    let model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None).await?;
+    
+    let response = model.invoke("Hello, world!").await?;
+    println!("{}", response);
+    
+    Ok(())
+}
+```
+
+Supported model formats:
+- `gpt-4o-mini`, `gpt-4o`, `gpt-4-turbo` (OpenAI)
+- `claude-3-5-sonnet-20241022` (Anthropic)
+- `mistralai/mistral-large-latest` (MistralAI)
+- `gemini-1.5-pro` (Google Gemini)
+- `anthropic.claude-3-5-sonnet-20241022-v2:0` (AWS Bedrock)
+- `meta-llama/Llama-3.1-8B-Instruct` (HuggingFace)
+- `qwen-plus` (Alibaba Qwen)
+- `deepseek-chat` (DeepSeek)
+- `llama3` (Ollama)
+
+### Conversational Chain
 
 ```rust
 use langchain_rust::{
     chain::{Chain, LLMChainBuilder},
     fmt_message, fmt_placeholder, fmt_template,
-    language_models::llm::LLM,
     llm::openai::{OpenAI, OpenAIModel},
     message_formatter,
     prompt::HumanMessagePromptTemplate,
@@ -301,57 +214,11 @@ use langchain_rust::{
 
 #[tokio::main]
 async fn main() {
-    //We can then initialize the model:
-    // If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
-    // let open_ai = OpenAI::default()
-    //     .with_config(
-    //         OpenAIConfig::default()
-    //             .with_api_key("<your_key>"),
-    //     ).with_model(OpenAIModel::Gpt4oMini.to_string());
     let open_ai = OpenAI::default().with_model(OpenAIModel::Gpt4oMini.to_string());
 
-
-    //Once you've installed and initialized the LLM of your choice, we can try using it! Let's ask it what LangSmith is - this is something that wasn't present in the training data so it shouldn't have a very good response.
-    let resp = open_ai.invoke("What is rust").await.unwrap();
-    println!("{}", resp);
-
-    // We can also guide it's response with a prompt template. Prompt templates are used to convert raw user input to a better input to the LLM.
     let prompt = message_formatter![
         fmt_message!(Message::new_system_message(
-            "You are world class technical documentation writer."
-        )),
-        fmt_template!(HumanMessagePromptTemplate::new(template_fstring!(
-            "{input}", "input"
-        )))
-    ];
-
-    //We can now combine these into a simple LLM chain:
-
-    let chain = LLMChainBuilder::new()
-        .prompt(prompt)
-        .llm(open_ai.clone())
-        .build()
-        .unwrap();
-
-    //We can now invoke it and ask the same question. It still won't know the answer, but it should respond in a more proper tone for a technical writer!
-
-    match chain
-        .invoke(prompt_args! {
-        "input" => "Quien es el escritor de 20000 millas de viaje submarino",
-           })
-        .await
-    {
-        Ok(result) => {
-            println!("Result: {:?}", result);
-        }
-        Err(e) => panic!("Error invoking LLMChain: {:?}", e),
-    }
-
-    //If you want to prompt to have a list of messages you could use the `fmt_placeholder` macro
-
-    let prompt = message_formatter![
-        fmt_message!(Message::new_system_message(
-            "You are world class technical documentation writer."
+            "You are a helpful assistant."
         )),
         fmt_placeholder!("history"),
         fmt_template!(HumanMessagePromptTemplate::new(template_fstring!(
@@ -364,21 +231,229 @@ async fn main() {
         .llm(open_ai)
         .build()
         .unwrap();
+
     match chain
         .invoke(prompt_args! {
-        "input" => "Who is the writer of 20,000 Leagues Under the Sea, and what is my name?",
-        "history" => vec![
-                Message::new_human_message("My name is: luis"),
-                Message::new_ai_message("Hi luis"),
-                ],
-
+            "input" => "What is Rust?",
+            "history" => vec![
+                Message::new_human_message("Hello"),
+                Message::new_ai_message("Hi there!"),
+            ],
         })
         .await
     {
-        Ok(result) => {
-            println!("Result: {:?}", result);
-        }
-        Err(e) => panic!("Error invoking LLMChain: {:?}", e),
+        Ok(result) => println!("Result: {:?}", result),
+        Err(e) => panic!("Error: {:?}", e),
     }
 }
 ```
+
+### Creating an Agent with Tools
+
+```rust
+use std::sync::Arc;
+use langchain_rust::{
+    agent::create_agent,
+    schemas::messages::Message,
+    tools::CommandExecutor,
+};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let command_executor = Arc::new(CommandExecutor::default());
+    
+    let agent = create_agent(
+        "gpt-4o-mini",
+        &[command_executor],
+        Some("You are a helpful assistant that can execute commands."),
+        None,
+    )?;
+
+    let result = agent
+        .invoke_messages(vec![Message::new_human_message(
+            "What files are in the current directory?",
+        )])
+        .await?;
+
+    println!("{}", result);
+    Ok(())
+}
+```
+
+## 📚 Current Features
+
+### LLMs
+
+- [x] [OpenAI](examples/llm_openai.rs)
+- [x] [Azure OpenAI](examples/llm_azure_open_ai.rs)
+- [x] [Anthropic Claude](examples/llm_anthropic_claude.rs)
+- [x] [MistralAI](examples/llm_mistralai.rs)
+- [x] [Google Gemini](examples/llm_gemini.rs)
+- [x] [AWS Bedrock](examples/llm_bedrock.rs)
+- [x] [HuggingFace](examples/llm_huggingface.rs)
+- [x] [Alibaba Qwen](examples/llm_alibaba_qwen.rs)
+- [x] [DeepSeek](examples/llm_deepseek.rs)
+- [x] [Ollama](examples/llm_ollama.rs)
+- [x] [Unified Model Initialization](examples/init_chat_model.rs)
+
+### Embeddings
+
+- [x] [OpenAI](examples/embedding_openai.rs)
+- [x] [Azure OpenAI](examples/embedding_azure_open_ai.rs)
+- [x] [Ollama](examples/embedding_ollama.rs)
+- [x] [Local FastEmbed](examples/embedding_fastembed.rs)
+- [x] [MistralAI](examples/embedding_mistralai.rs)
+
+### Vector Stores
+
+- [x] [PostgreSQL (pgvector)](examples/vector_store_postgres.rs)
+- [x] [Qdrant](examples/vector_store_qdrant.rs)
+- [x] [SQLite VSS](examples/vector_store_sqlite_vss.rs)
+- [x] [SQLite Vec](examples/vector_store_sqlite_vec.rs)
+- [x] [SurrealDB](examples/vector_store_surrealdb/src/main.rs)
+- [x] [OpenSearch](examples/vector_store_opensearch.rs)
+
+### Chains
+
+- [x] [LLM Chain](examples/llm_chain.rs)
+- [x] [Conversational Chain](examples/conversational_chain.rs)
+- [x] [Conversational Retriever Simple](examples/conversational_retriever_simple_chain.rs)
+- [x] [Conversational Retriever With Vector Store](examples/conversational_retriever_chain_with_vector_store.rs)
+- [x] [Sequential Chain](examples/sequential_chain.rs)
+- [x] [Q&A Chain](examples/qa_chain.rs)
+- [x] [SQL Chain](examples/sql_chain.rs)
+- [x] [Streaming Chain](examples/streaming_from_chain.rs)
+
+### Agents
+
+- [x] [Simple Agent](examples/create_agent_simple.rs)
+- [x] [Chat Agent with Tools](examples/agent.rs)
+- [x] [OpenAI Compatible Tools Agent](examples/open_ai_tools_agent.rs)
+- [x] [Multi-Agent Router](examples/multi_agent_router.rs)
+- [x] [Multi-Agent Subagents](examples/multi_agent_subagents.rs)
+- [x] [Multi-Agent Skills](examples/multi_agent_skills.rs)
+- [x] [Multi-Agent Handoffs](examples/multi_agent_handoffs.rs)
+
+### RAG (Retrieval-Augmented Generation)
+
+- [x] [Agentic RAG](examples/rag_agentic.rs) - Agent decides when to retrieve
+- [x] [Hybrid RAG](examples/rag_hybrid.rs) - Combines multiple retrieval strategies
+- [x] [Two-Step RAG](examples/rag_two_step.rs) - Two-stage retrieval process
+
+### Tools
+
+- [x] Serpapi/Google Search
+- [x] DuckDuckGo Search
+- [x] [Wolfram Alpha](examples/wolfram_tool.rs)
+- [x] Command Line Executor
+- [x] [Text-to-Speech](examples/text_to_speech.rs)
+- [x] [Speech-to-Text](examples/speech2text_openai.rs)
+- [x] [Advanced Tools](examples/advanced_tools.rs)
+
+### Middleware
+
+- [x] [Logging Middleware](examples/middleware_logging.rs)
+- [x] [PII Detection](examples/guardrails_pii.rs)
+- [x] [Content Filtering](examples/guardrails_combined.rs)
+- [x] [Custom Middleware](examples/middleware_custom.rs)
+- [x] [Runtime-Aware Middleware](examples/runtime_middleware.rs)
+- [x] [Dynamic Prompt Middleware](examples/runtime_dynamic_prompt.rs)
+
+### Memory
+
+- [x] Simple Memory
+- [x] Conversational Memory
+- [x] [Long-Term Memory (Basic)](examples/long_term_memory_basic.rs)
+- [x] [Long-Term Memory (Search)](examples/long_term_memory_search.rs)
+- [x] [Long-Term Memory (Tool)](examples/long_term_memory_tool.rs)
+
+### Runtime & Context
+
+- [x] [Typed Context](examples/runtime_typed_context.rs)
+- [x] [Dynamic Tools](examples/context_engineering_dynamic_tools.rs)
+- [x] [Dynamic Prompts](examples/context_engineering_dynamic_prompt.rs)
+- [x] [Message Injection](examples/context_engineering_message_injection.rs)
+- [x] [Complete Context Engineering](examples/context_engineering_complete.rs)
+
+### Structured Output
+
+- [x] [Structured Output](examples/structured_output.rs)
+- [x] [Structured Output Provider](examples/structured_output_provider.rs)
+
+### Advanced Features
+
+- [x] [Configurable Models](examples/configurable_model.rs)
+- [x] [Invocation Config](examples/invocation_config.rs)
+- [x] [Semantic Routing](examples/semantic_routes.rs)
+- [x] [Dynamic Semantic Routing](examples/dynamic_semantic_routes.rs)
+- [x] [Vision LLM Chain](examples/vision_llm_chain.rs)
+- [x] [Tool Runtime](examples/tool_runtime.rs)
+
+### Document Loaders
+
+- [x] PDF (pdf-extract or lopdf)
+- [x] HTML
+- [x] HTML to Markdown
+- [x] CSV
+- [x] Git Commits
+- [x] Source Code (with tree-sitter)
+- [x] Pandoc (various formats)
+
+See the [examples](examples/) directory for complete examples of each feature.
+
+## 🔧 Configuration
+
+### Environment Variables
+
+For OpenAI:
+```bash
+export OPENAI_API_KEY="your-api-key"
+```
+
+For Anthropic:
+```bash
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+For MistralAI:
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+For Google Gemini:
+```bash
+export GOOGLE_API_KEY="your-api-key"
+```
+
+For AWS Bedrock:
+```bash
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+export AWS_REGION="us-east-1"
+```
+
+## 📖 Documentation
+
+- [Official Documentation](https://langchain-rust.sellie.tech/get-started/quickstart)
+- [Examples Directory](examples/)
+- [API Documentation](https://docs.rs/langchain-rust)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- [LangChain](https://github.com/langchain-ai/langchain) - The original Python implementation
+- All contributors and users of this library
+
+## 🔗 Links
+
+- [Crates.io](https://crates.io/crates/langchain-rust)
+- [Documentation](https://langchain-rust.sellie.tech)
+- [Discord](https://discord.gg/JJFcTFbanu)
+- [GitHub Repository](https://github.com/Abraxas-365/langchain-rust)
