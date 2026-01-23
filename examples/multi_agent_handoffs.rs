@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{
-        create_agent,
-        HandoffAgentBuilder, HandoffTool,
-    },
+    agent::{create_agent, HandoffAgentBuilder, HandoffTool},
     schemas::messages::Message,
     tools::Tool,
 };

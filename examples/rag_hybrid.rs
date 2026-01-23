@@ -38,8 +38,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Add documents to store
-    use langchain_rust::vectorstore::{VectorStore, pgvector::PgOptions};
-    let _ = store.add_documents(&documents, &PgOptions::default()).await?;
+    use langchain_rust::vectorstore::{pgvector::PgOptions, VectorStore};
+    let _ = store
+        .add_documents(&documents, &PgOptions::default())
+        .await?;
 
     // Create retriever
     let retriever: Arc<dyn langchain_rust::schemas::Retriever> = Arc::new(Retriever::new(store, 3));

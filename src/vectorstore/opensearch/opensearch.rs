@@ -208,6 +208,24 @@ impl VectorStore for Store {
 
         Ok(documents)
     }
+
+    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), Box<dyn Error>> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let body: Vec<JsonBody<_>> = ids
+            .iter()
+            .map(|id| json!({"delete": {"_id": id}}).into())
+            .collect();
+        self.client
+            .bulk(BulkParts::Index(&self.index))
+            .body(body)
+            .send()
+            .await?
+            .error_for_status_code()
+            .map_err(Box::new)?;
+        Ok(())
+    }
 }
 
 fn build_similarity_search_query(

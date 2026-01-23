@@ -10,11 +10,7 @@ use langchain_rust::{
     llm::{OpenAI, OpenAIModel},
     memory::SimpleMemory,
     prompt_args,
-    retrievers::{
-        WikipediaRetriever,
-        MergerRetriever,
-        MergeStrategy,
-    },
+    retrievers::{MergeStrategy, MergerRetriever, WikipediaRetriever},
     schemas::Retriever as RetrieverTrait,
 };
 
@@ -25,9 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // You can add more retrievers here, e.g., ArxivRetriever, VectorStoreRetriever, etc.
 
     // Create merger retriever with Reciprocal Rank Fusion strategy
-    let mut merger_retriever = MergerRetriever::new(
-        vec![wikipedia_retriever.clone()],
-    );
+    let mut merger_retriever = MergerRetriever::new(vec![wikipedia_retriever.clone()]);
     merger_retriever.config.strategy = MergeStrategy::ReciprocalRankFusion { k: 60.0 };
     merger_retriever.config.top_k = 5;
 

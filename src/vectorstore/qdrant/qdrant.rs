@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use qdrant_client::client::Payload;
-use qdrant_client::qdrant::{Filter, PointStruct, SearchPointsBuilder, UpsertPointsBuilder};
+use qdrant_client::qdrant::{
+    DeletePointsBuilder, Filter, PointStruct, PointsIdsList, SearchPointsBuilder, UpsertPointsBuilder,
+};
 use serde_json::{json, Value};
 use std::error::Error;
 use std::sync::Arc;
@@ -136,5 +138,23 @@ impl VectorStore for Store {
             .collect();
 
         Ok(documents)
+    }
+
+    async fn delete(&self, ids: &[String], _opt: &QdrantOptions) -> Result<(), Box<dyn Error>> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let point_ids: Vec<qdrant_client::qdrant::PointId> = ids
+            .iter()
+            .map(|s| qdrant_client::qdrant::PointId::from(s.as_str()))
+            .collect();
+        self.client
+            .delete_points(
+                DeletePointsBuilder::new(&self.collection_name)
+                    .points(PointsIdsList { ids: point_ids })
+                    .wait(true),
+            )
+            .await?;
+        Ok(())
     }
 }

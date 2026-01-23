@@ -96,7 +96,12 @@ aws-sdk-bedrockruntime = { version = "1", optional = true }
 aws-sdk-s3 = { version = "1", optional = true }
 octocrab = { version = "0.38", optional = true }
 base64 = { version = "0.22", optional = true }
-
+chromadb = { version = "2", optional = true }
+hnsw_rs = { version = "0.3", optional = true }
+milvus-sdk-rust = { version = "0.1", optional = true }
+mongodb = { version = "2", optional = true }
+pinecone-rs = { version = "0.1", optional = true }
+weaviate-community = { version = "0.2", optional = true }
 
 [features]
 default = []
@@ -115,6 +120,14 @@ qdrant = ["qdrant-client", "uuid"]
 sqlite-vss = ["sqlx"]
 sqlite-vec = ["sqlx"]
 surrealdb = ["dep:surrealdb"]
+in-memory = []
+uuid = ["dep:uuid"]
+chroma = ["dep:chromadb", "uuid"]
+faiss = ["dep:hnsw_rs", "uuid"]
+milvus = ["dep:milvus-sdk-rust", "uuid"]
+mongodb = ["dep:mongodb", "uuid"]
+pinecone = ["dep:pinecone-rs", "uuid"]
+weaviate = ["dep:weaviate-community", "uuid"]
 tree-sitter = [
     "cc",
     "dep:tree-sitter",
@@ -157,6 +170,7 @@ tokio-test = "0.4.4"
 testcontainers = "0.23"
 env_logger = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
+mongodb = "2"
 
 [build-dependencies]
 cc = { version = "1", optional = true }

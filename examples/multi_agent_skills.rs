@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{
-        create_agent,
-        SimpleSkill, SkillAgentBuilder, SkillContext,
-    },
+    agent::{create_agent, SimpleSkill, SkillAgentBuilder, SkillContext},
     schemas::messages::Message,
 };
 
@@ -26,14 +23,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "rust_programming".to_string(),
         "Knowledge about Rust programming language".to_string(),
         "Rust is a systems programming language focused on safety and performance. \
-         Key concepts: ownership, borrowing, lifetimes, traits, enums, pattern matching.".to_string(),
+         Key concepts: ownership, borrowing, lifetimes, traits, enums, pattern matching."
+            .to_string(),
     ));
 
     let python_skill = Arc::new(SimpleSkill::with_context(
         "python_programming".to_string(),
         "Knowledge about Python programming language".to_string(),
         "Python is a high-level interpreted language. \
-         Key features: dynamic typing, indentation-based syntax, extensive standard library.".to_string(),
+         Key features: dynamic typing, indentation-based syntax, extensive standard library."
+            .to_string(),
     ));
 
     // Create skill agent

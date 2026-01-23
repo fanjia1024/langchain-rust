@@ -23,7 +23,7 @@
 - 🧠 **记忆**：简单记忆、对话记忆和带元数据的长期记忆
 - 🛠️ **工具**：搜索工具、命令行、Wolfram Alpha、文本转语音等
 - 📄 **文档加载器**：PDF、HTML、CSV、Git 提交、源代码等
-- 🗄️ **向量存储**：PostgreSQL (pgvector)、Qdrant、SQLite (VSS/Vec)、SurrealDB、OpenSearch
+- 🗄️ **向量存储**：PostgreSQL (pgvector)、Qdrant、SQLite (VSS/Vec)、SurrealDB、OpenSearch、In-Memory、Chroma、FAISS (hnsw_rs)、MongoDB Atlas、Pinecone、Weaviate
 - 🎯 **嵌入模型**：OpenAI、Azure OpenAI、Ollama、FastEmbed、MistralAI
 - 🔧 **中间件**：日志记录、PII 检测、内容过滤、速率限制、重试和自定义中间件
 - 🎨 **结构化输出**：JSON 模式验证和结构化响应生成
@@ -91,6 +91,42 @@ cargo add langchain-rust --features surrealdb
 
 ```bash
 cargo add langchain-rust --features opensearch
+```
+
+##### In-Memory
+
+```bash
+cargo add langchain-rust --features in-memory
+```
+
+##### Chroma
+
+```bash
+cargo add langchain-rust --features chroma
+```
+
+##### FAISS (hnsw_rs)
+
+```bash
+cargo add langchain-rust --features faiss
+```
+
+##### MongoDB Atlas Vector Search
+
+```bash
+cargo add langchain-rust --features mongodb
+```
+
+##### Pinecone
+
+```bash
+cargo add langchain-rust --features pinecone
+```
+
+##### Weaviate
+
+```bash
+cargo add langchain-rust --features weaviate
 ```
 
 #### 使用 LLM 提供商
@@ -312,6 +348,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] [SQLite Vec](examples/vector_store_sqlite_vec.rs)
 - [x] [SurrealDB](examples/vector_store_surrealdb/src/main.rs)
 - [x] [OpenSearch](examples/vector_store_opensearch.rs)
+- [x] [In-Memory](examples/vector_store_in_memory.rs)
+- [x] [Chroma](examples/vector_store_chroma.rs)
+- [x] [FAISS](examples/vector_store_faiss.rs)
+- [x] [MongoDB Atlas](examples/vector_store_mongodb.rs)
+- [x] [Pinecone](examples/vector_store_pinecone.rs)
+- [x] [Weaviate](examples/vector_store_weaviate.rs)
 
 ### 链式调用
 

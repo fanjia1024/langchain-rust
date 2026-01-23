@@ -1,8 +1,5 @@
 use async_trait::async_trait;
-use langchain_rust::agent::{
-    create_agent,
-    Middleware, MiddlewareContext, MiddlewareError,
-};
+use langchain_rust::agent::{create_agent, Middleware, MiddlewareContext, MiddlewareError};
 use langchain_rust::language_models::GenerateResult;
 use langchain_rust::prompt::PromptArgs;
 use langchain_rust::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
@@ -52,9 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Invoke the agent
     let result = agent
-        .invoke_messages(vec![
-            Message::new_human_message("Hello, how are you?")
-        ])
+        .invoke_messages(vec![Message::new_human_message("Hello, how are you?")])
         .await?;
 
     println!("Agent response: {}", result);

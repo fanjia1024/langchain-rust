@@ -23,7 +23,7 @@ This is the Rust language implementation of [LangChain](https://github.com/langc
 - 🧠 **Memory**: Simple memory, conversational memory, and long-term memory with metadata
 - 🛠️ **Tools**: Search tools, command line, Wolfram Alpha, text-to-speech, and more
 - 📄 **Document Loaders**: PDF, HTML, CSV, Git commits, source code, and more
-- 🗄️ **Vector Stores**: PostgreSQL (pgvector), Qdrant, SQLite (VSS/Vec), SurrealDB, OpenSearch
+- 🗄️ **Vector Stores**: PostgreSQL (pgvector), Qdrant, SQLite (VSS/Vec), SurrealDB, OpenSearch, In-Memory, Chroma, FAISS (hnsw_rs), MongoDB Atlas, Pinecone, Weaviate
 - 🎯 **Embeddings**: OpenAI, Azure OpenAI, Ollama, FastEmbed, MistralAI
 - 🔧 **Middleware**: Logging, PII detection, content filtering, rate limiting, retry, and custom middleware
 - 🎨 **Structured Output**: JSON schema validation and structured response generation
@@ -91,6 +91,42 @@ cargo add langchain-rust --features surrealdb
 
 ```bash
 cargo add langchain-rust --features opensearch
+```
+
+##### In-Memory
+
+```bash
+cargo add langchain-rust --features in-memory
+```
+
+##### Chroma
+
+```bash
+cargo add langchain-rust --features chroma
+```
+
+##### FAISS (hnsw_rs)
+
+```bash
+cargo add langchain-rust --features faiss
+```
+
+##### MongoDB Atlas Vector Search
+
+```bash
+cargo add langchain-rust --features mongodb
+```
+
+##### Pinecone
+
+```bash
+cargo add langchain-rust --features pinecone
+```
+
+##### Weaviate
+
+```bash
+cargo add langchain-rust --features weaviate
 ```
 
 #### With LLM Providers
@@ -312,6 +348,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] [SQLite Vec](examples/vector_store_sqlite_vec.rs)
 - [x] [SurrealDB](examples/vector_store_surrealdb/src/main.rs)
 - [x] [OpenSearch](examples/vector_store_opensearch.rs)
+- [x] [In-Memory](examples/vector_store_in_memory.rs)
+- [x] [Chroma](examples/vector_store_chroma.rs)
+- [x] [FAISS](examples/vector_store_faiss.rs)
+- [x] [MongoDB Atlas](examples/vector_store_mongodb.rs)
+- [x] [Pinecone](examples/vector_store_pinecone.rs)
+- [x] [Weaviate](examples/vector_store_weaviate.rs)
 
 ### Chains
 

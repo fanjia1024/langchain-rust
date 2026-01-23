@@ -1,7 +1,4 @@
-use langchain_rust::agent::{
-    create_agent,
-    PIIMiddleware, PIIStrategy, PIIType,
-};
+use langchain_rust::agent::{create_agent, PIIMiddleware, PIIStrategy, PIIType};
 use langchain_rust::schemas::Message;
 use serde_json::json;
 use std::sync::Arc;
@@ -45,9 +42,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // This should have email redacted
     let result = agent
-        .invoke_messages(vec![
-            Message::new_human_message("My email is [email protected]")
-        ])
+        .invoke_messages(vec![Message::new_human_message(
+            "My email is [email protected]",
+        )])
         .await?;
 
     println!("Result with email: {}", result);

@@ -23,9 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Invoke the agent
     let result = agent
-        .invoke_messages(vec![
-            Message::new_human_message("What is the capital of France?")
-        ])
+        .invoke_messages(vec![Message::new_human_message(
+            "What is the capital of France?",
+        )])
         .await?;
 
     println!("Agent response: {}", result);

@@ -24,6 +24,14 @@ pub trait VectorStore: Send + Sync {
         limit: usize,
         opt: &Self::Options,
     ) -> Result<Vec<Document>, Box<dyn Error>>;
+
+    /// Delete documents by IDs. Returns `VectorStoreError::DeleteNotSupported`
+    /// for stores that do not support deletion.
+    async fn delete(
+        &self,
+        ids: &[String],
+        _opt: &Self::Options,
+    ) -> Result<(), Box<dyn Error>>;
 }
 
 impl<VS, F> From<VS> for Box<dyn VectorStore<Options = F>>

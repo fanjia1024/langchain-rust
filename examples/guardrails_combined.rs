@@ -1,6 +1,6 @@
 use langchain_rust::agent::{
-    create_agent,
-    ContentFilterMiddleware, HumanInTheLoopMiddleware, PIIMiddleware, PIIStrategy, PIIType,
+    create_agent, ContentFilterMiddleware, HumanInTheLoopMiddleware, PIIMiddleware, PIIStrategy,
+    PIIType,
 };
 use langchain_rust::schemas::Message;
 use serde_json::json;
@@ -46,9 +46,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test 1: Content filter should block banned keywords
     println!("\n1. Testing content filter...");
     let result = agent
-        .invoke_messages(vec![
-            Message::new_human_message("How do I hack into a system?")
-        ])
+        .invoke_messages(vec![Message::new_human_message(
+            "How do I hack into a system?",
+        )])
         .await;
 
     match result {
@@ -59,9 +59,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test 2: PII should be redacted
     println!("\n2. Testing PII redaction...");
     let result = agent
-        .invoke_messages(vec![
-            Message::new_human_message("My email is [email protected]")
-        ])
+        .invoke_messages(vec![Message::new_human_message(
+            "My email is [email protected]",
+        )])
         .await?;
 
     println!("Result (should have redacted email): {}", result);
@@ -69,9 +69,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test 3: Normal request should work
     println!("\n3. Testing normal request...");
     let result = agent
-        .invoke_messages(vec![
-            Message::new_human_message("What is the capital of France?")
-        ])
+        .invoke_messages(vec![Message::new_human_message(
+            "What is the capital of France?",
+        )])
         .await?;
 
     println!("Result: {}", result);

@@ -1,3 +1,4 @@
+mod error;
 mod options;
 
 #[cfg(feature = "postgres")]
@@ -18,7 +19,26 @@ pub mod opensearch;
 #[cfg(feature = "qdrant")]
 pub mod qdrant;
 
+#[cfg(feature = "in-memory")]
+pub mod in_memory;
+
+#[cfg(feature = "chroma")]
+pub mod chroma;
+
+#[cfg(feature = "faiss")]
+pub mod faiss;
+
+#[cfg(feature = "mongodb")]
+pub mod mongodb;
+
+#[cfg(feature = "pinecone")]
+pub mod pinecone;
+
+#[cfg(feature = "weaviate")]
+pub mod weaviate;
+
 mod vectorstore;
 
+pub use error::*;
 pub use options::*;
 pub use vectorstore::*;

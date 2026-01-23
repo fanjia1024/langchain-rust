@@ -43,7 +43,11 @@ it will split by sentences, then by words, and finally by characters.
     ];
 
     let split_docs = splitter.split_documents(&documents).await?;
-    println!("\nSplit {} documents into {} chunks", documents.len(), split_docs.len());
+    println!(
+        "\nSplit {} documents into {} chunks",
+        documents.len(),
+        split_docs.len()
+    );
 
     Ok(())
 }

@@ -316,4 +316,23 @@ impl VectorStore for Store {
 
         Ok(docs)
     }
+
+    async fn delete(&self, ids: &[String], _opt: &PgOptions) -> Result<(), Box<dyn Error>> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        // pgvector uses uuid in the embedding table
+        let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("${}", i)).collect();
+        let sql = format!(
+            "DELETE FROM {} WHERE uuid IN ({})",
+            self.embedder_table_name,
+            placeholders.join(", ")
+        );
+        let mut query = sqlx::query(&sql);
+        for id in ids {
+            query = query.bind(id);
+        }
+        query.execute(&self.pool).await?;
+        Ok(())
+    }
 }

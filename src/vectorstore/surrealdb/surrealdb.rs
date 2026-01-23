@@ -215,6 +215,20 @@ impl<C: Connection> VectorStore for Store<C> {
 
         Ok(documents)
     }
+
+    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), Box<dyn Error>> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let table = self.get_collection_table_name();
+        let ids_vec: Vec<String> = ids.to_vec();
+        self.db
+            .query(format!("DELETE FROM {table} WHERE id INSIDE $ids"))
+            .bind(("ids", ids_vec))
+            .await?
+            .check()?;
+        Ok(())
+    }
 }
 
 #[derive(Deserialize, Debug)]

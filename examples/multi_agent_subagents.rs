@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{
-        create_agent,
-        SubagentInfo, SubagentsBuilder,
-    },
+    agent::{create_agent, SubagentInfo, SubagentsBuilder},
     schemas::messages::Message,
 };
 

@@ -7,8 +7,7 @@ use langchain_rust::{
     agent::create_agent,
     schemas::messages::Message,
     tools::{
-        EnhancedInMemoryStore, EnhancedToolStore, StoreValue,
-        ToolResult, ToolRuntime, ToolStore,
+        EnhancedInMemoryStore, EnhancedToolStore, StoreValue, ToolResult, ToolRuntime, ToolStore,
     },
 };
 use serde_json::json;

@@ -175,4 +175,27 @@ impl VectorStore for Store {
 
         Ok(docs)
     }
+
+    async fn delete(&self, ids: &[String], _opt: &SqliteVssOptions) -> Result<(), Box<dyn Error>> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let rowids: Vec<i64> = ids
+            .iter()
+            .map(|s| s.parse::<i64>())
+            .collect::<Result<_, _>>()
+            .map_err(|e: std::num::ParseIntError| -> Box<dyn Error> { e.into() })?;
+        let placeholders: Vec<String> = (0..rowids.len()).map(|_| "?".to_string()).collect();
+        let sql = format!(
+            "DELETE FROM {} WHERE rowid IN ({})",
+            self.table,
+            placeholders.join(", ")
+        );
+        let mut query = sqlx::query(&sql);
+        for rid in &rowids {
+            query = query.bind(rid);
+        }
+        query.execute(&self.pool).await?;
+        Ok(())
+    }
 }

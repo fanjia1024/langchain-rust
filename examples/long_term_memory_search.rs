@@ -6,7 +6,8 @@ use std::sync::Arc;
 use langchain_rust::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     tools::{
-        EnhancedInMemoryStore, EnhancedInMemoryStoreConfig, EnhancedToolStore, StoreFilter, StoreValue,
+        EnhancedInMemoryStore, EnhancedInMemoryStoreConfig, EnhancedToolStore, StoreFilter,
+        StoreValue,
     },
 };
 use serde_json::json;

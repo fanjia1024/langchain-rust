@@ -5,9 +5,7 @@ use std::sync::Arc;
 
 use langchain_rust::{
     agent::{
-        create_agent,
-        Middleware, MiddlewareContext, MiddlewareError,
-        Runtime, RuntimeRequest,
+        create_agent, Middleware, MiddlewareContext, MiddlewareError, Runtime, RuntimeRequest,
     },
     language_models::GenerateResult,
     prompt::PromptArgs,
