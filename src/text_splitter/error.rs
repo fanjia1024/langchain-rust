@@ -21,6 +21,15 @@ pub enum TextSplitterError {
     #[error("Invalid chunk overlap and size")]
     InvalidSplitterOptions,
 
+    #[error("HTML parse error: {0}")]
+    HtmlParseError(String),
+
+    #[error("JSON parse error: {0}")]
+    JsonParseError(String),
+
+    #[error("Code parse error: {0}")]
+    CodeParseError(String),
+
     #[error("Error: {0}")]
     OtherError(String),
 }

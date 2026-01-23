@@ -21,6 +21,25 @@ pub enum LoaderError {
     #[error(transparent)]
     CSVError(#[from] csv::Error),
 
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
+
+    #[cfg(feature = "yaml")]
+    #[error(transparent)]
+    YamlError(#[from] serde_yaml::Error),
+
+    #[cfg(feature = "toml")]
+    #[error(transparent)]
+    TomlError(#[from] toml::de::Error),
+
+    #[cfg(feature = "xml")]
+    #[error("XML parsing error: {0}")]
+    XmlError(String),
+
+    #[cfg(feature = "excel")]
+    #[error("Excel parsing error: {0}")]
+    ExcelError(String),
+
     #[cfg(any(feature = "lopdf"))]
     #[cfg(not(feature = "pdf-extract"))]
     #[error(transparent)]

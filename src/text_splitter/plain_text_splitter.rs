@@ -74,11 +74,14 @@ impl PlainTextSplitter {
 #[async_trait]
 impl TextSplitter for PlainTextSplitter {
     async fn split_text(&self, text: &str) -> Result<Vec<String>, TextSplitterError> {
-        let splitter = text_splitter::TextSplitter::new(
-            text_splitter::ChunkConfig::new(self.splitter_options.chunk_size)
-                .with_trim(self.splitter_options.trim_chunks)
-                .with_overlap(self.splitter_options.chunk_overlap)?,
-        );
+        use text_splitter::ChunkConfig;
+        
+        let chunk_config = ChunkConfig::new(self.splitter_options.chunk_size)
+            .with_trim(self.splitter_options.trim_chunks)
+            .with_overlap(self.splitter_options.chunk_overlap)
+            .map_err(|_| TextSplitterError::InvalidSplitterOptions)?;
+        
+        let splitter = text_splitter::TextSplitter::new(chunk_config);
 
         Ok(splitter.chunks(text).map(|x| x.to_string()).collect())
     }

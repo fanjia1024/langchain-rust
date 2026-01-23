@@ -38,3 +38,18 @@ pub use dir_loader::*;
 mod source_code_loader;
 #[cfg(feature = "tree-sitter")]
 pub use source_code_loader::*;
+
+mod common_file_loaders;
+pub use common_file_loaders::*;
+
+mod web_loaders;
+pub use web_loaders::*;
+
+mod office_loaders;
+pub use office_loaders::*;
+
+mod cloud_loaders;
+pub use cloud_loaders::*;
+
+mod productivity_loaders;
+pub use productivity_loaders::*;

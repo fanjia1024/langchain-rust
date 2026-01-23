@@ -141,7 +141,7 @@ cargo add langchain-rust --features html-to-markdown
 
 #### 使用代码解析
 
-##### Tree-sitter（用于源代码解析）
+##### Tree-sitter（用于源代码解析，需要 0.26+）
 
 ```bash
 cargo add langchain-rust --features tree-sitter
@@ -334,11 +334,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] [多智能体技能](examples/multi_agent_skills.rs)
 - [x] [多智能体交接](examples/multi_agent_handoffs.rs)
 
+### 文本分割器 (Text Splitters)
+
+#### 基于文本结构
+- [x] [递归字符分割器](examples/text_splitter_recursive_character.rs) - 推荐默认，按分隔符递归分割
+- [x] 字符分割器 - 使用单个分隔符的简单字符分割
+- [x] 纯文本分割器 - 基础文本分割
+- [x] Token 分割器 - 基于 Token 的分割（Tiktoken）
+
+#### 基于文档结构
+- [x] Markdown 分割器 - 按 Markdown 结构分割
+- [x] [HTML 分割器](examples/text_splitter_html.rs) - 按 HTML 标签分割
+- [x] [JSON 分割器](examples/text_splitter_json.rs) - 按 JSON 对象/数组分割
+- [x] 代码分割器 - 按语法树分割代码（tree-sitter 0.26+，需要 `tree-sitter` 特性）
+
 ### RAG（检索增强生成）
 
 - [x] [智能体 RAG](examples/rag_agentic.rs) - 智能体决定何时检索
 - [x] [混合 RAG](examples/rag_hybrid.rs) - 结合多种检索策略
 - [x] [两步 RAG](examples/rag_two_step.rs) - 两阶段检索过程
+
+### 检索器 (Retrievers)
+
+#### 外部索引检索器
+- [x] [Wikipedia 检索器](examples/retriever_wikipedia.rs) - 检索 Wikipedia 文章
+- [x] Arxiv 检索器 - 从 arXiv 检索学术论文
+- [x] Tavily 搜索 API 检索器 - 实时网络搜索
+
+#### 基于算法的检索器
+- [x] BM25 检索器 - BM25 算法文本检索
+- [x] TF-IDF 检索器 - 基于 TF-IDF 的检索
+- [x] SVM 检索器 - 基于支持向量机的检索
+
+#### 重排序器
+- [x] Cohere 重排序器 - 使用 Cohere API 重排序
+- [x] FlashRank 重排序器 - 本地 ONNX 模型重排序
+- [x] Contextual AI 重排序器 - Contextual AI API 重排序
+
+#### 混合检索器
+- [x] [合并检索器](examples/retriever_merger.rs) - 合并多个检索器结果
+- [x] 集成检索器 - 多个检索器的投票机制
+
+#### 查询增强检索器
+- [x] 查询重写检索器 - 基于 LLM 的查询重写
+- [x] 多查询检索器 - 生成多个查询变体
+
+#### 文档压缩检索器
+- [x] 嵌入冗余过滤器 - 基于相似度过滤冗余文档
 
 ### 工具
 
@@ -391,13 +433,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### 文档加载器
 
+#### 常见文件类型
 - [x] PDF (pdf-extract 或 lopdf)
 - [x] HTML
 - [x] HTML 转 Markdown
 - [x] CSV
-- [x] Git 提交
-- [x] 源代码（使用 tree-sitter）
-- [x] Pandoc（各种格式）
+- [x] TSV（制表符分隔值）
+- [x] JSON（包括 JSONL）
+- [x] Markdown
+- [x] TOML（需要 `toml` 特性）
+- [x] YAML（需要 `yaml` 特性）
+- [x] XML（需要 `xml` 特性）
+
+#### Office 文档
+- [x] Excel (.xlsx, .xls)（需要 `excel` 特性）
+- [x] Word、PowerPoint 等（通过 PandocLoader）
+
+#### 网页加载器
+- [x] WebBaseLoader - 从 URL 加载内容
+- [x] RecursiveURLLoader - 递归抓取网站
+- [x] SitemapLoader - 从 sitemap.xml 加载所有 URL（需要 `xml` 特性）
+
+#### 云存储
+- [x] AWS S3（需要 `aws-s3` 特性）
+
+#### 生产力工具
+- [x] GitHub（需要 `github` 特性）
+- [x] Git 提交（需要 `git` 特性）
+
+#### 其他
+- [x] 源代码（需要 tree-sitter 特性）
+- [x] Pandoc（各种格式：docx、epub、html、ipynb、markdown 等）
 
 查看 [examples](examples/) 目录以获取每个功能的完整示例。
 

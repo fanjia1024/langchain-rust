@@ -141,7 +141,7 @@ cargo add langchain-rust --features html-to-markdown
 
 #### With Code Parsing
 
-##### Tree-sitter (for source code parsing)
+##### Tree-sitter (for source code parsing, requires 0.26+)
 
 ```bash
 cargo add langchain-rust --features tree-sitter
@@ -334,11 +334,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] [Multi-Agent Skills](examples/multi_agent_skills.rs)
 - [x] [Multi-Agent Handoffs](examples/multi_agent_handoffs.rs)
 
+### Text Splitters
+
+#### Text Structure-Based
+- [x] [RecursiveCharacterTextSplitter](examples/text_splitter_recursive_character.rs) - Recommended default, splits recursively by separators
+- [x] CharacterTextSplitter - Simple character-based splitting with single separator
+- [x] PlainTextSplitter - Basic text splitting
+- [x] TokenSplitter - Token-based splitting (Tiktoken)
+
+#### Document Structure-Based
+- [x] MarkdownSplitter - Split Markdown by structure
+- [x] [HTMLSplitter](examples/text_splitter_html.rs) - Split HTML by tags
+- [x] [JsonSplitter](examples/text_splitter_json.rs) - Split JSON by objects/arrays
+- [x] CodeSplitter - Split code by syntax tree (tree-sitter 0.26+, requires `tree-sitter` feature)
+
 ### RAG (Retrieval-Augmented Generation)
 
 - [x] [Agentic RAG](examples/rag_agentic.rs) - Agent decides when to retrieve
 - [x] [Hybrid RAG](examples/rag_hybrid.rs) - Combines multiple retrieval strategies
 - [x] [Two-Step RAG](examples/rag_two_step.rs) - Two-stage retrieval process
+
+### Retrievers
+
+#### External Index Retrievers
+- [x] [Wikipedia Retriever](examples/retriever_wikipedia.rs) - Retrieve Wikipedia articles
+- [x] Arxiv Retriever - Retrieve academic papers from arXiv
+- [x] Tavily Search API Retriever - Real-time web search
+
+#### Algorithm-Based Retrievers
+- [x] BM25 Retriever - BM25 algorithm for text retrieval
+- [x] TF-IDF Retriever - TF-IDF based retrieval
+- [x] SVM Retriever - Support Vector Machine based retrieval
+
+#### Rerankers
+- [x] Cohere Reranker - Rerank using Cohere API
+- [x] FlashRank Reranker - Local ONNX model reranking
+- [x] Contextual AI Reranker - Contextual AI API reranking
+
+#### Hybrid Retrievers
+- [x] [Merger Retriever](examples/retriever_merger.rs) - Combine multiple retrievers
+- [x] Ensemble Retriever - Voting mechanism from multiple retrievers
+
+#### Query Enhancement Retrievers
+- [x] RePhrase Query Retriever - LLM-based query rephrasing
+- [x] Multi Query Retriever - Generate multiple query variations
+
+#### Document Compression Retrievers
+- [x] Embeddings Redundant Filter - Filter redundant documents by similarity
 
 ### Tools
 
@@ -391,13 +433,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Document Loaders
 
+#### Common File Types
 - [x] PDF (pdf-extract or lopdf)
 - [x] HTML
 - [x] HTML to Markdown
 - [x] CSV
-- [x] Git Commits
-- [x] Source Code (with tree-sitter)
-- [x] Pandoc (various formats)
+- [x] TSV (Tab-Separated Values)
+- [x] JSON (including JSONL)
+- [x] Markdown
+- [x] TOML (with `toml` feature)
+- [x] YAML (with `yaml` feature)
+- [x] XML (with `xml` feature)
+
+#### Office Documents
+- [x] Excel (.xlsx, .xls) (with `excel` feature)
+- [x] Word, PowerPoint, and more via PandocLoader
+
+#### Web Loaders
+- [x] WebBaseLoader - Load content from URLs
+- [x] RecursiveURLLoader - Recursively crawl websites
+- [x] SitemapLoader - Load all URLs from sitemap.xml (with `xml` feature)
+
+#### Cloud Storage
+- [x] AWS S3 (with `aws-s3` feature)
+
+#### Productivity Tools
+- [x] GitHub (with `github` feature)
+- [x] Git Commits (with `git` feature)
+
+#### Other
+- [x] Source Code (with tree-sitter feature)
+- [x] Pandoc (various formats: docx, epub, html, ipynb, markdown, etc.)
 
 See the [examples](examples/) directory for complete examples of each feature.
 

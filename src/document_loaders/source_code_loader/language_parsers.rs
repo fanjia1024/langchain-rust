@@ -156,7 +156,7 @@ impl LanguageParser {
 
         let count = tree.root_node().child_count();
         for i in 0..count {
-            let node = tree.root_node().child(i).unwrap();
+            let node = tree.root_node().child(i as u32).unwrap();
             let source_code = node.utf8_text(code.as_bytes()).unwrap().to_string();
             let lang_meta = (
                 "language".to_string(),

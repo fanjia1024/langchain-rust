@@ -1,4 +1,4 @@
-use text_splitter::ChunkConfig;
+use text_splitter::{ChunkConfig, ChunkSizer};
 use tiktoken_rs::{get_bpe_from_model, get_bpe_from_tokenizer, tokenizer::Tokenizer, CoreBPE};
 
 use super::TextSplitterError;
@@ -70,7 +70,18 @@ impl SplitterOptions {
     }
 }
 
-impl TryFrom<&SplitterOptions> for ChunkConfig<CoreBPE> {
+// Helper type that wraps CoreBPE to implement ChunkSizer
+pub(crate) struct TiktokenSizer(CoreBPE);
+
+impl ChunkSizer for TiktokenSizer {
+    fn size(&self, chunk: &str) -> usize {
+        // Use the CoreBPE to count tokens
+        // encode_ordinary returns Vec<usize> directly
+        self.0.encode_ordinary(chunk).len()
+    }
+}
+
+impl TryFrom<&SplitterOptions> for ChunkConfig<TiktokenSizer> {
     type Error = TextSplitterError;
 
     fn try_from(options: &SplitterOptions) -> Result<Self, Self::Error> {
@@ -83,8 +94,10 @@ impl TryFrom<&SplitterOptions> for ChunkConfig<CoreBPE> {
             get_bpe_from_model(&options.model_name).map_err(|_| TextSplitterError::InvalidModel)?
         };
 
+        let sizer = TiktokenSizer(tk);
+
         Ok(ChunkConfig::new(options.chunk_size)
-            .with_sizer(tk)
+            .with_sizer(sizer)
             .with_trim(options.trim_chunks)
             .with_overlap(options.chunk_overlap)?)
     }
