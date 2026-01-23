@@ -100,6 +100,8 @@ pub enum QwenModel {
     QwenPlus,
     /// Qwen-Long
     QwenLong,
+    /// Qwen-Flash (Commercial API Service - Fast and cost-effective)
+    QwenFlash,
     /// Qwen-72B-Chat (Open Source Version)
     Qwen1_72B_Chat,
     /// Qwen-14B-Chat (Open Source Version)
@@ -150,6 +152,32 @@ pub enum QwenModel {
     Qwen2_5_1_5B_INSTRUCT,
     /// Qwen2.5-0.5B-Instruct (Open Source Version)
     Qwen2_5_0_5B_INSTRUCT,
+    /// Qwen3-Max (Commercial API Service)
+    Qwen3Max,
+    /// Qwen3-Plus (Commercial API Service)
+    Qwen3Plus,
+    /// Qwen3-Flash (Commercial API Service)
+    Qwen3Flash,
+    /// Qwen3-235B-A22B (Commercial API Service)
+    Qwen3_235B_A22B,
+    /// Qwen3-Coder-Plus (Code Generation)
+    Qwen3CoderPlus,
+    /// Qwen3-Coder-Flash (Code Generation)
+    Qwen3CoderFlash,
+    /// Qwen3-Coder-480B-A35B-Instruct (Code Generation)
+    Qwen3Coder_480B_A35B_Instruct,
+    /// Qwen3-Coder-30B-A3B-Instruct (Code Generation)
+    Qwen3Coder_30B_A3B_Instruct,
+    /// Qwen3-VL-Plus (Multimodal Vision-Language)
+    Qwen3VlPlus,
+    /// Qwen3-VL-Max (Multimodal Vision-Language)
+    Qwen3VlMax,
+    /// Qwen3-VL-Flash (Multimodal Vision-Language)
+    Qwen3VlFlash,
+    /// Qwen-Coder (Code Generation)
+    QwenCoder,
+    /// Qwen-Coder-Plus (Code Generation)
+    QwenCoderPlus,
 }
 
 impl ToString for QwenModel {
@@ -159,6 +187,7 @@ impl ToString for QwenModel {
             QwenModel::QwenTurbo => "qwen-turbo".to_string(),
             QwenModel::QwenPlus => "qwen-plus".to_string(),
             QwenModel::QwenLong => "qwen-long".to_string(),
+            QwenModel::QwenFlash => "qwen-flash".to_string(),
             QwenModel::Qwen1_72B_Chat => "qwen-72b-chat".to_string(),
             QwenModel::Qwen1_14B_Chat => "qwen-14b-chat".to_string(),
             QwenModel::Qwen1_7B_Chat => "qwen-7b-chat".to_string(),
@@ -184,6 +213,19 @@ impl ToString for QwenModel {
             QwenModel::Qwen2_5_3B_INSTRUCT => "qwen2.5-3b-instruct".to_string(),
             QwenModel::Qwen2_5_1_5B_INSTRUCT => "qwen2.5-1.5b-instruct".to_string(),
             QwenModel::Qwen2_5_0_5B_INSTRUCT => "qwen2.5-0.5b-instruct".to_string(),
+            QwenModel::Qwen3Max => "qwen3-max".to_string(),
+            QwenModel::Qwen3Plus => "qwen3-plus".to_string(),
+            QwenModel::Qwen3Flash => "qwen3-flash".to_string(),
+            QwenModel::Qwen3_235B_A22B => "qwen3-235b-a22b".to_string(),
+            QwenModel::Qwen3CoderPlus => "qwen3-coder-plus".to_string(),
+            QwenModel::Qwen3CoderFlash => "qwen3-coder-flash".to_string(),
+            QwenModel::Qwen3Coder_480B_A35B_Instruct => "qwen3-coder-480b-a35b-instruct".to_string(),
+            QwenModel::Qwen3Coder_30B_A3B_Instruct => "qwen3-coder-30b-a3b-instruct".to_string(),
+            QwenModel::Qwen3VlPlus => "qwen3-vl-plus".to_string(),
+            QwenModel::Qwen3VlMax => "qwen3-vl-max".to_string(),
+            QwenModel::Qwen3VlFlash => "qwen3-vl-flash".to_string(),
+            QwenModel::QwenCoder => "qwen-coder".to_string(),
+            QwenModel::QwenCoderPlus => "qwen-coder-plus".to_string(),
         }
     }
 }
@@ -253,51 +295,68 @@ impl Qwen {
             .send()
             .await?;
 
-        match res.status().as_u16() {
+        let status = res.status().as_u16();
+        
+        // Read response text first (can only be read once)
+        let response_text = res.text().await?;
+        
+        match status {
             200 => {
-                let api_response = res.json::<ApiResponse>().await?;
+                // Try to parse as ApiResponse
+                match serde_json::from_str::<ApiResponse>(&response_text) {
+                    Ok(api_response) => {
+                        // Extract the first choice content
+                        let generation = match api_response.choices.first() {
+                            Some(choice) => choice.message.content.clone(),
+                            None => {
+                                return Err(LLMError::ContentNotFound(
+                                    "No content returned from API".to_string(),
+                                ))
+                            }
+                        };
 
-                // Extract the first choice content
-                let generation = match api_response.choices.first() {
-                    Some(choice) => choice.message.content.clone(),
-                    None => {
-                        return Err(LLMError::ContentNotFound(
-                            "No content returned from API".to_string(),
-                        ))
+                        let tokens = Some(TokenUsage {
+                            prompt_tokens: api_response.usage.prompt_tokens,
+                            completion_tokens: api_response.usage.completion_tokens,
+                            total_tokens: api_response.usage.total_tokens,
+                        });
+
+                        Ok(GenerateResult { tokens, generation })
                     }
-                };
-
-                let tokens = Some(TokenUsage {
-                    prompt_tokens: api_response.usage.prompt_tokens,
-                    completion_tokens: api_response.usage.completion_tokens,
-                    total_tokens: api_response.usage.total_tokens,
-                });
-
-                Ok(GenerateResult { tokens, generation })
+                    Err(e) => {
+                        // If JSON parsing fails, include the response text for debugging
+                        Err(LLMError::OtherError(format!(
+                            "Failed to decode response body: {}. Response: {}",
+                            e, response_text
+                        )))
+                    }
+                }
             }
-            400 => {
-                let error = res.json::<ErrorResponse>().await?;
-                Err(parse_error_response(error.code.as_str(), &error.message))
-            }
-            401 => {
-                let error = res.json::<ErrorResponse>().await?;
-                Err(parse_error_response(error.code.as_str(), &error.message))
-            }
-            429 => {
-                let error = res.json::<ErrorResponse>().await?;
-                Err(parse_error_response(error.code.as_str(), &error.message))
-            }
-            500 => {
-                let error = res.json::<ErrorResponse>().await?;
-                Err(parse_error_response(error.code.as_str(), &error.message))
-            }
-            503 => {
-                let error = res.json::<ErrorResponse>().await?;
-                Err(parse_error_response(error.code.as_str(), &error.message))
+            400 | 401 | 429 | 500 | 503 => {
+                // Try to parse as ErrorResponse
+                match serde_json::from_str::<ErrorResponse>(&response_text) {
+                    Ok(error) => Err(parse_error_response(error.code.as_str(), &error.message)),
+                    Err(_) => {
+                        // If error response parsing fails, return raw text
+                        Err(LLMError::QwenError(QwenError::SystemError(format!(
+                            "API returned status {} but error response could not be parsed. Response: {}",
+                            status, response_text
+                        ))))
+                    }
+                }
             }
             _ => {
-                let error = res.json::<ErrorResponse>().await?;
-                Err(parse_error_response(error.code.as_str(), &error.message))
+                // For other status codes, try to parse as ErrorResponse first
+                match serde_json::from_str::<ErrorResponse>(&response_text) {
+                    Ok(error) => Err(parse_error_response(error.code.as_str(), &error.message)),
+                    Err(_) => {
+                        // If parsing fails, return raw text
+                        Err(LLMError::QwenError(QwenError::SystemError(format!(
+                            "Unexpected status code {}. Response: {}",
+                            status, response_text
+                        ))))
+                    }
+                }
             }
         }
     }

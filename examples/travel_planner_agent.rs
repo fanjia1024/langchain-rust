@@ -15,14 +15,13 @@
 //! - Memory to remember user preferences across conversations
 
 use std::collections::HashMap;
+use std::env;
 use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use langchain_rust::{
-    agent::{
-        create_agent, SubagentInfo, SubagentsBuilder,
-    },
+    agent::{create_agent, SubagentInfo, SubagentsBuilder},
     schemas::messages::Message,
     tools::{DuckDuckGoSearchResults, Tool},
 };
@@ -310,18 +309,13 @@ impl Tool for BudgetCalculatorTool {
             let category = item["category"]
                 .as_str()
                 .ok_or("Missing 'category' in item")?;
-            let amount = item["amount"]
-                .as_f64()
-                .ok_or("Missing 'amount' in item")?;
+            let amount = item["amount"].as_f64().ok_or("Missing 'amount' in item")?;
 
             *totals.entry(category.to_string()).or_insert(0.0) += amount;
             total += amount;
         }
 
-        let breakdown: HashMap<String, f64> = totals
-            .iter()
-            .map(|(k, v)| (k.clone(), *v))
-            .collect();
+        let breakdown: HashMap<String, f64> = totals.iter().map(|(k, v)| (k.clone(), *v)).collect();
 
         let results = json!({
             "currency": currency,
@@ -398,7 +392,7 @@ impl Tool for RoutePlannerTool {
         for (idx, attraction) in attractions.iter().enumerate() {
             let name = attraction["name"].as_str().unwrap_or("Unknown");
             let location = attraction["location"].as_str().unwrap_or("Unknown");
-            
+
             route.push(json!({
                 "order": idx + 1,
                 "name": name,
@@ -486,11 +480,17 @@ impl Tool for ItineraryOptimizerTool {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
+    // Set Qwen API key environment variable
+    // Replace with your actual API key
+    env::set_var("QWEN_API_KEY", "your_qwen_api_key_here");
+
     println!("=== Travel Planner Agent Example ===\n");
 
     // Create specialized subagents
+    // Note: Using "qwen-plus" as the model name (qwen3-plus is not a valid model name)
+    // Valid Qwen models: qwen-plus, qwen-max, qwen-turbo, qwen-long
     let attraction_agent = Arc::new(create_agent(
-        "gpt-4o-mini",
+        "qwen:qwen3-max",
         &[],
         Some(
             "You are a travel attraction expert. Your role is to recommend and evaluate tourist attractions, \
@@ -501,7 +501,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?);
 
     let transportation_agent = Arc::new(create_agent(
-        "gpt-4o-mini",
+        "qwen:qwen3-max",
         &[],
         Some(
             "You are a transportation planning expert. Your role is to plan and optimize transportation \
@@ -522,8 +522,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create main agent with tools and subagents using SubagentsBuilder
     // SubagentsBuilder can create an agent with both tools and subagents
+    // Note: Using "qwen-plus" as the model name (qwen3-plus is not a valid model name)
     let main_agent = SubagentsBuilder::new()
-        .with_model("gpt-4o-mini")
+        .with_model("qwen:qwen3-max")
         .with_system_prompt(
             "You are an expert travel planning assistant. Your role is to help users plan comprehensive \
              travel itineraries. You have access to specialized tools and subagents for different aspects \
@@ -559,7 +560,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "transportation_planner".to_string(),
             "Specialized agent for planning transportation and routes between destinations".to_string(),
         ))
-        .build()?;
+        .build()?
+        .with_max_iterations(20); // Increase max iterations for complex travel planning tasks
 
     // Example 1: Complete travel planning request
     println!("Example 1: Planning a trip to Tokyo\n");
@@ -609,7 +611,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Note: UnifiedAgent can be used directly, but for memory support we need AgentExecutor
     // However, UnifiedAgent doesn't implement the Agent trait directly, so we need to use it differently
     // For this example, we'll show both approaches
-    
+
     // Approach 1: Direct use with invoke_messages (no memory)
     println!("Direct agent usage (no memory):\n");
     println!("User: 我想去日本东京旅游，预算5000元，5天\n");

@@ -29,17 +29,28 @@ impl ChatOutputParser {
         log::debug!("Parsing to Agent Action: {}", text);
         match parse_json_markdown(text) {
             Some(value) => {
-                // Deserialize the Value into AgentOutput
-                let agent_output: AgentOutput = serde_json::from_value(value)?;
+                // Extract action and action_input from the parsed JSON
+                let action = value.get("action")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| AgentError::OtherError("Missing or invalid 'action' field".to_string()))?
+                    .to_string();
+                
+                // Handle action_input: it can be a string or an object
+                // If it's an object, serialize it to a string
+                let action_input = match value.get("action_input") {
+                    Some(v) if v.is_string() => v.as_str().unwrap().to_string(),
+                    Some(v) => serde_json::to_string(v)?,
+                    None => return Err(AgentError::OtherError("Missing 'action_input' field".to_string())),
+                };
 
-                if agent_output.action == "Final Answer" {
+                if action == "Final Answer" {
                     Ok(AgentEvent::Finish(AgentFinish {
-                        output: agent_output.action_input,
+                        output: action_input,
                     }))
                 } else {
                     Ok(AgentEvent::Action(vec![AgentAction {
-                        tool: agent_output.action,
-                        tool_input: agent_output.action_input,
+                        tool: action,
+                        tool_input: action_input,
                         log: text.to_string(),
                     }]))
                 }
