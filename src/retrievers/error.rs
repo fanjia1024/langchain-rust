@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::vectorstore::VectorStoreError;
+
 /// Errors specific to retrievers
 #[derive(Error, Debug)]
 pub enum RetrieverError {
@@ -29,4 +31,7 @@ pub enum RetrieverError {
 
     #[error("Document processing error: {0}")]
     DocumentProcessingError(String),
+
+    #[error("Vector store error: {0}")]
+    VectorStoreError(#[from] VectorStoreError),
 }

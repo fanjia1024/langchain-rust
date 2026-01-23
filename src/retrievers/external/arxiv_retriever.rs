@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::error::Error;
 
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::Value;
 
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// Configuration for arXiv retriever
@@ -56,7 +56,7 @@ impl ArxivRetriever {
     }
 
     /// Search arXiv for papers matching the query
-    async fn search_arxiv(&self, query: &str) -> Result<Vec<Document>, Box<dyn Error>> {
+    async fn search_arxiv(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // arXiv API endpoint
         let url = "http://export.arxiv.org/api/query";
 
@@ -73,9 +73,12 @@ impl ArxivRetriever {
             .get(url)
             .query(&params)
             .send()
-            .await?;
-
-        let xml_content = response.text().await?;
+            .await
+            .map_err(|e| RetrieverError::ArxivError(e.to_string()))?;
+        let xml_content = response
+            .text()
+            .await
+            .map_err(|e| RetrieverError::ArxivError(e.to_string()))?;
 
         // Parse XML response
         let mut documents = Vec::new();
@@ -113,7 +116,10 @@ impl ArxivRetriever {
                         .cloned()
                         .unwrap_or_else(|| String::new());
 
-                    let content = format!("Title: {}\n\nAuthors: {}\n\nAbstract: {}", title, authors, summary);
+                    let content = format!(
+                        "Title: {}\n\nAuthors: {}\n\nAbstract: {}",
+                        title, authors, summary
+                    );
 
                     let mut metadata = HashMap::new();
                     metadata.insert("source".to_string(), Value::from("arxiv"));
@@ -188,10 +194,7 @@ impl Default for ArxivRetriever {
 
 #[async_trait]
 impl Retriever for ArxivRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         self.search_arxiv(query).await
     }
 }

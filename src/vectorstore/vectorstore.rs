@@ -2,6 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 
+use crate::error::{RetrieverError, VectorStoreError};
 use crate::schemas::{self, Document};
 
 use super::VecStoreOptions;
@@ -16,22 +17,18 @@ pub trait VectorStore: Send + Sync {
         &self,
         docs: &[Document],
         opt: &Self::Options,
-    ) -> Result<Vec<String>, Box<dyn Error>>;
+    ) -> Result<Vec<String>, VectorStoreError>;
 
     async fn similarity_search(
         &self,
         query: &str,
         limit: usize,
         opt: &Self::Options,
-    ) -> Result<Vec<Document>, Box<dyn Error>>;
+    ) -> Result<Vec<Document>, VectorStoreError>;
 
     /// Delete documents by IDs. Returns `VectorStoreError::DeleteNotSupported`
     /// for stores that do not support deletion.
-    async fn delete(
-        &self,
-        ids: &[String],
-        _opt: &Self::Options,
-    ) -> Result<(), Box<dyn Error>>;
+    async fn delete(&self, ids: &[String], _opt: &Self::Options) -> Result<(), VectorStoreError>;
 }
 
 impl<VS, F> From<VS> for Box<dyn VectorStore<Options = F>>
@@ -93,9 +90,10 @@ impl<F> Retriever<F> {
 
 #[async_trait]
 impl<O: Sync + Send> schemas::Retriever for Retriever<O> {
-    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, Box<dyn Error>> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         self.vstore
             .similarity_search(query, self.num_docs, &self.options)
             .await
+            .map_err(|e| e.into())
     }
 }

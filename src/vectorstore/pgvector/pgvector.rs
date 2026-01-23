@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -110,7 +110,7 @@ impl HNSWIndex {
 }
 
 impl Store {
-    fn get_filters(&self, opt: &PgOptions) -> Result<String, Box<dyn Error>> {
+    fn get_filters(&self, opt: &PgOptions) -> Result<String, VectorStoreError> {
         match &opt.filters {
             Some(pgfilter) => Ok(pgfilter.to_string()),
             None => Ok("TRUE".to_string()), // No filters provided
@@ -124,7 +124,7 @@ impl Store {
         }
     }
 
-    fn get_score_threshold(&self, opt: &PgOptions) -> Result<f32, Box<dyn Error>> {
+    fn get_score_threshold(&self, opt: &PgOptions) -> Result<f32, VectorStoreError> {
         match &opt.score_threshold {
             Some(score_threshold) => {
                 if *score_threshold < 0.0 || *score_threshold > 1.0 {
@@ -136,7 +136,7 @@ impl Store {
         }
     }
 
-    async fn drop_tables(&self) -> Result<(), Box<dyn Error>> {
+    async fn drop_tables(&self) -> Result<(), VectorStoreError> {
         sqlx::query(&format!(
             r#"DROP TABLE IF EXISTS {}"#,
             self.embedder_table_name
@@ -154,7 +154,7 @@ impl Store {
         Ok(())
     }
 
-    async fn remove_collection(&self) -> Result<(), Box<dyn Error>> {
+    async fn remove_collection(&self) -> Result<(), VectorStoreError> {
         sqlx::query(r#"DELETE FROM collection WHERE uuid = $1"#)
             .bind(&self.collection_uuid)
             .execute(&self.pool)
@@ -184,12 +184,12 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &PgOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         if opt.score_threshold.is_some() || opt.filters.is_some() || opt.name_space.is_some() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "score_threshold, filters, and name_space are not supported in pgvector",
-            )));
+            return Err(VectorStoreError::InvalidParameter(
+                "score_threshold, filters, and name_space are not supported in pgvector"
+                    .to_string(),
+            ));
         }
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
 
@@ -198,10 +198,9 @@ impl VectorStore for Store {
         let vectors = embedder.embed_documents(&texts).await?;
 
         if vectors.len() != docs.len() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Number of vectors and documents do not match",
-            )));
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
 
         let mut tx = self.pool.begin().await?;
@@ -239,7 +238,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &PgOptions,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let collection_name = self.get_name_space(opt);
         let where_filter = self.get_filters(opt)?;
 
@@ -317,7 +316,7 @@ impl VectorStore for Store {
         Ok(docs)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &PgOptions) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &PgOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }

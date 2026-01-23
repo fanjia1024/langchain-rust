@@ -8,13 +8,16 @@ use serde_json::Value;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 static IN_MEMORY_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn next_id() -> String {
-    format!("inmem-{}", IN_MEMORY_ID_COUNTER.fetch_add(1, Ordering::SeqCst))
+    format!(
+        "inmem-{}",
+        IN_MEMORY_ID_COUNTER.fetch_add(1, Ordering::SeqCst)
+    )
 }
 
 /// In-memory entry: (id, document, embedding, namespace)
@@ -39,8 +42,8 @@ impl StoreBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Store, Box<dyn std::error::Error>> {
-        let embedder = self.embedder.ok_or("embedder is required")?;
+    pub fn build(self) -> Result<Store, VectorStoreError> {
+        let embedder = self.embedder.ok_or("embedder is required".to_string())?;
         Ok(Store {
             data: RwLock::new(Vec::new()),
             embedder,
@@ -67,7 +70,10 @@ fn cosine_similarity(a: &[f64], b: &[f64]) -> f64 {
     dot / (norm_a * norm_b)
 }
 
-fn metadata_matches(doc_metadata: &HashMap<String, Value>, filter: &serde_json::Map<String, Value>) -> bool {
+fn metadata_matches(
+    doc_metadata: &HashMap<String, Value>,
+    filter: &serde_json::Map<String, Value>,
+) -> bool {
     for (k, v) in filter {
         match doc_metadata.get(k) {
             Some(dv) if dv == v => {}
@@ -87,7 +93,7 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &InMemoryOptions,
-    ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let vectors = embedder.embed_documents(&texts).await?;
@@ -112,7 +118,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &InMemoryOptions,
-    ) -> Result<Vec<Document>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let query_vector = embedder.embed_query(query).await?;
         let data = self.data.read().map_err(|e| e.to_string())?;
@@ -125,12 +131,10 @@ impl VectorStore for Store {
 
         let mut scored: Vec<(f64, Document)> = data
             .iter()
-            .filter(|(_, _, _, ns)| {
-                match (namespace_filter, ns) {
-                    (None, _) => true,
-                    (Some(n), Some(s)) => n == s,
-                    (Some(_), None) => false,
-                }
+            .filter(|(_, _, _, ns)| match (namespace_filter, ns) {
+                (None, _) => true,
+                (Some(n), Some(s)) => n == s,
+                (Some(_), None) => false,
             })
             .filter(|(_, doc, _, _)| {
                 filter_map.map_or(true, |m| metadata_matches(&doc.metadata, m))
@@ -154,7 +158,7 @@ impl VectorStore for Store {
         Ok(result)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &InMemoryOptions) -> Result<(), Box<dyn std::error::Error>> {
+    async fn delete(&self, ids: &[String], _opt: &InMemoryOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }

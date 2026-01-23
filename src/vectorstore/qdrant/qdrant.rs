@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use qdrant_client::client::Payload;
 use qdrant_client::qdrant::{
-    DeletePointsBuilder, Filter, PointStruct, PointsIdsList, SearchPointsBuilder, UpsertPointsBuilder,
+    DeletePointsBuilder, Filter, PointStruct, PointsIdsList, SearchPointsBuilder,
+    UpsertPointsBuilder,
 };
 use serde_json::{json, Value};
-use std::error::Error;
 use std::sync::Arc;
 
 pub use qdrant_client::Qdrant;
@@ -16,7 +16,7 @@ pub use qdrant_client::Qdrant as QdrantClient;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 use uuid::Uuid;
 
@@ -41,7 +41,7 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &QdrantOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
 
@@ -74,7 +74,8 @@ impl VectorStore for Store {
 
         self.client
             .upsert_points(UpsertPointsBuilder::new(&self.collection_name, points).wait(true))
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::from(e.to_string()))?;
 
         Ok(ids.collect())
     }
@@ -86,17 +87,19 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &QdrantOptions,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         if opt.name_space.is_some() {
-            return Err("Qdrant doesn't support namespaces".into());
+            return Err(VectorStoreError::InvalidParameter(
+                "Qdrant doesn't support namespaces".to_string(),
+            ));
         }
 
         if opt.filters.is_some() {
-            return Err(
+            return Err(VectorStoreError::InvalidParameter(
                 "'qdrant_client' doesn't support 'serde_json::Value' filters. 
             Use `search_filter` when constructing VectorStore instead"
-                    .into(),
-            );
+                    .to_string(),
+            ));
         }
 
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
@@ -116,7 +119,11 @@ impl VectorStore for Store {
         if let Some(filter) = &self.search_filter {
             operation = operation.filter(filter.clone());
         }
-        let results = self.client.search_points(operation).await?;
+        let results = self
+            .client
+            .search_points(operation)
+            .await
+            .map_err(|e| VectorStoreError::from(e.to_string()))?;
 
         let documents = results
             .result
@@ -140,7 +147,7 @@ impl VectorStore for Store {
         Ok(documents)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &QdrantOptions) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &QdrantOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
@@ -154,7 +161,8 @@ impl VectorStore for Store {
                     .points(PointsIdsList { ids: point_ids })
                     .wait(true),
             )
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::from(e.to_string()))?;
         Ok(())
     }
 }

@@ -1,10 +1,10 @@
-use std::error::Error;
 use std::string::String;
 
 use async_trait::async_trait;
 use serde_json::{json, Value};
 
 use crate::agent::Command;
+use crate::error::ToolError;
 
 use super::runtime::ToolRuntime;
 
@@ -48,7 +48,7 @@ pub trait Tool: Send + Sync {
     ///
     /// This function utilizes `parse_input` to parse the input and then calls `run`.
     /// Its used by the Agent
-    async fn call(&self, input: &str) -> Result<String, Box<dyn Error>> {
+    async fn call(&self, input: &str) -> Result<String, ToolError> {
         let input = self.parse_input(input).await;
         self.run(input).await
     }
@@ -62,7 +62,7 @@ pub trait Tool: Send + Sync {
     ///     self.simple_search(input_str).await
     /// }
     /// ```
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>>;
+    async fn run(&self, input: Value) -> Result<String, ToolError>;
 
     /// Executes the tool with runtime access (state, context, store, etc.).
     ///

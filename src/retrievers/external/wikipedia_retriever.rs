@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::error::Error;
 
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::Value;
 
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// Configuration for Wikipedia retriever
@@ -68,11 +68,8 @@ impl WikipediaRetriever {
     }
 
     /// Search Wikipedia for articles matching the query
-    async fn search(&self, query: &str) -> Result<Vec<String>, Box<dyn Error>> {
-        let url = format!(
-            "https://{}.wikipedia.org/w/api.php",
-            self.config.language
-        );
+    async fn search(&self, query: &str) -> Result<Vec<String>, RetrieverError> {
+        let url = format!("https://{}.wikipedia.org/w/api.php", self.config.language);
 
         let params = [
             ("action", "query"),
@@ -87,9 +84,13 @@ impl WikipediaRetriever {
             .get(&url)
             .query(&params)
             .send()
-            .await?;
+            .await
+            .map_err(|e| RetrieverError::WikipediaError(e.to_string()))?;
 
-        let json: Value = response.json().await?;
+        let json: Value = response
+            .json()
+            .await
+            .map_err(|e| RetrieverError::WikipediaError(e.to_string()))?;
 
         let mut titles = Vec::new();
         if let Some(query_obj) = json.get("query") {
@@ -108,11 +109,8 @@ impl WikipediaRetriever {
     }
 
     /// Fetch a Wikipedia page by title
-    async fn fetch_page(&self, title: &str) -> Result<Document, Box<dyn Error>> {
-        let url = format!(
-            "https://{}.wikipedia.org/w/api.php",
-            self.config.language
-        );
+    async fn fetch_page(&self, title: &str) -> Result<Document, RetrieverError> {
+        let url = format!("https://{}.wikipedia.org/w/api.php", self.config.language);
 
         let title_encoded = urlencoding::encode(title);
         let params = [
@@ -129,9 +127,13 @@ impl WikipediaRetriever {
             .get(&url)
             .query(&params)
             .send()
-            .await?;
+            .await
+            .map_err(|e| RetrieverError::WikipediaError(e.to_string()))?;
 
-        let json: Value = response.json().await?;
+        let json: Value = response
+            .json()
+            .await
+            .map_err(|e| RetrieverError::WikipediaError(e.to_string()))?;
 
         let mut content = String::new();
         let mut page_id = None;
@@ -158,17 +160,14 @@ impl WikipediaRetriever {
                                     ("titles", full_title),
                                     ("format", "json"),
                                 ];
-                                if let Ok(full_response) = self
-                                    .client
-                                    .get(&full_url)
-                                    .query(&full_params)
-                                    .send()
-                                    .await
+                                if let Ok(full_response) =
+                                    self.client.get(&full_url).query(&full_params).send().await
                                 {
                                     if let Ok(full_json) = full_response.json::<Value>().await {
                                         if let Some(full_query) = full_json.get("query") {
                                             if let Some(full_pages) = full_query.get("pages") {
-                                                if let Some(full_pages_obj) = full_pages.as_object() {
+                                                if let Some(full_pages_obj) = full_pages.as_object()
+                                                {
                                                     for (_, full_page) in full_pages_obj {
                                                         if let Some(full_extract) = full_page
                                                             .get("extract")
@@ -193,7 +192,10 @@ impl WikipediaRetriever {
 
         let mut metadata = HashMap::new();
         metadata.insert("source".to_string(), Value::from("wikipedia"));
-        metadata.insert("language".to_string(), Value::from(self.config.language.clone()));
+        metadata.insert(
+            "language".to_string(),
+            Value::from(self.config.language.clone()),
+        );
         if let Some(id) = page_id {
             metadata.insert("page_id".to_string(), Value::from(id));
         }
@@ -211,10 +213,7 @@ impl Default for WikipediaRetriever {
 
 #[async_trait]
 impl Retriever for WikipediaRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // First, search for relevant articles
         let titles = self.search(query).await?;
 
@@ -225,12 +224,8 @@ impl Retriever for WikipediaRetriever {
         // Fetch each article
         let mut documents = Vec::new();
         for title in titles {
-            match self.fetch_page(&title).await {
-                Ok(doc) => documents.push(doc),
-                Err(e) => {
-                    eprintln!("Error fetching Wikipedia page '{}': {}", title, e);
-                }
-            }
+            let doc = self.fetch_page(&title).await?;
+            documents.push(doc);
         }
 
         Ok(documents)

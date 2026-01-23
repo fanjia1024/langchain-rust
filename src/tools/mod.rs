@@ -16,6 +16,9 @@ pub use stream::*;
 mod schema;
 pub use schema::*;
 
+mod error;
+pub use error::*;
+
 pub use wolfram::*;
 mod wolfram;
 

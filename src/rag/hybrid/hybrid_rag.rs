@@ -4,6 +4,7 @@ use async_trait::async_trait;
 
 use crate::{
     chain::{Chain, ChainError, ConversationalRetrieverChainBuilder},
+    error::RetrieverError,
     language_models::{llm::LLM, GenerateResult},
     memory::SimpleMemory,
     prompt::PromptArgs,
@@ -15,10 +16,7 @@ struct RetrieverWrapper(Arc<dyn Retriever>);
 
 #[async_trait]
 impl Retriever for RetrieverWrapper {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, Box<dyn std::error::Error>> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         self.0.get_relevant_documents(query).await
     }
 }

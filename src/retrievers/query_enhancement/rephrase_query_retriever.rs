@@ -1,8 +1,8 @@
-use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 
+use crate::error::RetrieverError;
 use crate::language_models::llm::LLM;
 use crate::schemas::{Document, Retriever};
 
@@ -30,10 +30,7 @@ pub struct RePhraseQueryRetriever {
 
 impl RePhraseQueryRetriever {
     /// Create a new rephrase query retriever
-    pub fn new(
-        base_retriever: Arc<dyn Retriever>,
-        llm: Arc<dyn LLM>,
-    ) -> Self {
+    pub fn new(base_retriever: Arc<dyn Retriever>, llm: Arc<dyn LLM>) -> Self {
         Self::with_config(base_retriever, llm, RePhraseQueryRetrieverConfig::default())
     }
 
@@ -64,23 +61,24 @@ impl RePhraseQueryRetriever {
             )
         });
 
-        let messages = vec![crate::schemas::messages::Message::new_human_message(&prompt)];
+        let messages = vec![crate::schemas::messages::Message::new_human_message(
+            &prompt,
+        )];
         let result = self.llm.generate(&messages).await?;
-        
+
         Ok(result.generation.trim().to_string())
     }
 }
 
 #[async_trait]
 impl Retriever for RePhraseQueryRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Rephrase the query
         let rephrased_query = self.rephrase_query(query).await?;
-        
+
         // Use rephrased query for retrieval
-        self.base_retriever.get_relevant_documents(&rephrased_query).await
+        self.base_retriever
+            .get_relevant_documents(&rephrased_query)
+            .await
     }
 }
