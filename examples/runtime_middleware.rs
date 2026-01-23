@@ -6,11 +6,13 @@ use std::sync::Arc;
 use langchain_rust::{
     agent::{
         create_agent,
-        middleware::{Middleware, MiddlewareContext, MiddlewareError},
-        runtime::{Runtime, RuntimeRequest},
+        Middleware, MiddlewareContext, MiddlewareError,
+        Runtime, RuntimeRequest,
     },
-    schemas::agent::{AgentAction, AgentFinish},
     language_models::GenerateResult,
+    prompt::PromptArgs,
+    schemas::agent::{AgentAction, AgentFinish},
+    schemas::Message,
 };
 
 // Custom middleware that uses runtime
@@ -28,7 +30,7 @@ impl Middleware for RuntimeAwareMiddleware {
         if let Some(runtime) = request.runtime() {
             if let Some(user_id) = runtime.context().user_id() {
                 println!("Processing request for user: {}", user_id);
-                
+
                 // Modify input to include user context
                 let mut modified_input = request.input.clone();
                 modified_input.insert(
@@ -37,11 +39,11 @@ impl Middleware for RuntimeAwareMiddleware {
                         "user_id": user_id,
                     }),
                 );
-                
+
                 return Ok(Some(modified_input));
             }
         }
-        
+
         Ok(None)
     }
 
@@ -67,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     // Create middleware
-    let middleware = vec![Arc::new(RuntimeAwareMiddleware)];
+    let middleware: Vec<Arc<dyn Middleware>> = vec![Arc::new(RuntimeAwareMiddleware)];
 
     // Create agent with middleware
     let agent = create_agent(

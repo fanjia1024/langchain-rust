@@ -3,7 +3,7 @@ use std::sync::Arc;
 use langchain_rust::{
     agent::{
         create_agent,
-        multi_agent::{SubagentsBuilder, SubagentInfo},
+        SubagentInfo, SubagentsBuilder,
     },
     schemas::messages::Message,
 };
@@ -14,23 +14,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     // Create specialized subagents
-    let math_agent = Arc::new(
-        create_agent(
-            "gpt-4o-mini",
-            &[],
-            Some("You are a math expert. Solve mathematical problems step by step."),
-            None,
-        )?,
-    );
+    let math_agent = Arc::new(create_agent(
+        "gpt-4o-mini",
+        &[],
+        Some("You are a math expert. Solve mathematical problems step by step."),
+        None,
+    )?);
 
-    let coding_agent = Arc::new(
-        create_agent(
-            "gpt-4o-mini",
-            &[],
-            Some("You are a coding expert. Help with programming questions and write code."),
-            None,
-        )?,
-    );
+    let coding_agent = Arc::new(create_agent(
+        "gpt-4o-mini",
+        &[],
+        Some("You are a coding expert. Help with programming questions and write code."),
+        None,
+    )?);
 
     // Create main agent with subagents
     let main_agent = SubagentsBuilder::new()

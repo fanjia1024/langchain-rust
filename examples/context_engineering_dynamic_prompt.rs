@@ -4,12 +4,9 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{
-        create_agent,
-        context_engineering::middleware::EnhancedDynamicPromptMiddleware,
-    },
+    agent::{context_engineering::middleware::EnhancedDynamicPromptMiddleware, create_agent},
     schemas::messages::Message,
-    tools::{SimpleContext, InMemoryStore},
+    tools::{InMemoryStore, SimpleContext},
 };
 
 #[tokio::main]
@@ -27,11 +24,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Alternative: from store
     let store_based_prompt = EnhancedDynamicPromptMiddleware::from_store(
-        |store: &dyn langchain_rust::tools::ToolStore, ctx: &dyn langchain_rust::tools::ToolContext| {
+        |store: &dyn langchain_rust::tools::ToolStore,
+         ctx: &dyn langchain_rust::tools::ToolContext| {
             // In a real implementation, you'd read user preferences from store
             let user_id = ctx.user_id().unwrap_or("unknown");
             format!("You are assisting user {}.", user_id)
-        }
+        },
     );
 
     // Create agent with dynamic prompt middleware
@@ -42,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(vec![Arc::new(dynamic_prompt)]),
     )?
     .with_context(Arc::new(
-        SimpleContext::new().with_user_id("user_123".to_string())
+        SimpleContext::new().with_user_id("user_123".to_string()),
     ))
     .with_store(Arc::new(InMemoryStore::new()));
 

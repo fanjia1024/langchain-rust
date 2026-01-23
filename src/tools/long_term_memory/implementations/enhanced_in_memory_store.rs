@@ -40,11 +40,7 @@ impl EnhancedInMemoryStoreConfig {
     }
 
     /// Enable vector index
-    pub fn with_vector_index(
-        mut self,
-        embedder: Arc<dyn Embedder>,
-        dimensions: usize,
-    ) -> Self {
+    pub fn with_vector_index(mut self, embedder: Arc<dyn Embedder>, dimensions: usize) -> Self {
         self.enable_vector_index = true;
         self.embedder = Some(embedder);
         self.vector_dimensions = Some(dimensions);
@@ -131,12 +127,11 @@ impl EnhancedInMemoryStore {
                     serde_json::to_string(value).unwrap_or_default()
                 }
             }
-            Value::Array(arr) => {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            }
+            Value::Array(arr) => arr
+                .iter()
+                .filter_map(|v| v.as_str())
+                .collect::<Vec<_>>()
+                .join(" "),
             _ => serde_json::to_string(value).unwrap_or_default(),
         }
     }
@@ -182,11 +177,7 @@ impl ToolStore for EnhancedInMemoryStore {
 
 #[async_trait]
 impl EnhancedToolStore for EnhancedInMemoryStore {
-    async fn get_with_metadata(
-        &self,
-        namespace: &[&str],
-        key: &str,
-    ) -> Option<StoreValue> {
+    async fn get_with_metadata(&self, namespace: &[&str], key: &str) -> Option<StoreValue> {
         let ns_key = Self::make_namespace_key(namespace);
         let data = self.data.read().await;
         data.get(&ns_key)
@@ -194,12 +185,7 @@ impl EnhancedToolStore for EnhancedInMemoryStore {
             .map(|item| item.value.clone())
     }
 
-    async fn put_with_metadata(
-        &self,
-        namespace: &[&str],
-        key: &str,
-        value: StoreValue,
-    ) {
+    async fn put_with_metadata(&self, namespace: &[&str], key: &str, value: StoreValue) {
         let ns_key = Self::make_namespace_key(namespace);
         let mut data = self.data.write().await;
 
@@ -258,10 +244,13 @@ impl EnhancedToolStore for EnhancedInMemoryStore {
         if let Some(query_text) = query {
             if self.config.enable_vector_index {
                 if let Some(embedder) = &self.config.embedder {
-                    let query_vector_f64 = embedder.embed_query(query_text).await
+                    let query_vector_f64 = embedder
+                        .embed_query(query_text)
+                        .await
                         .map_err(|e| StoreError::EmbeddingError(e.to_string()))?;
                     // Convert f64 to f32
-                    let query_vector: Vec<f32> = query_vector_f64.into_iter().map(|x| x as f32).collect();
+                    let query_vector: Vec<f32> =
+                        query_vector_f64.into_iter().map(|x| x as f32).collect();
 
                     // Calculate similarities and sort
                     let mut scored_items: Vec<(f64, StoreValue)> = items
@@ -275,7 +264,8 @@ impl EnhancedToolStore for EnhancedInMemoryStore {
                         .collect();
 
                     // Sort by similarity (descending)
-                    scored_items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+                    scored_items
+                        .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
                     // Take top results
                     let results: Vec<StoreValue> = scored_items
@@ -309,31 +299,43 @@ mod tests {
         let store = EnhancedInMemoryStore::new();
 
         let store_value = StoreValue::new(serde_json::json!({"name": "John"}));
-        store.put_with_metadata(&["users"], "user1", store_value).await;
+        store
+            .put_with_metadata(&["users"], "user1", store_value)
+            .await;
 
         let retrieved = store.get_with_metadata(&["users"], "user1").await;
         assert!(retrieved.is_some());
-        assert_eq!(retrieved.unwrap().value, serde_json::json!({"name": "John"}));
+        assert_eq!(
+            retrieved.unwrap().value,
+            serde_json::json!({"name": "John"})
+        );
     }
 
     #[tokio::test]
     async fn test_enhanced_store_search_by_filter() {
         let store = EnhancedInMemoryStore::new();
 
-        store.put_with_metadata(
-            &["users"],
-            "user1",
-            StoreValue::new(serde_json::json!({"name": "John", "age": 30})),
-        ).await;
+        store
+            .put_with_metadata(
+                &["users"],
+                "user1",
+                StoreValue::new(serde_json::json!({"name": "John", "age": 30})),
+            )
+            .await;
 
-        store.put_with_metadata(
-            &["users"],
-            "user2",
-            StoreValue::new(serde_json::json!({"name": "Jane", "age": 25})),
-        ).await;
+        store
+            .put_with_metadata(
+                &["users"],
+                "user2",
+                StoreValue::new(serde_json::json!({"name": "Jane", "age": 25})),
+            )
+            .await;
 
         let filter = StoreFilter::content_equals("age".to_string(), serde_json::json!(30));
-        let results = store.search_by_filter(&["users"], &filter, 10).await.unwrap();
+        let results = store
+            .search_by_filter(&["users"], &filter, 10)
+            .await
+            .unwrap();
 
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].value["name"], "John");
@@ -345,13 +347,13 @@ mod tests {
 
         let mut metadata = std::collections::HashMap::new();
         metadata.insert("created_at".to_string(), serde_json::json!("2024-01-01"));
-        
-        let store_value = StoreValue::with_metadata(
-            serde_json::json!({"name": "Test"}),
-            metadata.clone(),
-        );
 
-        store.put_with_metadata(&["test"], "key1", store_value).await;
+        let store_value =
+            StoreValue::with_metadata(serde_json::json!({"name": "Test"}), metadata.clone());
+
+        store
+            .put_with_metadata(&["test"], "key1", store_value)
+            .await;
 
         let retrieved = store.get_with_metadata(&["test"], "key1").await.unwrap();
         assert_eq!(retrieved.metadata, Some(metadata));
@@ -361,17 +363,21 @@ mod tests {
     async fn test_enhanced_store_list() {
         let store = EnhancedInMemoryStore::new();
 
-        store.put_with_metadata(
-            &["test"],
-            "key1",
-            StoreValue::new(serde_json::json!("value1")),
-        ).await;
+        store
+            .put_with_metadata(
+                &["test"],
+                "key1",
+                StoreValue::new(serde_json::json!("value1")),
+            )
+            .await;
 
-        store.put_with_metadata(
-            &["test"],
-            "key2",
-            StoreValue::new(serde_json::json!("value2")),
-        ).await;
+        store
+            .put_with_metadata(
+                &["test"],
+                "key2",
+                StoreValue::new(serde_json::json!("value2")),
+            )
+            .await;
 
         let keys = store.list(&["test"]).await;
         assert_eq!(keys.len(), 2);

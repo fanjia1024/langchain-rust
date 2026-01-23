@@ -4,12 +4,9 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{
-        create_agent,
-        runtime::DynamicPromptMiddleware,
-    },
+    agent::{create_agent, DynamicPromptMiddleware},
     schemas::messages::Message,
-    tools::{context::SimpleContext, ToolContext},
+    tools::{SimpleContext, ToolContext},
 };
 
 #[tokio::main]
@@ -19,17 +16,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create dynamic prompt middleware
     let dynamic_prompt = DynamicPromptMiddleware::with_template(
         "You are a helpful assistant. Address the user as {user_name}. \
-         The user ID is {user_id}.".to_string()
+         The user ID is {user_id}."
+            .to_string(),
     );
 
     // Alternative: custom prompt generator
     let custom_prompt = DynamicPromptMiddleware::new(|ctx: &dyn ToolContext| {
         let user_id = ctx.user_id().unwrap_or("Guest");
-        format!("You are a personalized assistant for user {}. Be friendly and helpful.", user_id)
+        format!(
+            "You are a personalized assistant for user {}. Be friendly and helpful.",
+            user_id
+        )
     });
 
     // Create agent with dynamic prompt middleware
-    let middleware = vec![Arc::new(dynamic_prompt)];
+    // DynamicPromptMiddleware implements Middleware trait
+    let middleware: Vec<Arc<dyn langchain_rust::agent::Middleware>> = vec![Arc::new(dynamic_prompt)];
 
     let agent = create_agent(
         "gpt-4o-mini",
@@ -40,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .with_context(Arc::new(
         SimpleContext::new()
             .with_user_id("user_123".to_string())
-            .with_custom("user_name".to_string(), "John".to_string())
+            .with_custom("user_name".to_string(), "John".to_string()),
     ));
 
     // Use the agent

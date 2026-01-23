@@ -94,10 +94,7 @@ impl Tool for RetrieverTool {
         };
 
         // Retrieve documents
-        let documents = self
-            .retriever
-            .get_relevant_documents(&query)
-            .await?;
+        let documents = self.retriever.get_relevant_documents(&query).await?;
 
         // Limit the number of documents
         let limited_docs: Vec<&Document> = documents.iter().take(self.max_docs).collect();
@@ -113,15 +110,20 @@ impl Tool for RetrieverTool {
                     format!(
                         "[Document {}]\nSource: {:?}\nContent: {}\n",
                         i + 1,
-                        doc.metadata.get("source").and_then(|v| v.as_str()).unwrap_or("unknown"),
+                        doc.metadata
+                            .get("source")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("unknown"),
                         doc.page_content
                     )
                 })
                 .collect();
-            format!("Retrieved {} document(s) for query '{}':\n\n{}", 
-                limited_docs.len(), 
+            format!(
+                "Retrieved {} document(s) for query '{}':\n\n{}",
+                limited_docs.len(),
                 query,
-                doc_strings.join("\n---\n\n"))
+                doc_strings.join("\n---\n\n")
+            )
         };
 
         Ok(ToolResult::Text(result))

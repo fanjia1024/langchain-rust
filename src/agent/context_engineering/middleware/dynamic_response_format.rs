@@ -5,8 +5,8 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
-        middleware::{Middleware, MiddlewareContext, MiddlewareError},
         context_engineering::{ModelRequest, ModelResponse},
+        middleware::{Middleware, MiddlewareContext, MiddlewareError},
     },
     schemas::StructuredOutputStrategy,
 };
@@ -17,17 +17,15 @@ use crate::{
 /// based on conversation stage, user preferences, or role.
 pub struct DynamicResponseFormatMiddleware {
     /// Function that selects a response format based on ModelRequest
-    format_selector: Arc<dyn Fn(&ModelRequest) -> Option<Box<dyn StructuredOutputStrategy>> + Send + Sync>,
+    format_selector:
+        Arc<dyn Fn(&ModelRequest) -> Option<Box<dyn StructuredOutputStrategy>> + Send + Sync>,
     /// Available formats mapped by name
     available_formats: HashMap<String, Box<dyn StructuredOutputStrategy>>,
 }
 
 impl DynamicResponseFormatMiddleware {
     /// Create a new DynamicResponseFormatMiddleware with a format selector function
-    pub fn new<F>(
-        selector: F,
-        formats: HashMap<String, Box<dyn StructuredOutputStrategy>>,
-    ) -> Self
+    pub fn new<F>(selector: F, formats: HashMap<String, Box<dyn StructuredOutputStrategy>>) -> Self
     where
         F: Fn(&ModelRequest) -> Option<Box<dyn StructuredOutputStrategy>> + Send + Sync + 'static,
     {
@@ -51,7 +49,7 @@ impl DynamicResponseFormatMiddleware {
         Self::new(
             move |request: &ModelRequest| {
                 let message_count = request.messages.len();
-                
+
                 // Note: Format selection would need to be handled at agent level
                 // since we can't clone trait objects
                 let _format_name = if message_count < threshold {
@@ -59,7 +57,7 @@ impl DynamicResponseFormatMiddleware {
                 } else {
                     &detailed_name
                 };
-                
+
                 None // Format selection handled elsewhere
             },
             formats,
@@ -67,9 +65,7 @@ impl DynamicResponseFormatMiddleware {
     }
 
     /// Create a format selector based on user role from Runtime Context
-    pub fn from_user_role(
-        formats: HashMap<String, Box<dyn StructuredOutputStrategy>>,
-    ) -> Self {
+    pub fn from_user_role(formats: HashMap<String, Box<dyn StructuredOutputStrategy>>) -> Self {
         Self::new(
             move |request: &ModelRequest| {
                 if let Some(runtime) = request.runtime() {
@@ -80,7 +76,7 @@ impl DynamicResponseFormatMiddleware {
                         return None;
                     }
                 }
-                
+
                 // Default: use standard format
                 None
             },

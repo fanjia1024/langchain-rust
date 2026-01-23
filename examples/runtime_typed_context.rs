@@ -4,7 +4,10 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{create_agent, runtime::{TypedContext, TypedContextFields, ContextAdapter}},
+    agent::{
+        create_agent,
+        ContextAdapter, TypedContext, TypedContextFields,
+    },
     schemas::messages::Message,
     tools::ToolContext,
 };

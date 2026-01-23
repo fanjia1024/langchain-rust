@@ -4,7 +4,7 @@ use tokio::sync::Mutex;
 use crate::{
     agent::AgentState,
     prompt::PromptArgs,
-    tools::{ToolContext, ToolStore, StreamWriter},
+    tools::{StreamWriter, ToolContext, ToolStore},
 };
 
 /// Runtime information available to middleware and tools.
@@ -24,10 +24,7 @@ pub struct Runtime {
 
 impl Runtime {
     /// Create a new Runtime
-    pub fn new(
-        context: Arc<dyn ToolContext>,
-        store: Arc<dyn ToolStore>,
-    ) -> Self {
+    pub fn new(context: Arc<dyn ToolContext>, store: Arc<dyn ToolStore>) -> Self {
         Self {
             context,
             store,
@@ -36,10 +33,7 @@ impl Runtime {
     }
 
     /// Create with stream writer
-    pub fn with_stream_writer(
-        mut self,
-        stream_writer: Arc<dyn StreamWriter>,
-    ) -> Self {
+    pub fn with_stream_writer(mut self, stream_writer: Arc<dyn StreamWriter>) -> Self {
         self.stream_writer = Some(stream_writer);
         self
     }
@@ -75,10 +69,7 @@ pub struct RuntimeRequest {
 
 impl RuntimeRequest {
     /// Create a new RuntimeRequest
-    pub fn new(
-        input: PromptArgs,
-        state: Arc<Mutex<AgentState>>,
-    ) -> Self {
+    pub fn new(input: PromptArgs, state: Arc<Mutex<AgentState>>) -> Self {
         Self {
             input,
             state,
@@ -87,10 +78,7 @@ impl RuntimeRequest {
     }
 
     /// Create with runtime
-    pub fn with_runtime(
-        mut self,
-        runtime: Arc<Runtime>,
-    ) -> Self {
+    pub fn with_runtime(mut self, runtime: Arc<Runtime>) -> Self {
         self.runtime = Some(runtime);
         self
     }
@@ -111,7 +99,7 @@ mod tests {
         let context = Arc::new(EmptyContext);
         let store = Arc::new(InMemoryStore::new());
         let runtime = Runtime::new(context, store);
-        
+
         assert!(runtime.stream_writer().is_none());
     }
 
@@ -120,7 +108,7 @@ mod tests {
         let state = Arc::new(Mutex::new(AgentState::new()));
         let input = PromptArgs::new();
         let request = RuntimeRequest::new(input, state);
-        
+
         assert!(request.runtime().is_none());
     }
 
@@ -131,10 +119,9 @@ mod tests {
         let context = Arc::new(EmptyContext);
         let store = Arc::new(InMemoryStore::new());
         let runtime = Arc::new(Runtime::new(context, store));
-        
-        let request = RuntimeRequest::new(input, state)
-            .with_runtime(runtime);
-        
+
+        let request = RuntimeRequest::new(input, state).with_runtime(runtime);
+
         assert!(request.runtime().is_some());
     }
 }

@@ -105,7 +105,12 @@ mod tests {
             .await;
 
         dbg!(&documents);
-        // assert_eq!(documents[0].page_content, "");
-        todo!()
+        // Note: This test is incomplete and marked with #[ignore]
+        // It requires a valid git repository path to run
+        // TODO: Add proper assertions once test data is available
+        assert!(
+            !documents.is_empty(),
+            "Should load at least one commit document"
+        );
     }
 }

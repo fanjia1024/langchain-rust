@@ -1,9 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{
-    rag::RAGError,
-    schemas::Document,
-};
+use crate::{rag::RAGError, schemas::Document};
 
 /// Result of answer validation
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -116,7 +113,10 @@ impl AnswerValidator for LLMAnswerValidator {
             .replace("{answer}", answer)
             .replace("{sources}", &doc_texts.join("\n---\n"));
 
-        let response = self.llm.invoke(&formatted_prompt).await
+        let response = self
+            .llm
+            .invoke(&formatted_prompt)
+            .await
             .map_err(|e| RAGError::AnswerValidationError(format!("LLM error: {}", e)))?;
 
         // Try to parse JSON response
@@ -124,8 +124,8 @@ impl AnswerValidator for LLMAnswerValidator {
             Ok(result) => Ok(result),
             Err(_) => {
                 // Fallback: simple heuristic
-                let is_valid = response.to_lowercase().contains("valid") || 
-                              response.to_lowercase().contains("accurate");
+                let is_valid = response.to_lowercase().contains("valid")
+                    || response.to_lowercase().contains("accurate");
                 Ok(AnswerValidationResult {
                     is_valid,
                     confidence: if is_valid { 0.7 } else { 0.3 },
@@ -180,10 +180,11 @@ mod tests {
     #[tokio::test]
     async fn test_source_alignment_validator_with_sources() {
         let validator = SourceAlignmentValidator::new();
-        let docs = vec![
-            Document::new("This is test content about machine learning"),
-        ];
-        let result = validator.validate("query", "machine learning", &docs).await.unwrap();
+        let docs = vec![Document::new("This is test content about machine learning")];
+        let result = validator
+            .validate("query", "machine learning", &docs)
+            .await
+            .unwrap();
         // Should be valid if answer words appear in sources
         assert!(result.is_valid || !result.is_valid); // Either is fine for this simple test
     }
@@ -226,14 +227,17 @@ impl AnswerValidator for SourceAlignmentValidator {
         if supporting_count < self.min_supporting_sources {
             Ok(AnswerValidationResult::invalid(
                 (supporting_count as f64) / (source_documents.len() as f64),
-                format!("Answer is not well supported by sources ({} of {} sources support it)", 
-                    supporting_count, source_documents.len()),
+                format!(
+                    "Answer is not well supported by sources ({} of {} sources support it)",
+                    supporting_count,
+                    source_documents.len()
+                ),
                 vec!["Answer may contain information not in source documents".to_string()],
                 vec!["Review answer for accuracy".to_string()],
             ))
         } else {
             Ok(AnswerValidationResult::valid(
-                (supporting_count as f64) / (source_documents.len() as f64)
+                (supporting_count as f64) / (source_documents.len() as f64),
             ))
         }
     }

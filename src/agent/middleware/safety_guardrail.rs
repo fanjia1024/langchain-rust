@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use std::sync::Arc;
 use futures::Stream;
+use std::sync::Arc;
 
 use super::{Middleware, MiddlewareContext, MiddlewareError};
 use crate::language_models::llm::LLM;
@@ -54,18 +54,18 @@ impl SafetyGuardrailMiddleware {
     /// Evaluate if a response is safe using the safety model.
     async fn evaluate_safety(&self, response: &str) -> Result<bool, MiddlewareError> {
         let evaluation_prompt = format!("{}\n\nResponse: {}", self.safety_prompt, response);
-        
+
         let messages = vec![Message::new_human_message(&evaluation_prompt)];
-        let result = self.safety_model
-            .generate(&messages)
-            .await
-            .map_err(|e| MiddlewareError::ExecutionError(format!("Safety model error: {}", e)))?;
+        let result =
+            self.safety_model.generate(&messages).await.map_err(|e| {
+                MiddlewareError::ExecutionError(format!("Safety model error: {}", e))
+            })?;
 
         let evaluation = result.generation.trim().to_uppercase();
-        
+
         // Check if response indicates safety
         let is_safe = evaluation.contains("SAFE") && !evaluation.contains("UNSAFE");
-        
+
         Ok(is_safe)
     }
 }
@@ -81,19 +81,13 @@ impl Middleware for SafetyGuardrailMiddleware {
         // Only evaluate finish events (final responses)
         if let AgentEvent::Finish(finish) = event {
             let is_safe = self.evaluate_safety(&finish.output).await?;
-            
-            context.set_custom_data(
-                "safety_evaluated".to_string(),
-                serde_json::json!(true)
-            );
-            context.set_custom_data(
-                "is_safe".to_string(),
-                serde_json::json!(is_safe)
-            );
+
+            context.set_custom_data("safety_evaluated".to_string(), serde_json::json!(true));
+            context.set_custom_data("is_safe".to_string(), serde_json::json!(is_safe));
 
             if !is_safe {
                 log::warn!("Safety guardrail blocked unsafe response");
-                
+
                 // Replace with safe message
                 let mut modified_finish = finish.clone();
                 modified_finish.output = self.unsafe_response_message.clone();
@@ -111,14 +105,11 @@ impl Middleware for SafetyGuardrailMiddleware {
     ) -> Result<Option<AgentFinish>, MiddlewareError> {
         // Double-check safety before final return
         let is_safe = self.evaluate_safety(&finish.output).await?;
-        
+
         if !is_safe {
             log::warn!("Safety guardrail blocked unsafe response in before_finish");
-            
-            context.set_custom_data(
-                "safety_blocked".to_string(),
-                serde_json::json!(true)
-            );
+
+            context.set_custom_data("safety_blocked".to_string(), serde_json::json!(true));
 
             let mut modified_finish = finish.clone();
             modified_finish.output = self.unsafe_response_message.clone();
@@ -145,7 +136,10 @@ mod tests {
 
     #[async_trait]
     impl LLM for MockSafetyModel {
-        async fn generate(&self, _messages: &[Message]) -> Result<GenerateResult, crate::language_models::LLMError> {
+        async fn generate(
+            &self,
+            _messages: &[Message],
+        ) -> Result<GenerateResult, crate::language_models::LLMError> {
             Ok(GenerateResult {
                 generation: self.response.clone(),
                 ..Default::default()
@@ -156,12 +150,26 @@ mod tests {
             Ok(self.response.clone())
         }
 
-        async fn stream(&self, _messages: &[Message]) -> Result<std::pin::Pin<Box<dyn Stream<Item = Result<StreamData, crate::language_models::LLMError>> + Send>>, crate::language_models::LLMError> {
+        async fn stream(
+            &self,
+            _messages: &[Message],
+        ) -> Result<
+            std::pin::Pin<
+                Box<dyn Stream<Item = Result<StreamData, crate::language_models::LLMError>> + Send>,
+            >,
+            crate::language_models::LLMError,
+        > {
             use futures::stream;
             use std::pin::Pin;
-            Ok(Box::pin(stream::once(async { 
-                Ok(StreamData::Text(self.response.clone())) 
-            })) as Pin<Box<dyn Stream<Item = Result<StreamData, crate::language_models::LLMError>> + Send>>)
+            Ok(Box::pin(stream::once(async {
+                Ok(StreamData::Text(self.response.clone()))
+            }))
+                as Pin<
+                    Box<
+                        dyn Stream<Item = Result<StreamData, crate::language_models::LLMError>>
+                            + Send,
+                    >,
+                >)
         }
 
         fn add_options(&mut self, _options: crate::language_models::options::CallOptions) {}
@@ -173,8 +181,11 @@ mod tests {
             response: "SAFE".to_string(),
         });
         let middleware = SafetyGuardrailMiddleware::new(mock_model);
-        
-        let is_safe = middleware.evaluate_safety("This is a safe response").await.unwrap();
+
+        let is_safe = middleware
+            .evaluate_safety("This is a safe response")
+            .await
+            .unwrap();
         assert!(is_safe);
     }
 
@@ -184,8 +195,11 @@ mod tests {
             response: "UNSAFE".to_string(),
         });
         let middleware = SafetyGuardrailMiddleware::new(mock_model);
-        
-        let is_safe = middleware.evaluate_safety("This is an unsafe response").await.unwrap();
+
+        let is_safe = middleware
+            .evaluate_safety("This is an unsafe response")
+            .await
+            .unwrap();
         assert!(!is_safe);
     }
 }

@@ -9,17 +9,14 @@ use crate::{
     language_models::GenerateResult,
     prompt::PromptArgs,
     schemas::{
-        agent::AgentAction,
-        agent::AgentEvent,
-        memory::BaseMemory,
-        messages::Message,
+        agent::AgentAction, agent::AgentEvent, memory::BaseMemory, messages::Message,
         StructuredOutputStrategy,
     },
     tools::{ToolContext, ToolStore},
 };
 
 use super::{agent::Agent, executor::AgentExecutor, state::AgentState, AgentError};
-use crate::agent::runtime::{TypedContext, Runtime};
+use crate::agent::runtime::{Runtime, TypedContext};
 
 /// A wrapper that makes Box<dyn Agent> work with AgentExecutor
 struct AgentBox(Box<dyn Agent>);
@@ -86,13 +83,19 @@ impl UnifiedAgent {
     }
 
     /// Set the structured output format for the agent.
-    pub fn with_response_format(mut self, response_format: Box<dyn StructuredOutputStrategy>) -> Self {
+    pub fn with_response_format(
+        mut self,
+        response_format: Box<dyn StructuredOutputStrategy>,
+    ) -> Self {
         self.executor = self.executor.with_response_format(response_format);
         self
     }
 
     /// Set middleware for the agent.
-    pub fn with_middleware(mut self, middleware: Vec<Arc<dyn super::middleware::Middleware>>) -> Self {
+    pub fn with_middleware(
+        mut self,
+        middleware: Vec<Arc<dyn super::middleware::Middleware>>,
+    ) -> Self {
         self.executor = self.executor.with_middleware(middleware);
         self
     }
@@ -146,16 +149,16 @@ impl UnifiedAgent {
     ) -> Result<String, ChainError> {
         // Convert typed context to ToolContext
         let tool_context = context.to_tool_context();
-        
+
         // Get store from executor
-        // Note: We need to access store, but it's private. 
+        // Note: We need to access store, but it's private.
         // For now, we'll use the context that's already set in the executor
         // In a full implementation, we'd add a getter or make store accessible
         let store = Arc::new(crate::tools::InMemoryStore::new()); // Fallback
-        
+
         // Create runtime
         let runtime = Arc::new(Runtime::new(tool_context, store));
-        
+
         // Use executor's invoke_with_runtime if available, otherwise fallback
         // For now, we'll update the executor's context temporarily
         // In a full implementation, we'd add invoke_with_runtime to executor
@@ -243,7 +246,7 @@ fn convert_messages_to_prompt_args(input_variables: PromptArgs) -> Result<Prompt
 
     let mut prompt_args = PromptArgs::new();
     prompt_args.insert("input".to_string(), json!(input));
-    
+
     // Preserve chat history if it exists, otherwise use messages
     if input_variables.contains_key("chat_history") {
         prompt_args.insert(

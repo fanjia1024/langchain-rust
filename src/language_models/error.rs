@@ -8,6 +8,17 @@ use tokio::time::error::Elapsed;
 
 use crate::llm::{AnthropicError, DeepseekError, QwenError};
 
+#[cfg(feature = "mistralai")]
+use crate::llm::MistralAIError;
+
+#[cfg(feature = "gemini")]
+use crate::llm::GeminiError;
+
+#[cfg(feature = "bedrock")]
+use crate::llm::BedrockError;
+
+use crate::llm::HuggingFaceError;
+
 #[derive(Error, Debug)]
 pub enum LLMError {
     #[error("OpenAI error: {0}")]
@@ -21,6 +32,21 @@ pub enum LLMError {
 
     #[error("Deepseek error: {0}")]
     DeepseekError(#[from] DeepseekError),
+
+    #[cfg(feature = "mistralai")]
+    #[error("MistralAI error: {0}")]
+    MistralAIError(#[from] MistralAIError),
+
+    #[cfg(feature = "gemini")]
+    #[error("Gemini error: {0}")]
+    GeminiError(#[from] GeminiError),
+
+    #[cfg(feature = "bedrock")]
+    #[error("Bedrock error: {0}")]
+    BedrockError(#[from] BedrockError),
+
+    #[error("HuggingFace error: {0}")]
+    HuggingFaceError(#[from] HuggingFaceError),
 
     #[cfg(feature = "ollama")]
     #[error("Ollama error: {0}")]

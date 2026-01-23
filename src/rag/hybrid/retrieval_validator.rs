@@ -1,9 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{
-    rag::RAGError,
-    schemas::Document,
-};
+use crate::{rag::RAGError, schemas::Document};
 
 /// Result of retrieval validation
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -98,8 +95,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_relevance_validator_min_documents() {
-        let validator = RelevanceValidator::new()
-            .with_min_documents(2);
+        let validator = RelevanceValidator::new().with_min_documents(2);
 
         let docs = vec![Document::new("test")];
         let result = validator.validate("test query", &docs).await.unwrap();
@@ -108,8 +104,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_relevance_validator_sufficient_documents() {
-        let validator = RelevanceValidator::new()
-            .with_min_documents(1);
+        let validator = RelevanceValidator::new().with_min_documents(1);
 
         let docs = vec![Document::new("test content")];
         let result = validator.validate("test query", &docs).await.unwrap();
@@ -128,8 +123,11 @@ impl RetrievalValidator for RelevanceValidator {
         if documents.len() < self.min_documents {
             return Ok(RetrievalValidationResult::invalid(
                 0.0,
-                format!("Insufficient documents retrieved: got {}, need at least {}", 
-                    documents.len(), self.min_documents),
+                format!(
+                    "Insufficient documents retrieved: got {}, need at least {}",
+                    documents.len(),
+                    self.min_documents
+                ),
                 vec!["Try expanding the query or using different search terms".to_string()],
             ));
         }
@@ -225,7 +223,10 @@ impl RetrievalValidator for LLMRetrievalValidator {
             .replace("{query}", query)
             .replace("{documents}", &doc_texts.join("\n---\n"));
 
-        let response = self.llm.invoke(&formatted_prompt).await
+        let response = self
+            .llm
+            .invoke(&formatted_prompt)
+            .await
             .map_err(|e| RAGError::RetrievalValidationError(format!("LLM error: {}", e)))?;
 
         // Try to parse JSON response
@@ -233,9 +234,9 @@ impl RetrievalValidator for LLMRetrievalValidator {
             Ok(result) => Ok(result),
             Err(_) => {
                 // Fallback: simple heuristic based on response
-                let is_valid = response.to_lowercase().contains("valid") || 
-                              response.to_lowercase().contains("yes") ||
-                              response.to_lowercase().contains("sufficient");
+                let is_valid = response.to_lowercase().contains("valid")
+                    || response.to_lowercase().contains("yes")
+                    || response.to_lowercase().contains("sufficient");
                 Ok(RetrievalValidationResult {
                     is_valid,
                     confidence: if is_valid { 0.7 } else { 0.3 },

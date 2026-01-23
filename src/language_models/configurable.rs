@@ -1,18 +1,18 @@
-use std::collections::HashMap;
 use async_trait::async_trait;
 use serde_json::Value;
+use std::collections::HashMap;
 
 use crate::{
     language_models::{
-        llm::{LLM, LLMClone},
-        options::CallOptions,
         invocation_config::InvocationConfig,
+        llm::{LLMClone, LLM},
+        options::CallOptions,
         GenerateResult, LLMError,
     },
     schemas::Message,
 };
-use std::pin::Pin;
 use futures::Stream;
+use std::pin::Pin;
 
 /// A wrapper around an LLM that allows runtime configuration of certain fields.
 ///
@@ -64,7 +64,11 @@ impl ConfigurableModel {
         self
     }
 
-    fn get_config_value<'a>(&'a self, config: &'a InvocationConfig, field: &str) -> Option<&'a Value> {
+    fn get_config_value<'a>(
+        &'a self,
+        config: &'a InvocationConfig,
+        field: &str,
+    ) -> Option<&'a Value> {
         let key: String = if let Some(ref prefix) = self.config_prefix {
             format!("{}_{}", prefix, field)
         } else {
@@ -94,7 +98,10 @@ impl LLM for ConfigurableModel {
     async fn stream(
         &self,
         messages: &[Message],
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<crate::schemas::StreamData, LLMError>> + Send>>, LLMError> {
+    ) -> Result<
+        Pin<Box<dyn Stream<Item = Result<crate::schemas::StreamData, LLMError>> + Send>>,
+        LLMError,
+    > {
         self.model.stream(messages).await
     }
 
@@ -122,18 +129,22 @@ mod tests {
 
     #[tokio::test]
     async fn test_configurable_model_creation() {
-        let base_model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None).unwrap();
+        let base_model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None)
+            .await
+            .unwrap();
         let configurable = ConfigurableModel::new(base_model)
             .with_configurable_fields(vec!["model".to_string(), "temperature".to_string()]);
 
         assert_eq!(configurable.configurable_fields.len(), 2);
     }
 
-    #[test]
-    fn test_configurable_model_prefix() {
-        let base_model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None).unwrap();
-        let configurable = ConfigurableModel::new(base_model)
-            .with_config_prefix("first".to_string());
+    #[tokio::test]
+    async fn test_configurable_model_prefix() {
+        let base_model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None)
+            .await
+            .unwrap();
+        let configurable =
+            ConfigurableModel::new(base_model).with_config_prefix("first".to_string());
 
         assert_eq!(configurable.config_prefix, Some("first".to_string()));
     }

@@ -99,10 +99,7 @@ impl LoggingMiddleware {
                 LogLevel::Error => log::error!("{}", log_entry),
             }
         } else {
-            let data_str = data
-                .as_ref()
-                .map(|v| format!(" {}", v))
-                .unwrap_or_default();
+            let data_str = data.as_ref().map(|v| format!(" {}", v)).unwrap_or_default();
             match level {
                 LogLevel::Debug => log::debug!("{}{}", message, data_str),
                 LogLevel::Info => log::info!("{}{}", message, data_str),

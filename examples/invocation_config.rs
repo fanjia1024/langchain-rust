@@ -1,6 +1,4 @@
-use langchain_rust::language_models::{
-    init_chat_model, InvocationConfig,
-};
+use langchain_rust::language_models::{init_chat_model, InvocationConfig};
 use serde_json::json;
 
 #[tokio::main]
@@ -15,15 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
         None,
         None,
-    )?;
+    )
+    .await?;
 
     // Create invocation config with metadata
     let config = InvocationConfig::new()
         .with_run_name("production_run_001".to_string())
-        .with_tags(vec![
-            "production".to_string(),
-            "user_query".to_string(),
-        ])
+        .with_tags(vec!["production".to_string(), "user_query".to_string()])
         .add_metadata("user_id".to_string(), json!("user_123"))
         .add_metadata("session_id".to_string(), json!("session_456"))
         .add_metadata("request_id".to_string(), json!("req_789"))

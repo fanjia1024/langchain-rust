@@ -195,7 +195,8 @@ impl LLM for Claude {
                         if value["type"].as_str().unwrap_or("") == "content_block_delta" {
                             let content = value["delta"]["text"].clone();
                             // Return StreamData based on the parsed content
-                            // TODO get tokens from the response
+                            // Note: Token usage information is not available in streaming responses
+                            // and should be retrieved from the final response or usage callback
                             Ok(StreamData::new(value, None, content.as_str().unwrap_or("")))
                         } else {
                             Ok(StreamData::new(value, None, ""))

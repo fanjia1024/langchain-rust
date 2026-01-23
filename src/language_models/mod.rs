@@ -2,25 +2,25 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub mod llm;
-pub mod options;
-pub mod model_parser;
-pub mod invocation_config;
-pub mod usage;
-pub mod init;
 pub mod configurable;
+pub mod init;
+pub mod invocation_config;
+pub mod llm;
+pub mod model_parser;
+pub mod options;
+pub mod usage;
 
 mod error;
 pub use error::*;
 
-pub use model_parser::{parse_model_string, ParsedModel};
-pub use invocation_config::InvocationConfig;
-pub use usage::{UsageMetadata, UsageCallback, CollectingUsageCallback};
-pub use init::init_chat_model;
 pub use configurable::ConfigurableModel;
+pub use init::init_chat_model;
+pub use invocation_config::InvocationConfig;
+pub use model_parser::{parse_model_string, ParsedModel};
+pub use usage::{CollectingUsageCallback, UsageCallback, UsageMetadata};
 
-//TODO: check if its this should have a data:serde::Value to save all other things, like OpenAI
-//function responses
+// Note: Consider adding a `data: Option<serde::Value>` field to store additional
+// metadata from LLM responses (e.g., OpenAI function call responses, tool calls, etc.)
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct GenerateResult {
     pub tokens: Option<TokenUsage>,

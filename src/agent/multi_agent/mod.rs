@@ -27,13 +27,13 @@ pub enum MultiAgentError {
     SerdeJsonError(#[from] serde_json::Error),
 }
 
-pub mod subagents;
 pub mod handoffs;
-pub mod skills;
 pub mod router;
+pub mod skills;
+pub mod subagents;
 
 // Re-export commonly used types
-pub use subagents::{SubagentTool, SubagentsBuilder, SubagentInfo};
-pub use handoffs::{HandoffTool, HandoffAgent, HandoffAgentBuilder};
-pub use skills::{Skill, SkillAgent, SkillContext, SimpleSkill, SkillAgentBuilder};
-pub use router::{Router, RouterAgent, RoutingStrategy, DefaultRouter, RouterAgentBuilder};
+pub use handoffs::{HandoffAgent, HandoffAgentBuilder, HandoffTool};
+pub use router::{DefaultRouter, Router, RouterAgent, RouterAgentBuilder, RoutingStrategy};
+pub use skills::{SimpleSkill, Skill, SkillAgent, SkillAgentBuilder, SkillContext};
+pub use subagents::{SubagentInfo, SubagentTool, SubagentsBuilder};

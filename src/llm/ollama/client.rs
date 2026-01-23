@@ -132,9 +132,12 @@ impl LLM for Ollama {
                     None,
                     message.content,
                 )),
-                // TODO: no need to return error, see https://github.com/Abraxas-365/langchain-rust/issues/140
-                None => Err(LLMError::ContentNotFound(
-                    "No message in response".to_string(),
+                // Note: Returning empty content instead of error for better stream handling
+                // See: https://github.com/Abraxas-365/langchain-rust/issues/140
+                None => Ok(StreamData::new(
+                    serde_json::to_value(data).unwrap_or_default(),
+                    None,
+                    String::new(),
                 )),
             },
             Err(_) => Err(OllamaError::from("Stream error".to_string()).into()),

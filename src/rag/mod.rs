@@ -27,16 +27,15 @@ pub enum RAGError {
     SerdeJsonError(#[from] serde_json::Error),
 }
 
-pub mod two_step;
 pub mod agentic;
 pub mod hybrid;
+pub mod two_step;
 
 // Re-export commonly used types
-pub use two_step::{TwoStepRAG, TwoStepRAGBuilder};
-pub use agentic::{AgenticRAG, AgenticRAGBuilder, RetrieverTool};
+pub use agentic::{AgenticRAG, AgenticRAGBuilder, RetrieverInfo, RetrieverTool};
 pub use hybrid::{
-    HybridRAG, HybridRAGBuilder,
-    QueryEnhancer, LLMQueryEnhancer, KeywordQueryEnhancer,
-    RetrievalValidator, RelevanceValidator, LLMRetrievalValidator,
-    AnswerValidator, LLMAnswerValidator, SourceAlignmentValidator,
+    AnswerValidator, HybridRAG, HybridRAGBuilder, HybridRAGConfig, KeywordQueryEnhancer,
+    LLMAnswerValidator, LLMQueryEnhancer, LLMRetrievalValidator, QueryEnhancer,
+    RelevanceValidator, RetrievalValidator, SourceAlignmentValidator,
 };
+pub use two_step::{TwoStepRAG, TwoStepRAGBuilder};

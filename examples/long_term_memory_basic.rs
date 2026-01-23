@@ -7,8 +7,8 @@ use langchain_rust::{
     agent::create_agent,
     schemas::messages::Message,
     tools::{
-        long_term_memory::{EnhancedInMemoryStore, StoreValue},
-        ToolRuntime, ToolResult,
+        EnhancedInMemoryStore, EnhancedToolStore, StoreValue,
+        ToolResult, ToolRuntime, ToolStore,
     },
 };
 use serde_json::json;
@@ -63,7 +63,10 @@ impl langchain_rust::tools::Tool for GetUserInfoTool {
 
         match user_info {
             Some(info) => Ok(ToolResult::Text(format!("User info: {}", info))),
-            None => Ok(ToolResult::Text(format!("No information found for user: {}", context_user_id))),
+            None => Ok(ToolResult::Text(format!(
+                "No information found for user: {}",
+                context_user_id
+            ))),
         }
     }
 
@@ -111,12 +114,17 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         input: serde_json::Value,
         runtime: &ToolRuntime,
     ) -> Result<ToolResult, Box<dyn std::error::Error>> {
-        let user_id = runtime.context().user_id()
+        let user_id = runtime
+            .context()
+            .user_id()
             .ok_or("user_id is required in context")?;
 
         // Create store value with metadata
         let mut metadata = std::collections::HashMap::new();
-        metadata.insert("updated_at".to_string(), json!(chrono::Utc::now().to_rfc3339()));
+        metadata.insert(
+            "updated_at".to_string(),
+            json!(chrono::Utc::now().to_rfc3339()),
+        );
 
         let store_value = StoreValue::with_metadata(
             json!({
@@ -129,9 +137,14 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         // Save to store
         // Note: In a real implementation with EnhancedInMemoryStore, you'd use put_with_metadata
         // For this example, we'll use the basic interface
-        runtime.store().put(&["users"], user_id, store_value.value.clone()).await;
+        runtime
+            .store()
+            .put(&["users"], user_id, store_value.value.clone())
+            .await;
 
-        Ok(ToolResult::Text("User information saved successfully.".to_string()))
+        Ok(ToolResult::Text(
+            "User information saved successfully.".to_string(),
+        ))
     }
 
     fn requires_runtime(&self) -> bool {
@@ -149,24 +162,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Pre-populate with some user data
     let mut metadata = std::collections::HashMap::new();
     metadata.insert("created_at".to_string(), json!("2024-01-01"));
-    
-    store.put_with_metadata(
-        &["users"],
-        "user_123",
-        StoreValue::with_metadata(
-            json!({
-                "name": "John Smith",
-                "language": "English",
-            }),
-            metadata,
-        ),
-    ).await;
+
+    store
+        .put_with_metadata(
+            &["users"],
+            "user_123",
+            StoreValue::with_metadata(
+                json!({
+                    "name": "John Smith",
+                    "language": "English",
+                }),
+                metadata,
+            ),
+        )
+        .await;
 
     // Create tools
-    let tools: Vec<Arc<dyn langchain_rust::tools::Tool>> = vec![
-        Arc::new(GetUserInfoTool),
-        Arc::new(SaveUserInfoTool),
-    ];
+    let tools: Vec<Arc<dyn langchain_rust::tools::Tool>> =
+        vec![Arc::new(GetUserInfoTool), Arc::new(SaveUserInfoTool)];
 
     // Create agent with store
     let agent = create_agent(
@@ -191,7 +204,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "name": "Jane Doe",
         "language": "Spanish",
     }));
-    store.put_with_metadata(&["users"], "user_456", new_info).await;
+    store
+        .put_with_metadata(&["users"], "user_456", new_info)
+        .await;
 
     println!("\nSaved new user info");
 

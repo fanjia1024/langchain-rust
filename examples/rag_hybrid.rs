@@ -9,9 +9,8 @@ use langchain_rust::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     llm::openai::{OpenAI, OpenAIModel},
     memory::SimpleMemory,
-    rag::hybrid::{
-        HybridRAGBuilder, HybridRAGConfig,
-        LLMQueryEnhancer, RelevanceValidator, LLMAnswerValidator,
+    rag::{
+        HybridRAGBuilder, HybridRAGConfig, LLMAnswerValidator, LLMQueryEnhancer, RelevanceValidator,
     },
     schemas::Document,
     vectorstore::{pgvector::StoreBuilder, Retriever},
@@ -39,25 +38,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Add documents to store
-    let _ = add_documents!(store, &documents).await?;
+    use langchain_rust::vectorstore::{VectorStore, pgvector::PgOptions};
+    let _ = store.add_documents(&documents, &PgOptions::default()).await?;
 
     // Create retriever
     let retriever: Arc<dyn langchain_rust::schemas::Retriever> = Arc::new(Retriever::new(store, 3));
 
     // Create LLM
     let llm = OpenAI::default().with_model(OpenAIModel::Gpt4oMini.to_string());
+    let llm_box1: Box<dyn langchain_rust::language_models::llm::LLM> = Box::new(llm.clone());
+    let llm_box2: Box<dyn langchain_rust::language_models::llm::LLM> = Box::new(llm.clone());
 
     // Create query enhancer
-    let query_enhancer = Arc::new(LLMQueryEnhancer::new(llm.clone_box()));
+    let query_enhancer = Arc::new(LLMQueryEnhancer::new(llm_box1));
 
     // Create retrieval validator
-    let retrieval_validator = Arc::new(
-        RelevanceValidator::new()
-            .with_min_documents(1)
-    );
+    let retrieval_validator = Arc::new(RelevanceValidator::new().with_min_documents(1));
 
     // Create answer validator
-    let answer_validator = Arc::new(LLMAnswerValidator::new(llm.clone_box()));
+    let answer_validator = Arc::new(LLMAnswerValidator::new(llm_box2));
 
     // Configure Hybrid RAG
     let config = HybridRAGConfig {
@@ -80,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     println!("Hybrid RAG Example\n");
-    
+
     // Test with a query that will go through the full pipeline
     println!("Question: What is machine learning?");
     let answer = hybrid_rag.invoke("What is machine learning?").await?;
@@ -88,7 +87,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test with a more complex query
     println!("Question: Explain the relationship between AI, ML, and NLP");
-    let answer = hybrid_rag.invoke("Explain the relationship between AI, ML, and NLP").await?;
+    let answer = hybrid_rag
+        .invoke("Explain the relationship between AI, ML, and NLP")
+        .await?;
     println!("Answer: {}\n", answer);
 
     Ok(())

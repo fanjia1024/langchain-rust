@@ -112,21 +112,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_subagent_tool_creation() {
-        let agent = Arc::new(
-            create_agent(
-                "gpt-4o-mini",
-                &[],
-                Some("Test agent"),
-                None,
-            )
-            .unwrap(),
-        );
+        let agent = Arc::new(create_agent("gpt-4o-mini", &[], Some("Test agent"), None).unwrap());
 
-        let tool = SubagentTool::new(
-            agent,
-            "test_agent".to_string(),
-            "A test agent".to_string(),
-        );
+        let tool = SubagentTool::new(agent, "test_agent".to_string(), "A test agent".to_string());
 
         assert_eq!(tool.name(), "test_agent");
         assert_eq!(tool.description(), "A test agent");

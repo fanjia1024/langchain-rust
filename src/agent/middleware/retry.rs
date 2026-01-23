@@ -99,10 +99,7 @@ impl Middleware for RetryMiddleware {
 
             if self.should_retry(observation, retry_count) {
                 // Store retry information in context
-                context.set_custom_data(
-                    "should_retry".to_string(),
-                    serde_json::json!(true),
-                );
+                context.set_custom_data("should_retry".to_string(), serde_json::json!(true));
                 context.set_custom_data(
                     "retry_count".to_string(),
                     serde_json::json!(retry_count + 1),

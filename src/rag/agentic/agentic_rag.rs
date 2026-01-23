@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    agent::{UnifiedAgent, AgentError},
+    agent::{AgentError, UnifiedAgent},
     chain::ChainError,
     schemas::{messages::Message, Retriever},
     tools::Tool,
@@ -25,11 +25,7 @@ pub struct RetrieverInfo {
 
 impl RetrieverInfo {
     /// Create a new RetrieverInfo
-    pub fn new(
-        retriever: Arc<dyn Retriever>,
-        name: String,
-        description: String,
-    ) -> Self {
+    pub fn new(retriever: Arc<dyn Retriever>, name: String, description: String) -> Self {
         Self {
             retriever,
             name,
@@ -71,10 +67,7 @@ impl AgenticRAG {
     }
 
     /// Invoke the agent with messages
-    pub async fn invoke_messages(
-        &self,
-        messages: Vec<Message>,
-    ) -> Result<String, RAGError> {
+    pub async fn invoke_messages(&self, messages: Vec<Message>) -> Result<String, RAGError> {
         self.agent
             .invoke_messages(messages)
             .await
@@ -177,14 +170,14 @@ impl AgenticRAGBuilder {
                         retriever_info.name.clone(),
                         retriever_info.description.clone(),
                     )
-                    .with_max_docs(retriever_info.max_docs)
+                    .with_max_docs(retriever_info.max_docs),
                 );
                 all_tools.push(retriever_tool);
             }
 
             Arc::new(
                 crate::agent::create_agent(&model, &all_tools, Some(&system_prompt), None)
-                    .map_err(|e| RAGError::ChainError(ChainError::AgentError(e.to_string())))?
+                    .map_err(|e| RAGError::ChainError(ChainError::AgentError(e.to_string())))?,
             )
         };
 
@@ -199,7 +192,7 @@ impl AgenticRAGBuilder {
                     retriever_info.name.clone(),
                     retriever_info.description,
                 )
-                .with_max_docs(retriever_info.max_docs)
+                .with_max_docs(retriever_info.max_docs),
             );
             retriever_tools.push(retriever_tool.clone());
         }

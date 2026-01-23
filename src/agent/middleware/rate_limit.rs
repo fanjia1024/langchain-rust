@@ -92,7 +92,9 @@ impl RateLimitMiddleware {
         if let Some(&limit) = self.per_tool_limits.get(tool_name) {
             let now = Instant::now();
             let mut tool_times = self.tool_request_times.lock().await;
-            let times = tool_times.entry(tool_name.to_string()).or_insert_with(Vec::new);
+            let times = tool_times
+                .entry(tool_name.to_string())
+                .or_insert_with(Vec::new);
 
             // Check requests in the last minute
             times.retain(|&time| now.duration_since(time) < Duration::from_secs(60));
@@ -150,12 +152,12 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limit_check() {
         let middleware = RateLimitMiddleware::new().with_requests_per_second(2);
-        
+
         // First two should succeed
         assert!(middleware.check_rate_limit().await.is_ok());
         tokio::time::sleep(Duration::from_millis(10)).await;
         assert!(middleware.check_rate_limit().await.is_ok());
-        
+
         // Third should fail (within same second)
         let result = middleware.check_rate_limit().await;
         assert!(result.is_err());

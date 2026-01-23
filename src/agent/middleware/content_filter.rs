@@ -82,7 +82,7 @@ impl ContentFilterMiddleware {
     /// Extract text content from prompt args.
     fn extract_text_from_input(&self, input: &PromptArgs) -> String {
         let mut texts = Vec::new();
-        
+
         // Check "input" field
         if let Some(input_val) = input.get("input") {
             if let Some(s) = input_val.as_str() {
@@ -120,21 +120,18 @@ impl Middleware for ContentFilterMiddleware {
         context: &mut MiddlewareContext,
     ) -> Result<Option<PromptArgs>, MiddlewareError> {
         let text = self.extract_text_from_input(input);
-        
+
         if let Some(banned_keyword) = self.contains_banned_keywords(&text) {
             // Log the blocked attempt
             log::warn!(
                 "Content filter blocked request containing banned keyword: '{}'",
                 banned_keyword
             );
-            
-            context.set_custom_data(
-                "content_filtered".to_string(),
-                serde_json::json!(true)
-            );
+
+            context.set_custom_data("content_filtered".to_string(), serde_json::json!(true));
             context.set_custom_data(
                 "banned_keyword".to_string(),
-                serde_json::json!(banned_keyword)
+                serde_json::json!(banned_keyword),
             );
 
             // Return a modified input that will result in the block message
@@ -144,7 +141,7 @@ impl Middleware for ContentFilterMiddleware {
             let mut modified_input = input.clone();
             modified_input.insert(
                 "input".to_string(),
-                serde_json::json!(self.block_message.clone())
+                serde_json::json!(self.block_message.clone()),
             );
 
             // Note: In a real implementation, you might want to raise an error
@@ -175,9 +172,13 @@ mod tests {
     fn test_banned_keyword_detection() {
         let middleware = ContentFilterMiddleware::new()
             .with_banned_keywords(vec!["hack".to_string(), "exploit".to_string()]);
-        
-        assert!(middleware.contains_banned_keywords("How to hack a system").is_some());
-        assert!(middleware.contains_banned_keywords("This is safe content").is_none());
+
+        assert!(middleware
+            .contains_banned_keywords("How to hack a system")
+            .is_some());
+        assert!(middleware
+            .contains_banned_keywords("This is safe content")
+            .is_none());
     }
 
     #[test]
@@ -185,7 +186,7 @@ mod tests {
         let middleware = ContentFilterMiddleware::new()
             .with_banned_keyword("HACK".to_string())
             .with_case_sensitive(false);
-        
+
         assert!(middleware.contains_banned_keywords("hack").is_some());
         assert!(middleware.contains_banned_keywords("HACK").is_some());
         assert!(middleware.contains_banned_keywords("Hack").is_some());
@@ -196,7 +197,7 @@ mod tests {
         let middleware = ContentFilterMiddleware::new()
             .with_banned_keyword("HACK".to_string())
             .with_case_sensitive(true);
-        
+
         assert!(middleware.contains_banned_keywords("HACK").is_some());
         assert!(middleware.contains_banned_keywords("hack").is_none());
     }

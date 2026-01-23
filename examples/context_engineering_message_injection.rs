@@ -6,12 +6,11 @@ use tokio::sync::Mutex;
 
 use langchain_rust::{
     agent::{
-        create_agent,
-        context_engineering::middleware::{MessageInjectionMiddleware, InjectionPosition},
-        AgentState,
+        context_engineering::middleware::{InjectionPosition, MessageInjectionMiddleware},
+        create_agent, AgentState,
     },
     schemas::messages::Message,
-    tools::{SimpleContext, InMemoryStore},
+    tools::{InMemoryStore, SimpleContext},
 };
 use serde_json::json;
 
@@ -20,14 +19,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // env_logger::init(); // Uncomment if env_logger is available
 
     // Create message injection middleware for file context
-    let file_context_injector = MessageInjectionMiddleware::inject_file_context(
-        InjectionPosition::End,
-    );
+    let file_context_injector =
+        MessageInjectionMiddleware::inject_file_context(InjectionPosition::End);
 
     // Create message injection middleware for compliance rules
-    let compliance_injector = MessageInjectionMiddleware::inject_compliance_rules(
-        InjectionPosition::End,
-    );
+    let compliance_injector =
+        MessageInjectionMiddleware::inject_compliance_rules(InjectionPosition::End);
 
     // Create state with uploaded files
     let mut state = AgentState::new();
@@ -44,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "type": "excel",
                 "summary": "Budget spreadsheet for Q4"
             }
-        ])
+        ]),
     );
 
     // Create agent with message injection middleware
@@ -62,14 +59,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_user_id("user_123".to_string())
             .with_custom("user_jurisdiction".to_string(), "EU".to_string())
             .with_custom("compliance_frameworks".to_string(), "GDPR".to_string())
-            .with_custom("industry".to_string(), "finance".to_string())
+            .with_custom("industry".to_string(), "finance".to_string()),
     ))
     .with_store(Arc::new(InMemoryStore::new()))
     .with_state(Arc::new(Mutex::new(state)));
 
     // Use the agent
     let result = agent
-        .invoke_messages(vec![Message::new_human_message("What files do I have access to?")])
+        .invoke_messages(vec![Message::new_human_message(
+            "What files do I have access to?",
+        )])
         .await?;
 
     println!("Agent response: {}", result);

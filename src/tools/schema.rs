@@ -38,11 +38,11 @@ pub fn generate_field_schema(
 ) -> Value {
     let desc = description.unwrap_or(field_name);
     let mut schema = generate_schema_from_type(field_type, desc);
-    
+
     if let Some(obj) = schema.as_object_mut() {
         obj.insert("description".to_string(), json!(desc));
     }
-    
+
     if !required {
         // For optional fields, we wrap in a union with null
         schema = json!({
@@ -52,7 +52,7 @@ pub fn generate_field_schema(
             ]
         });
     }
-    
+
     schema
 }
 
@@ -66,7 +66,7 @@ pub fn generate_parameters_schema(
     for (name, field_type, description, is_required) in properties {
         let field_schema = generate_field_schema(name, field_type, description, is_required);
         schema_properties.insert(name.to_string(), field_schema);
-        
+
         if is_required {
             required.push(name.to_string());
         }
@@ -82,17 +82,23 @@ pub fn generate_parameters_schema(
 /// Helper to extract type name from a type string (handles Option, Vec, etc.)
 pub fn extract_base_type(type_str: &str) -> (&str, bool) {
     let type_str = type_str.trim();
-    
+
     // Handle Option<T>
-    if let Some(inner) = type_str.strip_prefix("Option<").and_then(|s| s.strip_suffix('>')) {
+    if let Some(inner) = type_str
+        .strip_prefix("Option<")
+        .and_then(|s| s.strip_suffix('>'))
+    {
         return (inner.trim(), false);
     }
-    
+
     // Handle Vec<T>
-    if let Some(inner) = type_str.strip_prefix("Vec<").and_then(|s| s.strip_suffix('>')) {
+    if let Some(inner) = type_str
+        .strip_prefix("Vec<")
+        .and_then(|s| s.strip_suffix('>'))
+    {
         return (inner.trim(), true); // true indicates array
     }
-    
+
     (type_str, false)
 }
 
@@ -113,7 +119,7 @@ mod tests {
             ("query", "String", Some("Search query"), true),
             ("limit", "u32", Some("Result limit"), false),
         ]);
-        
+
         assert_eq!(schema["type"], "object");
         assert!(schema["properties"].is_object());
         assert!(schema["required"].is_array());

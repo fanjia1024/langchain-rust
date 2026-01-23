@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    agent::{UnifiedAgent, AgentError},
-    agent::multi_agent::router::{Router, DefaultRouter, RoutingStrategy},
+    agent::multi_agent::router::{DefaultRouter, Router, RoutingStrategy},
+    agent::{AgentError, UnifiedAgent},
     chain::ChainError,
     schemas::messages::Message,
 };
@@ -66,20 +66,13 @@ impl RouterAgent {
     }
 
     /// Route and invoke the appropriate agent(s)
-    pub async fn invoke_messages(
-        &self,
-        messages: Vec<Message>,
-    ) -> Result<String, ChainError> {
+    pub async fn invoke_messages(&self, messages: Vec<Message>) -> Result<String, ChainError> {
         // Extract the last human message
         let last_human_message = messages
             .iter()
             .rev()
             .find(|m| matches!(m.message_type, crate::schemas::MessageType::HumanMessage))
-            .ok_or_else(|| {
-                ChainError::AgentError(
-                    "No human message found".to_string(),
-                )
-            })?;
+            .ok_or_else(|| ChainError::AgentError("No human message found".to_string()))?;
 
         let input = &last_human_message.content;
 
@@ -92,14 +85,9 @@ impl RouterAgent {
 
         if let Some(agent_name) = selected_agent_name {
             // Get the selected agent
-            let agent = self
-                .agents
-                .get(&agent_name)
-                .ok_or_else(|| {
-                    ChainError::AgentError(
-                        format!("Agent not found: {}", agent_name)
-                    )
-                })?;
+            let agent = self.agents.get(&agent_name).ok_or_else(|| {
+                ChainError::AgentError(format!("Agent not found: {}", agent_name))
+            })?;
 
             // Invoke the selected agent
             agent.invoke_messages(messages).await

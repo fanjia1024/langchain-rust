@@ -83,7 +83,10 @@ impl QueryEnhancer for LLMQueryEnhancer {
         );
 
         let enhanced_prompt = prompt.replace("{query}", query);
-        let enhanced_query = self.llm.invoke(&enhanced_prompt).await
+        let enhanced_query = self
+            .llm
+            .invoke(&enhanced_prompt)
+            .await
             .map_err(|e| RAGError::QueryEnhancementError(format!("LLM error: {}", e)))?;
 
         Ok(EnhancedQuery::new(enhanced_query.trim().to_string()))
@@ -97,7 +100,10 @@ impl QueryEnhancer for LLMQueryEnhancer {
             query
         );
 
-        let response = self.llm.invoke(&prompt).await
+        let response = self
+            .llm
+            .invoke(&prompt)
+            .await
             .map_err(|e| RAGError::QueryEnhancementError(format!("LLM error: {}", e)))?;
 
         let variations: Vec<EnhancedQuery> = response
@@ -160,10 +166,12 @@ mod tests {
     #[tokio::test]
     async fn test_keyword_query_enhancer() {
         let mut expansions = std::collections::HashMap::new();
-        expansions.insert("rust".to_string(), vec!["systems".to_string(), "performance".to_string()]);
-        
-        let enhancer = KeywordQueryEnhancer::new()
-            .with_expansions(expansions);
+        expansions.insert(
+            "rust".to_string(),
+            vec!["systems".to_string(), "performance".to_string()],
+        );
+
+        let enhancer = KeywordQueryEnhancer::new().with_expansions(expansions);
 
         let result = enhancer.enhance("rust programming").await.unwrap();
         assert!(result.query.contains("rust"));
@@ -183,7 +191,8 @@ mod tests {
 impl QueryEnhancer for KeywordQueryEnhancer {
     async fn enhance(&self, query: &str) -> Result<EnhancedQuery, RAGError> {
         let query_lower = query.to_lowercase();
-        let mut enhanced_terms: Vec<String> = query.split_whitespace().map(|s| s.to_string()).collect();
+        let mut enhanced_terms: Vec<String> =
+            query.split_whitespace().map(|s| s.to_string()).collect();
 
         // Expand with related keywords
         for (term, related) in &self.keyword_expansions {

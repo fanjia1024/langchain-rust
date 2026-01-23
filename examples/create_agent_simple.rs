@@ -2,11 +2,7 @@ use std::{error::Error, sync::Arc};
 
 use async_trait::async_trait;
 use langchain_rust::{
-    agent::create_agent,
-    chain::Chain,
-    prompt_args,
-    schemas::messages::Message,
-    tools::Tool,
+    agent::create_agent, chain::Chain, prompt_args, schemas::messages::Message, tools::Tool,
 };
 use serde_json::{json, Value};
 
@@ -36,9 +32,10 @@ impl Tool for WeatherTool {
 async fn main() {
     // Create an agent with a simple API
     let agent = create_agent(
-        "gpt-4o-mini", // Model as string - auto-detected
-        &[Arc::new(WeatherTool)], // Tools
+        "gpt-4o-mini",                       // Model as string - auto-detected
+        &[Arc::new(WeatherTool)],            // Tools
         Some("You are a helpful assistant"), // System prompt
+        None,                                // Middleware (optional)
     )
     .expect("Failed to create agent");
 

@@ -64,7 +64,6 @@ where
     }
 }
 
-
 /// Macro to simplify creating TypedContext implementations.
 ///
 /// This macro generates the necessary implementations for a struct to work as a TypedContext.

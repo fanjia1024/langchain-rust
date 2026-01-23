@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use langchain_rust::agent::{create_agent, middleware::LoggingMiddleware};
+use langchain_rust::agent::{create_agent, LoggingMiddleware};
 use langchain_rust::schemas::Message;
 use serde_json::json;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create logging middleware
     let logging_middleware = LoggingMiddleware::new()
-        .with_log_level(langchain_rust::agent::middleware::logging::LogLevel::Info)
+        .with_log_level(langchain_rust::agent::LogLevel::Info)
         .with_structured_logging(false);
 
     // Create agent with middleware
@@ -23,11 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Invoke the agent
     let result = agent
-        .invoke(json!({
-            "messages": [
-                Message::new_human_message("What is the capital of France?")
-            ]
-        }))
+        .invoke_messages(vec![
+            Message::new_human_message("What is the capital of France?")
+        ])
         .await?;
 
     println!("Agent response: {}", result);

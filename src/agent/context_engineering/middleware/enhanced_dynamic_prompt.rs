@@ -4,9 +4,9 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
+        context_engineering::{ModelRequest, ModelResponse},
         middleware::{Middleware, MiddlewareContext, MiddlewareError},
         AgentState,
-        context_engineering::{ModelRequest, ModelResponse},
     },
     tools::{ToolContext, ToolStore},
 };
@@ -84,21 +84,21 @@ impl EnhancedDynamicPromptMiddleware {
     pub fn with_template(template: String) -> Self {
         Self::new(move |request: &ModelRequest| {
             let mut prompt = template.clone();
-            
+
             // Replace runtime context placeholders
             if let Some(runtime) = request.runtime() {
                 if let Some(user_id) = runtime.context().user_id() {
                     prompt = prompt.replace("{user_id}", user_id);
                 }
-                
+
                 if let Some(session_id) = runtime.context().session_id() {
                     prompt = prompt.replace("{session_id}", session_id);
                 }
             }
-            
+
             // Note: State placeholders would require async access
             // For template-based approach, consider using from_state for complex logic
-            
+
             prompt
         })
     }
@@ -113,31 +113,42 @@ impl Middleware for EnhancedDynamicPromptMiddleware {
     ) -> Result<Option<ModelRequest>, MiddlewareError> {
         // Generate dynamic prompt based on context
         let dynamic_prompt = (self.prompt_generator)(request);
-        
+
         // Inject the prompt as a system message at the beginning
         let mut messages = request.messages.clone();
-        
+
         // Check if there's already a system message
-        let has_system = messages.iter().any(|m| {
-            matches!(m.message_type, crate::schemas::MessageType::SystemMessage)
-        });
-        
+        let has_system = messages
+            .iter()
+            .any(|m| matches!(m.message_type, crate::schemas::MessageType::SystemMessage));
+
         if !has_system {
             // Insert system message at the beginning
-            messages.insert(0, crate::schemas::Message::new_system_message(&dynamic_prompt));
+            messages.insert(
+                0,
+                crate::schemas::Message::new_system_message(&dynamic_prompt),
+            );
         } else {
             // Prepend to first system message or add new one
             if let Some(first_msg) = messages.first_mut() {
-                if matches!(first_msg.message_type, crate::schemas::MessageType::SystemMessage) {
+                if matches!(
+                    first_msg.message_type,
+                    crate::schemas::MessageType::SystemMessage
+                ) {
                     // Prepend to existing system message
                     first_msg.content = format!("{}\n\n{}", dynamic_prompt, first_msg.content);
                 } else {
-                    messages.insert(0, crate::schemas::Message::new_system_message(&dynamic_prompt));
+                    messages.insert(
+                        0,
+                        crate::schemas::Message::new_system_message(&dynamic_prompt),
+                    );
                 }
             }
         }
-        
-        Ok(Some(request.with_messages_and_tools(messages, request.tools.clone())))
+
+        Ok(Some(
+            request.with_messages_and_tools(messages, request.tools.clone()),
+        ))
     }
 }
 
@@ -152,8 +163,8 @@ impl Clone for EnhancedDynamicPromptMiddleware {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tools::{context::SimpleContext, InMemoryStore};
     use crate::schemas::Message;
+    use crate::tools::{context::SimpleContext, InMemoryStore};
 
     #[tokio::test]
     async fn test_enhanced_dynamic_prompt_from_runtime() {
@@ -168,8 +179,7 @@ mod tests {
         let runtime = Arc::new(crate::agent::Runtime::new(context, store));
 
         let messages = vec![Message::new_human_message("Hello")];
-        let request = ModelRequest::new(messages, vec![], state)
-            .with_runtime(runtime);
+        let request = ModelRequest::new(messages, vec![], state).with_runtime(runtime);
 
         let mut middleware_context = MiddlewareContext::new();
         let result = middleware

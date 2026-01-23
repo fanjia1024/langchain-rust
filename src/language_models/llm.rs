@@ -5,7 +5,7 @@ use futures::Stream;
 
 use crate::schemas::{Message, StreamData};
 
-use super::{options::CallOptions, invocation_config::InvocationConfig, GenerateResult, LLMError};
+use super::{invocation_config::InvocationConfig, options::CallOptions, GenerateResult, LLMError};
 
 #[async_trait]
 pub trait LLM: Sync + Send + LLMClone {

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    agent::{UnifiedAgent, AgentError},
     agent::multi_agent::handoffs::HandoffTool,
+    agent::{AgentError, UnifiedAgent},
     chain::{chain_trait::Chain, ChainError},
     prompt::PromptArgs,
     schemas::messages::Message,
@@ -61,10 +61,7 @@ impl HandoffAgent {
     }
 
     /// Invoke with messages, automatically routing based on state
-    pub async fn invoke_messages(
-        &self,
-        messages: Vec<Message>,
-    ) -> Result<String, ChainError> {
+    pub async fn invoke_messages(&self, messages: Vec<Message>) -> Result<String, ChainError> {
         // Extract the last human message to check for handoff instructions
         let last_human_message = messages
             .iter()
@@ -77,11 +74,7 @@ impl HandoffAgent {
             .default_agent
             .as_ref()
             .or_else(|| self.agents.values().next())
-            .ok_or_else(|| {
-                ChainError::AgentError(
-                    "No agent available for handoff".to_string(),
-                )
-            })?;
+            .ok_or_else(|| ChainError::AgentError("No agent available for handoff".to_string()))?;
 
         agent.invoke_messages(messages).await
     }

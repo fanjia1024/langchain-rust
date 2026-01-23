@@ -4,8 +4,8 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
-        middleware::{Middleware, MiddlewareContext, MiddlewareError},
         context_engineering::{ModelRequest, ModelResponse},
+        middleware::{Middleware, MiddlewareContext, MiddlewareError},
     },
     schemas::Message,
 };
@@ -34,10 +34,7 @@ pub struct MessageInjectionMiddleware {
 
 impl MessageInjectionMiddleware {
     /// Create a new MessageInjectionMiddleware with an injector function
-    pub fn new<F>(
-        injector: F,
-        position: InjectionPosition,
-    ) -> Self
+    pub fn new<F>(injector: F, position: InjectionPosition) -> Self
     where
         F: Fn(&ModelRequest) -> Vec<Message> + Send + Sync + 'static,
     {
@@ -53,41 +50,43 @@ impl MessageInjectionMiddleware {
             move |request: &ModelRequest| {
                 if let Ok(handle) = tokio::runtime::Handle::try_current() {
                     let state = handle.block_on(request.state());
-                    
+
                     // Check for uploaded files in state
                     if let Some(files_value) = state.get_field("uploaded_files") {
                         if let Some(files) = files_value.as_array() {
                             let mut file_descriptions = Vec::new();
                             for file in files {
                                 if let Some(file_obj) = file.as_object() {
-                                    let name = file_obj.get("name")
+                                    let name = file_obj
+                                        .get("name")
                                         .and_then(|v| v.as_str())
                                         .unwrap_or("unknown");
-                                    let file_type = file_obj.get("type")
+                                    let file_type = file_obj
+                                        .get("type")
                                         .and_then(|v| v.as_str())
                                         .unwrap_or("unknown");
-                                    let summary = file_obj.get("summary")
+                                    let summary = file_obj
+                                        .get("summary")
                                         .and_then(|v| v.as_str())
                                         .unwrap_or("");
-                                    
-                                    file_descriptions.push(
-                                        format!("- {} ({}): {}", name, file_type, summary)
-                                    );
+
+                                    file_descriptions
+                                        .push(format!("- {} ({}): {}", name, file_type, summary));
                                 }
                             }
-                            
+
                             if !file_descriptions.is_empty() {
                                 let context = format!(
                                     "Files you have access to in this conversation:\n{}\n\nReference these files when answering questions.",
                                     file_descriptions.join("\n")
                                 );
-                                
+
                                 return vec![Message::new_human_message(&context)];
                             }
                         }
                     }
                 }
-                
+
                 vec![]
             },
             position,
@@ -100,40 +99,48 @@ impl MessageInjectionMiddleware {
             move |request: &ModelRequest| {
                 if let Some(runtime) = request.runtime() {
                     let mut rules = Vec::new();
-                    
+
                     // Check for compliance frameworks
                     if let Some(frameworks) = runtime.context().get("compliance_frameworks") {
                         // Parse frameworks (simplified - in practice would be more structured)
                         if frameworks.contains("GDPR") {
-                            rules.push("- Must obtain explicit consent before processing personal data");
+                            rules.push(
+                                "- Must obtain explicit consent before processing personal data",
+                            );
                             rules.push("- Users have right to data deletion");
                         }
                         if frameworks.contains("HIPAA") {
-                            rules.push("- Cannot share patient health information without authorization");
+                            rules.push(
+                                "- Cannot share patient health information without authorization",
+                            );
                             rules.push("- Must use secure, encrypted communication");
                         }
                     }
-                    
+
                     // Check for industry
                     if let Some(industry) = runtime.context().get("industry") {
                         if industry == "finance" {
-                            rules.push("- Cannot provide financial advice without proper disclaimers");
+                            rules.push(
+                                "- Cannot provide financial advice without proper disclaimers",
+                            );
                         }
                     }
-                    
+
                     if !rules.is_empty() {
-                        let jurisdiction = runtime.context().get("user_jurisdiction")
+                        let jurisdiction = runtime
+                            .context()
+                            .get("user_jurisdiction")
                             .unwrap_or("default");
                         let context = format!(
                             "Compliance requirements for {}:\n{}",
                             jurisdiction,
                             rules.join("\n")
                         );
-                        
+
                         return vec![Message::new_human_message(&context)];
                     }
                 }
-                
+
                 vec![]
             },
             position,
@@ -154,7 +161,7 @@ impl MessageInjectionMiddleware {
                         // }
                     }
                 }
-                
+
                 vec![]
             },
             position,
@@ -171,14 +178,14 @@ impl Middleware for MessageInjectionMiddleware {
     ) -> Result<Option<ModelRequest>, MiddlewareError> {
         // Generate messages to inject
         let messages_to_inject = (self.injector)(request);
-        
+
         if messages_to_inject.is_empty() {
             return Ok(None);
         }
-        
+
         // Inject messages at the specified position
         let mut messages = request.messages.clone();
-        
+
         match self.position {
             InjectionPosition::Beginning => {
                 // Insert at the beginning
@@ -201,8 +208,10 @@ impl Middleware for MessageInjectionMiddleware {
                 messages.extend(messages_to_inject);
             }
         }
-        
-        Ok(Some(request.with_messages_and_tools(messages, request.tools.clone())))
+
+        Ok(Some(
+            request.with_messages_and_tools(messages, request.tools.clone()),
+        ))
     }
 }
 
@@ -220,9 +229,9 @@ mod tests {
     use super::*;
     use crate::agent::AgentState;
     use crate::schemas::Message;
+    use serde_json::json;
     use std::sync::Arc;
     use tokio::sync::Mutex;
-    use serde_json::json;
 
     #[tokio::test]
     async fn test_message_injection_beginning() {
@@ -249,9 +258,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_message_injection_file_context() {
-        let middleware = MessageInjectionMiddleware::inject_file_context(
-            InjectionPosition::End,
-        );
+        let middleware = MessageInjectionMiddleware::inject_file_context(InjectionPosition::End);
 
         let mut state = AgentState::new();
         state.set_field(
@@ -262,7 +269,7 @@ mod tests {
                     "type": "pdf",
                     "summary": "Project proposal"
                 }
-            ])
+            ]),
         );
         let state = Arc::new(Mutex::new(state));
 

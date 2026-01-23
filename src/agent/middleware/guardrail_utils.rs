@@ -27,7 +27,11 @@ pub fn matches_patterns(text: &str, patterns: &[Regex]) -> Option<usize> {
 }
 
 /// Count occurrences of keywords in text.
-pub fn count_keywords(text: &str, keywords: &[String], case_sensitive: bool) -> HashMap<String, usize> {
+pub fn count_keywords(
+    text: &str,
+    keywords: &[String],
+    case_sensitive: bool,
+) -> HashMap<String, usize> {
     let mut counts = HashMap::new();
     let search_text = if case_sensitive {
         text.to_string()
@@ -54,19 +58,19 @@ pub fn count_keywords(text: &str, keywords: &[String], case_sensitive: bool) -> 
 /// Validate text length against thresholds.
 pub fn validate_length(text: &str, min: Option<usize>, max: Option<usize>) -> bool {
     let len = text.len();
-    
+
     if let Some(min_len) = min {
         if len < min_len {
             return false;
         }
     }
-    
+
     if let Some(max_len) = max {
         if len > max_len {
             return false;
         }
     }
-    
+
     true
 }
 
@@ -91,22 +95,18 @@ pub fn contains_profanity(text: &str) -> bool {
     let profanity_words = vec![
         "damn", "hell", "crap", // Add more as needed
     ];
-    
+
     let text_lower = text.to_lowercase();
     profanity_words.iter().any(|word| text_lower.contains(word))
 }
 
 /// Calculate text similarity using simple word overlap.
 pub fn text_similarity(text1: &str, text2: &str) -> f64 {
-    let words1: std::collections::HashSet<String> = text1
-        .split_whitespace()
-        .map(|w| w.to_lowercase())
-        .collect();
-    
-    let words2: std::collections::HashSet<String> = text2
-        .split_whitespace()
-        .map(|w| w.to_lowercase())
-        .collect();
+    let words1: std::collections::HashSet<String> =
+        text1.split_whitespace().map(|w| w.to_lowercase()).collect();
+
+    let words2: std::collections::HashSet<String> =
+        text2.split_whitespace().map(|w| w.to_lowercase()).collect();
 
     let intersection: usize = words1.intersection(&words2).count();
     let union: usize = words1.union(&words2).count();
@@ -141,7 +141,7 @@ mod tests {
         let text = "hello world hello";
         let keywords = vec!["hello".to_string(), "world".to_string()];
         let counts = count_keywords(text, &keywords, false);
-        
+
         assert_eq!(counts.get("hello"), Some(&2));
         assert_eq!(counts.get("world"), Some(&1));
     }

@@ -1,12 +1,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use crate::{
-    agent::AgentError,
-    language_models::llm::LLM,
-    prompt::PromptArgs,
-    prompt_args,
-};
+use crate::{agent::AgentError, language_models::llm::LLM, prompt::PromptArgs, prompt_args};
 
 /// Strategy for routing input to agents
 pub enum RoutingStrategy {
@@ -41,10 +36,7 @@ pub struct DefaultRouter {
 
 impl DefaultRouter {
     /// Create a new router with LLM-based routing
-    pub fn with_llm(
-        llm: Box<dyn LLM>,
-        agent_descriptions: Vec<(String, String)>,
-    ) -> Self {
+    pub fn with_llm(llm: Box<dyn LLM>, agent_descriptions: Vec<(String, String)>) -> Self {
         Self {
             strategy: RoutingStrategy::LLMBased {
                 llm,
@@ -54,9 +46,7 @@ impl DefaultRouter {
     }
 
     /// Create a new router with keyword-based routing
-    pub fn with_keywords(
-        keyword_map: std::collections::HashMap<String, Vec<String>>,
-    ) -> Self {
+    pub fn with_keywords(keyword_map: std::collections::HashMap<String, Vec<String>>) -> Self {
         Self {
             strategy: RoutingStrategy::KeywordBased { keyword_map },
         }
@@ -75,9 +65,7 @@ impl Router for DefaultRouter {
                 let agent_list: Vec<String> = agent_descriptions
                     .iter()
                     .enumerate()
-                    .map(|(i, (name, desc))| {
-                        format!("{}. {}: {}", i + 1, name, desc)
-                    })
+                    .map(|(i, (name, desc))| format!("{}. {}: {}", i + 1, name, desc))
                     .collect();
 
                 let prompt = format!(
@@ -143,8 +131,14 @@ mod tests {
     #[tokio::test]
     async fn test_keyword_router_routing() {
         let mut keyword_map = HashMap::new();
-        keyword_map.insert("weather".to_string(), vec!["weather".to_string(), "temperature".to_string()]);
-        keyword_map.insert("news".to_string(), vec!["news".to_string(), "headlines".to_string()]);
+        keyword_map.insert(
+            "weather".to_string(),
+            vec!["weather".to_string(), "temperature".to_string()],
+        );
+        keyword_map.insert(
+            "news".to_string(),
+            vec!["news".to_string(), "headlines".to_string()],
+        );
 
         let router = DefaultRouter::with_keywords(keyword_map);
 

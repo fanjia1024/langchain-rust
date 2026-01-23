@@ -23,10 +23,7 @@ impl StoreValue {
     }
 
     /// Create a new StoreValue with value and metadata
-    pub fn with_metadata(
-        value: Value,
-        metadata: std::collections::HashMap<String, Value>,
-    ) -> Self {
+    pub fn with_metadata(value: Value, metadata: std::collections::HashMap<String, Value>) -> Self {
         Self {
             value,
             metadata: Some(metadata),
@@ -92,11 +89,9 @@ mod tests {
     fn test_store_value_with_metadata() {
         let mut metadata = std::collections::HashMap::new();
         metadata.insert("created_at".to_string(), serde_json::json!("2024-01-01"));
-        
-        let value = StoreValue::with_metadata(
-            serde_json::json!({"name": "test"}),
-            metadata.clone(),
-        );
+
+        let value =
+            StoreValue::with_metadata(serde_json::json!({"name": "test"}), metadata.clone());
         assert_eq!(value.metadata, Some(metadata));
     }
 
@@ -104,7 +99,7 @@ mod tests {
     fn test_store_value_metadata_operations() {
         let mut store_value = StoreValue::new(serde_json::json!({"name": "test"}));
         store_value.add_metadata("key1".to_string(), serde_json::json!("value1"));
-        
+
         assert_eq!(
             store_value.get_metadata("key1"),
             Some(&serde_json::json!("value1"))

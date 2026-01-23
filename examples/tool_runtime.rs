@@ -42,11 +42,21 @@ impl Tool for StateAwareTool {
 
         let human_count = messages
             .iter()
-            .filter(|m| matches!(m.message_type, langchain_rust::schemas::MessageType::HumanMessage))
+            .filter(|m| {
+                matches!(
+                    m.message_type,
+                    langchain_rust::schemas::MessageType::HumanMessage
+                )
+            })
             .count();
         let ai_count = messages
             .iter()
-            .filter(|m| matches!(m.message_type, langchain_rust::schemas::MessageType::AIMessage))
+            .filter(|m| {
+                matches!(
+                    m.message_type,
+                    langchain_rust::schemas::MessageType::AIMessage
+                )
+            })
             .count();
 
         let summary = format!(
@@ -147,9 +157,15 @@ impl Tool for StoreAwareTool {
             .ok_or("Missing 'value' parameter")?
             .to_string();
 
-        runtime.store().put(&["preferences"], &key, json!(value)).await;
+        runtime
+            .store()
+            .put(&["preferences"], &key, json!(value))
+            .await;
 
-        Ok(ToolResult::text(format!("Saved preference: {} = {}", key, value)))
+        Ok(ToolResult::text(format!(
+            "Saved preference: {} = {}",
+            key, value
+        )))
     }
 }
 
@@ -240,6 +256,8 @@ async fn main() {
         Some("You are a helpful assistant with access to runtime information"),
         Some(context),
         Some(store),
+        None, // response_format
+        None, // middleware
     )
     .expect("Failed to create agent");
 

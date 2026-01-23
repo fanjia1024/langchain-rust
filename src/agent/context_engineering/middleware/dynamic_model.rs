@@ -5,8 +5,8 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
-        middleware::{Middleware, MiddlewareContext, MiddlewareError},
         context_engineering::{ModelRequest, ModelResponse},
+        middleware::{Middleware, MiddlewareContext, MiddlewareError},
     },
     language_models::llm::LLM,
     schemas::Message,
@@ -25,10 +25,7 @@ pub struct DynamicModelMiddleware {
 
 impl DynamicModelMiddleware {
     /// Create a new DynamicModelMiddleware with a model selector function
-    pub fn new<F>(
-        selector: F,
-        models: HashMap<String, Arc<dyn LLM>>,
-    ) -> Self
+    pub fn new<F>(selector: F, models: HashMap<String, Arc<dyn LLM>>) -> Self
     where
         F: Fn(&ModelRequest) -> Option<Arc<dyn LLM>> + Send + Sync + 'static,
     {
@@ -50,7 +47,7 @@ impl DynamicModelMiddleware {
         Self::new(
             move |request: &ModelRequest| {
                 let message_count = request.messages.len();
-                
+
                 // Find the first threshold that message_count exceeds
                 for (threshold, model_name) in &thresholds {
                     if message_count >= *threshold {
@@ -59,7 +56,7 @@ impl DynamicModelMiddleware {
                         }
                     }
                 }
-                
+
                 // Default: use the first model or None
                 models_clone.values().next().map(|m| Arc::clone(m))
             },
@@ -68,9 +65,7 @@ impl DynamicModelMiddleware {
     }
 
     /// Create a model selector based on user preference from Store
-    pub fn from_user_preference(
-        models: HashMap<String, Arc<dyn LLM>>,
-    ) -> Self {
+    pub fn from_user_preference(models: HashMap<String, Arc<dyn LLM>>) -> Self {
         let models_clone = models.clone();
         Self::new(
             move |request: &ModelRequest| {
@@ -82,7 +77,7 @@ impl DynamicModelMiddleware {
                         // let prefs = runtime.store().get(("preferences",), user_id).await?;
                         // let preferred_model = prefs.value.get("preferred_model")?;
                         // models_clone.get(preferred_model)
-                        
+
                         // For now, return default
                         models_clone.values().next().map(|m| Arc::clone(m))
                     } else {
@@ -97,9 +92,7 @@ impl DynamicModelMiddleware {
     }
 
     /// Create a model selector based on cost tier from Runtime Context
-    pub fn from_cost_tier(
-        models: HashMap<String, Arc<dyn LLM>>,
-    ) -> Self {
+    pub fn from_cost_tier(models: HashMap<String, Arc<dyn LLM>>) -> Self {
         let models_clone = models.clone();
         Self::new(
             move |request: &ModelRequest| {
@@ -111,13 +104,14 @@ impl DynamicModelMiddleware {
                             "budget" => "budget_model",
                             _ => "standard_model",
                         };
-                        
+
                         return models_clone.get(model_name).map(|m| Arc::clone(m));
                     }
                 }
-                
+
                 // Default: use standard model
-                models_clone.get("standard_model")
+                models_clone
+                    .get("standard_model")
                     .or_else(|| models_clone.values().next())
                     .map(|m| Arc::clone(m))
             },
@@ -163,7 +157,7 @@ mod tests {
             (10, "standard_model".to_string()),
             (20, "large_model".to_string()),
         ];
-        
+
         let middleware = DynamicModelMiddleware::from_message_count(models, thresholds);
 
         let state = Arc::new(Mutex::new(AgentState::new()));

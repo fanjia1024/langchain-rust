@@ -12,3 +12,21 @@ pub use qwen::*;
 
 pub mod deepseek;
 pub use deepseek::*;
+
+#[cfg(feature = "mistralai")]
+pub mod mistralai;
+#[cfg(feature = "mistralai")]
+pub use mistralai::*;
+
+#[cfg(feature = "gemini")]
+pub mod gemini;
+#[cfg(feature = "gemini")]
+pub use gemini::*;
+
+#[cfg(feature = "bedrock")]
+pub mod bedrock;
+#[cfg(feature = "bedrock")]
+pub use bedrock::*;
+
+pub mod huggingface;
+pub use huggingface::*;

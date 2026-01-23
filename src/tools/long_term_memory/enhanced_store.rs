@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use crate::tools::store::ToolStore;
 
-use super::{StoreValue, StoreFilter};
+use super::{StoreFilter, StoreValue};
 
 /// Error types for enhanced store operations
 #[derive(Error, Debug)]
@@ -30,19 +30,10 @@ pub enum StoreError {
 #[async_trait]
 pub trait EnhancedToolStore: ToolStore {
     /// Get a value with its metadata from the store
-    async fn get_with_metadata(
-        &self,
-        namespace: &[&str],
-        key: &str,
-    ) -> Option<StoreValue>;
+    async fn get_with_metadata(&self, namespace: &[&str], key: &str) -> Option<StoreValue>;
 
     /// Put a value with metadata into the store
-    async fn put_with_metadata(
-        &self,
-        namespace: &[&str],
-        key: &str,
-        value: StoreValue,
-    );
+    async fn put_with_metadata(&self, namespace: &[&str], key: &str, value: StoreValue);
 
     /// Search for values using vector similarity search and optional filters
     ///

@@ -1,6 +1,6 @@
 use langchain_rust::{
     agent::create_agent_with_structured_output,
-    schemas::structured_output::{ToolStrategy, StructuredOutputSchema},
+    schemas::structured_output::{StructuredOutputSchema, ToolStrategy},
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -30,15 +30,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &[],
         Some("You are a helpful assistant that extracts contact information from text."),
         Some(Box::new(strategy)),
+        None, // Middleware (optional)
     )?;
 
     // Use the agent to extract structured information
     let result = agent
-        .invoke_messages(vec![
-            langchain_rust::schemas::Message::new_human_message(
-                "Extract contact info from: John Doe, [email protected], (555) 123-4567"
-            ),
-        ])
+        .invoke_messages(vec![langchain_rust::schemas::Message::new_human_message(
+            "Extract contact info from: John Doe, [email protected], (555) 123-4567",
+        )])
         .await?;
 
     println!("Agent response: {}", result);

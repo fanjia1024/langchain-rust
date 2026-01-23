@@ -8,10 +8,10 @@ use langchain_rust::{
     agent::create_agent,
     schemas::messages::Message,
     tools::{
-        long_term_memory::{EnhancedInMemoryStore, StoreValue},
-        ToolRuntime, ToolResult,
+        SimpleContext,
+        EnhancedInMemoryStore, EnhancedToolStore, StoreValue,
+        ToolResult, ToolRuntime,
     },
-    tools::context::SimpleContext,
 };
 use serde_json::json;
 
@@ -45,7 +45,9 @@ impl langchain_rust::tools::Tool for GetUserInfoTool {
         _input: serde_json::Value,
         runtime: &ToolRuntime,
     ) -> Result<ToolResult, Box<dyn std::error::Error>> {
-        let user_id = runtime.context().user_id()
+        let user_id = runtime
+            .context()
+            .user_id()
             .ok_or("user_id is required in context")?;
 
         // Get user info from store
@@ -111,7 +113,9 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         input: serde_json::Value,
         runtime: &ToolRuntime,
     ) -> Result<ToolResult, Box<dyn std::error::Error>> {
-        let user_id = runtime.context().user_id()
+        let user_id = runtime
+            .context()
+            .user_id()
             .ok_or("user_id is required in context")?;
 
         // Build user info object
@@ -137,7 +141,9 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         // For this example, we'll use basic put
         runtime.store().put(&["users"], user_id, value).await;
 
-        Ok(ToolResult::Text("User information saved successfully.".to_string()))
+        Ok(ToolResult::Text(
+            "User information saved successfully.".to_string(),
+        ))
     }
 
     fn requires_runtime(&self) -> bool {
@@ -156,27 +162,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Note: We need to use EnhancedInMemoryStore directly to use enhanced features
     let enhanced_store = Arc::new(EnhancedInMemoryStore::new());
     let store: Arc<dyn langchain_rust::tools::ToolStore> = enhanced_store.clone();
-    
+
     let mut metadata = HashMap::new();
     metadata.insert("created_at".to_string(), json!("2024-01-01"));
-    
-    enhanced_store.put_with_metadata(
-        &["users"],
-        "user_123",
-        StoreValue::with_metadata(
-            json!({
-                "name": "John Smith",
-                "language": "English",
-            }),
-            metadata,
-        ),
-    ).await;
+
+    enhanced_store
+        .put_with_metadata(
+            &["users"],
+            "user_123",
+            StoreValue::with_metadata(
+                json!({
+                    "name": "John Smith",
+                    "language": "English",
+                }),
+                metadata,
+            ),
+        )
+        .await;
 
     // Create tools
-    let tools: Vec<Arc<dyn langchain_rust::tools::Tool>> = vec![
-        Arc::new(GetUserInfoTool),
-        Arc::new(SaveUserInfoTool),
-    ];
+    let tools: Vec<Arc<dyn langchain_rust::tools::Tool>> =
+        vec![Arc::new(GetUserInfoTool), Arc::new(SaveUserInfoTool)];
 
     // Create context with user_id
     let context = Arc::new(SimpleContext::new().with_user_id("user_123".to_string()));
@@ -192,13 +198,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Long-term Memory Tool Example\n");
 
     println!("Long-term Memory Tool Example\n");
-    
+
     // Read from store
     let user_info = store.get(&["users"], "user_123").await;
     println!("Retrieved user info: {:?}", user_info);
-    
+
     // Read with metadata using enhanced store
-    let user_info_with_metadata = enhanced_store.get_with_metadata(&["users"], "user_123").await;
+    let user_info_with_metadata = enhanced_store
+        .get_with_metadata(&["users"], "user_123")
+        .await;
     if let Some(info) = user_info_with_metadata {
         println!("Retrieved with metadata:");
         println!("  Value: {}", info.value);

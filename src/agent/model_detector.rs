@@ -1,8 +1,5 @@
 use crate::{
-    language_models::{
-        llm::LLM,
-        model_parser::parse_model_string,
-    },
+    language_models::{llm::LLM, model_parser::parse_model_string},
     llm::{
         claude::Claude,
         deepseek::Deepseek,
@@ -12,7 +9,18 @@ use crate::{
 };
 
 #[cfg(feature = "ollama")]
-use crate::llm::ollama::Ollama;
+use crate::llm::Ollama;
+
+#[cfg(feature = "mistralai")]
+use crate::llm::MistralAI;
+
+#[cfg(feature = "gemini")]
+use crate::llm::Gemini;
+
+#[cfg(feature = "bedrock")]
+use crate::llm::Bedrock;
+
+use crate::llm::HuggingFace;
 
 use super::AgentError;
 
@@ -26,6 +34,10 @@ use super::AgentError;
 /// - Ollama: "llama3", "mistral", "qwen", etc. (any non-prefixed model name)
 /// - Qwen: "qwen-*", "qwen-plus", "qwen-max", etc.
 /// - Deepseek: "deepseek-*", "deepseek-chat", "deepseek-reasoner"
+/// - MistralAI: "mistral-small-latest", "mistral-medium-latest", "mistral-large-latest", etc. (requires "mistralai" feature)
+/// - Google Gemini: "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", etc. (requires "gemini" feature)
+/// - AWS Bedrock: "anthropic.claude-3-5-sonnet-20240620-v1:0", "meta.llama3-70b-instruct-v1:0", etc. (requires "bedrock" feature)
+/// - HuggingFace: "microsoft/Phi-3-mini-4k-instruct", "meta-llama/Llama-3.1-8B-Instruct", etc.
 ///
 /// # Example
 /// ```rust,ignore
@@ -35,7 +47,7 @@ use super::AgentError;
 pub fn detect_and_create_llm(model: &str) -> Result<Box<dyn LLM>, AgentError> {
     let parsed = parse_model_string(model)
         .map_err(|e| AgentError::OtherError(format!("Failed to parse model string: {}", e)))?;
-    
+
     let provider = parsed.provider.as_deref();
     let model_name = parsed.model.as_str();
     let model_lower = model_name.to_lowercase();
@@ -47,8 +59,10 @@ pub fn detect_and_create_llm(model: &str) -> Result<Box<dyn LLM>, AgentError> {
     }
 
     // Claude models
-    if provider == Some("anthropic") || provider == Some("claude")
-        || (provider.is_none() && (model_lower.starts_with("claude-") || model_lower.starts_with("claude")))
+    if provider == Some("anthropic")
+        || provider == Some("claude")
+        || (provider.is_none()
+            && (model_lower.starts_with("claude-") || model_lower.starts_with("claude")))
     {
         let llm = Claude::default().with_model(model_name);
         return Ok(Box::new(llm));
@@ -64,10 +78,70 @@ pub fn detect_and_create_llm(model: &str) -> Result<Box<dyn LLM>, AgentError> {
 
     // Deepseek models
     if provider == Some("deepseek")
-        || (provider.is_none() && (model_lower.starts_with("deepseek-") || model_lower == "deepseek"))
+        || (provider.is_none()
+            && (model_lower.starts_with("deepseek-") || model_lower == "deepseek"))
     {
         let llm = Deepseek::default().with_model(model_name);
         return Ok(Box::new(llm));
+    }
+
+    // MistralAI models
+    #[cfg(feature = "mistralai")]
+    {
+        if provider == Some("mistralai")
+            || provider == Some("mistral")
+            || (provider.is_none()
+                && (model_lower.starts_with("mistral-")
+                    || model_lower.starts_with("mixtral-")
+                    || model_lower.starts_with("pixtral-")))
+        {
+            let llm = MistralAI::default().with_model(model_name);
+            return Ok(Box::new(llm));
+        }
+    }
+
+    // Google Gemini models
+    #[cfg(feature = "gemini")]
+    {
+        if provider == Some("gemini")
+            || provider == Some("google")
+            || provider == Some("google_genai")
+            || (provider.is_none()
+                && (model_lower.starts_with("gemini-") || model_lower == "gemini"))
+        {
+            let llm = Gemini::default().with_model(model_name);
+            return Ok(Box::new(llm));
+        }
+    }
+
+    // AWS Bedrock models
+    #[cfg(feature = "bedrock")]
+    {
+        if provider == Some("bedrock")
+            || provider == Some("aws_bedrock")
+            || (provider.is_none()
+                && (model_lower.contains("anthropic.claude")
+                    || model_lower.contains("meta.llama")
+                    || model_lower.contains("amazon.titan")))
+        {
+            // Note: Bedrock requires async initialization, which is not available in this sync context
+            // This is a limitation - consider using a factory pattern or making this function async
+            return Err(AgentError::OtherError(
+                "Bedrock models require async initialization. Use init_chat_model() instead."
+                    .to_string(),
+            ));
+        }
+    }
+
+    // HuggingFace models
+    {
+        if provider == Some("huggingface")
+            || provider == Some("hf")
+            || (provider.is_none() && model_lower.contains("/"))
+        {
+            let llm = HuggingFace::default().with_model(model_name);
+            return Ok(Box::new(llm));
+        }
     }
 
     // Ollama models (default for unrecognized patterns)
@@ -79,14 +153,28 @@ pub fn detect_and_create_llm(model: &str) -> Result<Box<dyn LLM>, AgentError> {
             let llm = Ollama::default().with_model(model_name);
             return Ok(Box::new(llm));
         }
+        return Err(AgentError::OtherError(format!(
+            "Unrecognized model: {}. Supported providers: openai, anthropic, qwen, deepseek, mistralai, gemini, bedrock, huggingface, ollama.",
+            model
+        )));
     }
-    
+
     #[cfg(not(feature = "ollama"))]
     {
-        Err(AgentError::OtherError(format!(
-            "Unrecognized model: {}. Supported providers: openai, anthropic, qwen, deepseek. Ollama support requires the 'ollama' feature.",
-            model
-        )))
+        #[cfg(feature = "mistralai")]
+        {
+            return Err(AgentError::OtherError(format!(
+                "Unrecognized model: {}. Supported providers: openai, anthropic, qwen, deepseek, mistralai. Ollama support requires the 'ollama' feature.",
+                model
+            )));
+        }
+        #[cfg(not(feature = "mistralai"))]
+        {
+            return Err(AgentError::OtherError(format!(
+                "Unrecognized model: {}. Supported providers: openai, anthropic, qwen, deepseek. MistralAI support requires the 'mistralai' feature. Ollama support requires the 'ollama' feature.",
+                model
+            )));
+        }
     }
 }
 
@@ -159,12 +247,18 @@ mod tests {
     #[test]
     fn test_detect_with_provider() {
         let result = detect_and_create_llm("openai:gpt-4o-mini");
-        assert!(result.is_ok(), "Failed to detect model with provider prefix");
+        assert!(
+            result.is_ok(),
+            "Failed to detect model with provider prefix"
+        );
     }
 
     #[test]
     fn test_detect_anthropic_provider() {
         let result = detect_and_create_llm("anthropic:claude-3-5-sonnet-20240620");
-        assert!(result.is_ok(), "Failed to detect Claude model with provider prefix");
+        assert!(
+            result.is_ok(),
+            "Failed to detect Claude model with provider prefix"
+        );
     }
 }

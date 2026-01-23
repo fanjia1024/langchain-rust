@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::language_models::TokenUsage;
+use std::collections::HashMap;
 
 /// Aggregated usage metadata across multiple model invocations.
 ///
@@ -27,9 +27,10 @@ impl UsageMetadata {
 
     /// Add token usage for a specific model.
     pub fn add_usage(&mut self, model: &str, usage: &TokenUsage) {
-        let entry = self.usage_by_model.entry(model.to_string()).or_insert_with(|| {
-            TokenUsage::new(0, 0)
-        });
+        let entry = self
+            .usage_by_model
+            .entry(model.to_string())
+            .or_insert_with(|| TokenUsage::new(0, 0));
         entry.add(usage);
     }
 

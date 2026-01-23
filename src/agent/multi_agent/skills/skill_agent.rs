@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    agent::{UnifiedAgent, AgentError},
     agent::multi_agent::skills::Skill,
+    agent::{AgentError, UnifiedAgent},
     chain::{chain_trait::Chain, ChainError},
     prompt::PromptArgs,
     schemas::messages::Message,
@@ -63,7 +63,10 @@ impl SkillAgent {
     }
 
     /// Load a skill and return its context
-    pub async fn load_skill(&self, name: &str) -> Result<crate::agent::multi_agent::skills::SkillContext, Box<dyn std::error::Error>> {
+    pub async fn load_skill(
+        &self,
+        name: &str,
+    ) -> Result<crate::agent::multi_agent::skills::SkillContext, Box<dyn std::error::Error>> {
         let skill = self
             .skills
             .get(name)
@@ -72,10 +75,7 @@ impl SkillAgent {
     }
 
     /// Invoke the agent with messages, automatically loading relevant skills
-    pub async fn invoke_messages(
-        &self,
-        messages: Vec<Message>,
-    ) -> Result<String, ChainError> {
+    pub async fn invoke_messages(&self, messages: Vec<Message>) -> Result<String, ChainError> {
         // Extract the last human message to check for skill triggers
         let last_human_message = messages
             .iter()
@@ -112,7 +112,10 @@ impl SkillAgent {
             let system_message = if let Some(template) = &self.system_prompt_template {
                 template.replace("{skills}", &skills_text)
             } else {
-                format!("You have access to the following specialized knowledge:\n\n{}", skills_text)
+                format!(
+                    "You have access to the following specialized knowledge:\n\n{}",
+                    skills_text
+                )
             };
 
             final_messages.insert(0, Message::new_system_message(system_message));

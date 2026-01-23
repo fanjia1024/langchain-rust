@@ -15,15 +15,18 @@ struct RetrieverWrapper(Arc<dyn Retriever>);
 
 #[async_trait]
 impl Retriever for RetrieverWrapper {
-    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, Box<dyn std::error::Error>> {
+    async fn get_relevant_documents(
+        &self,
+        query: &str,
+    ) -> Result<Vec<Document>, Box<dyn std::error::Error>> {
         self.0.get_relevant_documents(query).await
     }
 }
 
 use super::{
-    query_enhancer::{QueryEnhancer, EnhancedQuery},
-    retrieval_validator::{RetrievalValidator, RetrievalValidationResult},
-    answer_validator::{AnswerValidator, AnswerValidationResult},
+    answer_validator::{AnswerValidationResult, AnswerValidator},
+    query_enhancer::{EnhancedQuery, QueryEnhancer},
+    retrieval_validator::{RetrievalValidationResult, RetrievalValidator},
 };
 use crate::rag::RAGError;
 
@@ -136,15 +139,20 @@ impl HybridRAG {
         // Step 2 & 3: Retrieval with Validation (with retries)
         let mut retrieval_attempts = 0;
         loop {
-            documents = self.retriever.get_relevant_documents(&current_query).await
+            documents = self
+                .retriever
+                .get_relevant_documents(&current_query)
+                .await
                 .map_err(|e| RAGError::RetrieverError(e.to_string()))?;
 
             // Validate retrieval if enabled
             if self.config.enable_retrieval_validation {
                 if let Some(validator) = &self.retrieval_validator {
                     let validation = validator.validate(&current_query, &documents).await?;
-                    
-                    if !validation.is_valid && retrieval_attempts < self.config.max_retrieval_retries {
+
+                    if !validation.is_valid
+                        && retrieval_attempts < self.config.max_retrieval_retries
+                    {
                         // Try to refine query based on suggestions
                         if let Some(suggestion) = validation.suggestions.first() {
                             current_query = format!("{} {}", current_query, suggestion);
@@ -153,7 +161,10 @@ impl HybridRAG {
                         continue;
                     } else if !validation.is_valid {
                         // Max retries reached, proceed with what we have
-                        log::warn!("Retrieval validation failed but max retries reached: {:?}", validation.feedback);
+                        log::warn!(
+                            "Retrieval validation failed but max retries reached: {:?}",
+                            validation.feedback
+                        );
                     }
                 }
             }
@@ -167,7 +178,8 @@ impl HybridRAG {
 
         loop {
             // Build a simple chain for generation
-            let retriever_box: Box<dyn Retriever> = Box::new(RetrieverWrapper(self.retriever.clone()));
+            let retriever_box: Box<dyn Retriever> =
+                Box::new(RetrieverWrapper(self.retriever.clone()));
             let chain = ConversationalRetrieverChainBuilder::new()
                 .llm(self.llm.clone_box())
                 .retriever(retriever_box)
@@ -180,15 +192,21 @@ impl HybridRAG {
             let mut prompt_args = PromptArgs::new();
             prompt_args.insert("question".to_string(), serde_json::json!(current_query));
 
-            answer = chain.invoke(prompt_args).await
+            answer = chain
+                .invoke(prompt_args)
+                .await
                 .map_err(|e| RAGError::ChainError(e))?;
 
             // Step 5: Answer Validation (optional)
             if self.config.enable_answer_validation {
                 if let Some(validator) = &self.answer_validator {
-                    let validation = validator.validate(&current_query, &answer, &documents).await?;
-                    
-                    if !validation.is_valid && generation_attempts < self.config.max_generation_retries {
+                    let validation = validator
+                        .validate(&current_query, &answer, &documents)
+                        .await?;
+
+                    if !validation.is_valid
+                        && generation_attempts < self.config.max_generation_retries
+                    {
                         // Try to refine query or regenerate
                         if let Some(suggestion) = validation.suggestions.first() {
                             current_query = format!("{} {}", current_query, suggestion);
@@ -196,7 +214,10 @@ impl HybridRAG {
                         generation_attempts += 1;
                         continue;
                     } else if !validation.is_valid {
-                        log::warn!("Answer validation failed but max retries reached: {:?}", validation.feedback);
+                        log::warn!(
+                            "Answer validation failed but max retries reached: {:?}",
+                            validation.feedback
+                        );
                     }
                 }
             }
@@ -277,17 +298,17 @@ impl HybridRAGBuilder {
 
     /// Build the HybridRAG instance
     pub fn build(self) -> Result<HybridRAG, RAGError> {
-        let retriever = self.retriever.ok_or_else(|| {
-            RAGError::InvalidConfiguration("Retriever must be set".to_string())
-        })?;
+        let retriever = self
+            .retriever
+            .ok_or_else(|| RAGError::InvalidConfiguration("Retriever must be set".to_string()))?;
 
-        let llm = self.llm.ok_or_else(|| {
-            RAGError::InvalidConfiguration("LLM must be set".to_string())
-        })?;
+        let llm = self
+            .llm
+            .ok_or_else(|| RAGError::InvalidConfiguration("LLM must be set".to_string()))?;
 
-        let memory = self.memory.unwrap_or_else(|| {
-            Arc::new(tokio::sync::Mutex::new(SimpleMemory::new()))
-        });
+        let memory = self
+            .memory
+            .unwrap_or_else(|| Arc::new(tokio::sync::Mutex::new(SimpleMemory::new())));
 
         let mut hybrid_rag = HybridRAG::new(retriever, llm, memory);
 

@@ -4,12 +4,9 @@ use tokio::sync::Mutex;
 
 use crate::{
     agent::{AgentState, Runtime},
-    language_models::{GenerateResult, llm::LLM},
+    language_models::{llm::LLM, GenerateResult},
     prompt::PromptArgs,
-    schemas::{
-        messages::Message,
-        StructuredOutputStrategy,
-    },
+    schemas::{messages::Message, StructuredOutputStrategy},
     tools::Tool,
 };
 use serde_json::Value;
@@ -82,10 +79,7 @@ impl ModelRequest {
     }
 
     /// Override response format
-    pub fn override_response_format(
-        mut self,
-        format: Box<dyn StructuredOutputStrategy>,
-    ) -> Self {
+    pub fn override_response_format(mut self, format: Box<dyn StructuredOutputStrategy>) -> Self {
         self.response_format = Some(format);
         self
     }
@@ -115,11 +109,15 @@ impl ModelRequest {
         Self {
             messages,
             tools,
-            model: self.model.as_ref().map(|_| {
-                // Note: Can't clone trait objects - return None for now
-                // In practice, models should be stored in a way that allows sharing
-                None
-            }).flatten(),
+            model: self
+                .model
+                .as_ref()
+                .map(|_| {
+                    // Note: Can't clone trait objects - return None for now
+                    // In practice, models should be stored in a way that allows sharing
+                    None
+                })
+                .flatten(),
             response_format: None, // Can't clone trait objects
             state: Arc::clone(&self.state),
             runtime: self.runtime.as_ref().map(|r| Arc::clone(r)),
@@ -168,7 +166,7 @@ mod tests {
         let state = Arc::new(Mutex::new(AgentState::new()));
         let messages = vec![Message::new_human_message("Hello")];
         let request = ModelRequest::new(messages, vec![], state);
-        
+
         assert_eq!(request.messages.len(), 1);
         assert!(request.tools.is_empty());
         assert!(request.model.is_none());
@@ -180,13 +178,13 @@ mod tests {
         let state = Arc::new(Mutex::new(AgentState::new()));
         let messages = vec![Message::new_human_message("Hello")];
         let mut request = ModelRequest::new(messages, vec![], state);
-        
+
         let new_messages = vec![
             Message::new_human_message("Hello"),
             Message::new_human_message("World"),
         ];
         request = request.override_messages(new_messages);
-        
+
         assert_eq!(request.messages.len(), 2);
     }
 
@@ -196,11 +194,10 @@ mod tests {
         let context = Arc::new(EmptyContext);
         let store = Arc::new(InMemoryStore::new());
         let runtime = Arc::new(Runtime::new(context, store));
-        
+
         let messages = vec![Message::new_human_message("Hello")];
-        let request = ModelRequest::new(messages, vec![], state)
-            .with_runtime(runtime);
-        
+        let request = ModelRequest::new(messages, vec![], state).with_runtime(runtime);
+
         assert!(request.runtime().is_some());
     }
 }

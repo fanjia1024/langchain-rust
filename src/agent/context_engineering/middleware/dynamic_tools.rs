@@ -4,9 +4,9 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
+        context_engineering::{ModelRequest, ModelResponse},
         middleware::{Middleware, MiddlewareContext, MiddlewareError},
         AgentState,
-        context_engineering::{ModelRequest, ModelResponse},
     },
     tools::{Tool, ToolContext},
 };
@@ -42,9 +42,10 @@ impl DynamicToolsMiddleware {
             if let Ok(handle) = tokio::runtime::Handle::try_current() {
                 let state = handle.block_on(request.state());
                 let allowed_tool_names = filter(&state);
-                
+
                 // Filter tools by name
-                request.tools
+                request
+                    .tools
                     .iter()
                     .filter(|tool| allowed_tool_names.contains(&tool.name()))
                     .cloned()
@@ -64,9 +65,10 @@ impl DynamicToolsMiddleware {
         Self::new(move |request: &ModelRequest| {
             if let Some(runtime) = request.runtime() {
                 let allowed_tool_names = filter(runtime.context());
-                
+
                 // Filter tools by name
-                request.tools
+                request
+                    .tools
                     .iter()
                     .filter(|tool| allowed_tool_names.contains(&tool.name()))
                     .cloned()
@@ -81,10 +83,13 @@ impl DynamicToolsMiddleware {
     /// Create a simple filter that only allows tools with specific prefixes
     pub fn allow_prefixes(prefixes: Vec<String>) -> Self {
         Self::new(move |request: &ModelRequest| {
-            request.tools
+            request
+                .tools
                 .iter()
                 .filter(|tool| {
-                    prefixes.iter().any(|prefix| tool.name().starts_with(prefix))
+                    prefixes
+                        .iter()
+                        .any(|prefix| tool.name().starts_with(prefix))
                 })
                 .cloned()
                 .collect()
@@ -94,7 +99,8 @@ impl DynamicToolsMiddleware {
     /// Create a filter that excludes tools with specific names
     pub fn exclude_tools(excluded: Vec<String>) -> Self {
         Self::new(move |request: &ModelRequest| {
-            request.tools
+            request
+                .tools
                 .iter()
                 .filter(|tool| !excluded.contains(&tool.name()))
                 .cloned()
@@ -112,10 +118,13 @@ impl Middleware for DynamicToolsMiddleware {
     ) -> Result<Option<ModelRequest>, MiddlewareError> {
         // Filter tools
         let filtered_tools = (self.tool_filter)(request);
-        
+
         // Only modify if tools were actually filtered
         if filtered_tools.len() != request.tools.len() {
-            Ok(Some(request.with_messages_and_tools(request.messages.clone(), filtered_tools)))
+            Ok(Some(request.with_messages_and_tools(
+                request.messages.clone(),
+                filtered_tools,
+            )))
         } else {
             Ok(None)
         }
@@ -133,16 +142,17 @@ impl Clone for DynamicToolsMiddleware {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tools::context::SimpleContext;
     use crate::schemas::Message;
+    use crate::tools::context::SimpleContext;
 
     #[tokio::test]
     async fn test_dynamic_tools_exclude() {
         // This test would require actual tool instances
         // For now, we'll just test the structure
-        let middleware = DynamicToolsMiddleware::exclude_tools(
-            vec!["delete_tool".to_string(), "admin_tool".to_string()]
-        );
+        let middleware = DynamicToolsMiddleware::exclude_tools(vec![
+            "delete_tool".to_string(),
+            "admin_tool".to_string(),
+        ]);
 
         let state = Arc::new(tokio::sync::Mutex::new(AgentState::new()));
         let messages = vec![Message::new_human_message("Hello")];

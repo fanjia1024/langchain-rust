@@ -1,10 +1,5 @@
 use crate::{
-    language_models::{
-        llm::LLM,
-        model_parser::parse_model_string,
-        options::CallOptions,
-        LLMError,
-    },
+    language_models::{llm::LLM, model_parser::parse_model_string, options::CallOptions, LLMError},
     llm::{
         claude::Claude,
         deepseek::Deepseek,
@@ -14,7 +9,18 @@ use crate::{
 };
 
 #[cfg(feature = "ollama")]
-use crate::llm::ollama::Ollama;
+use crate::llm::Ollama;
+
+#[cfg(feature = "mistralai")]
+use crate::llm::MistralAI;
+
+#[cfg(feature = "gemini")]
+use crate::llm::Gemini;
+
+#[cfg(feature = "bedrock")]
+use crate::llm::Bedrock;
+
+use crate::llm::HuggingFace;
 
 /// Initialize a chat model from a model string with optional parameters.
 ///
@@ -32,6 +38,10 @@ use crate::llm::ollama::Ollama;
 /// - Claude: "claude-3-opus", "claude-3-sonnet", "claude-3-haiku", "claude-3-5-sonnet", "claude-sonnet-4-5-20250929"
 /// - Qwen: "qwen-plus", "qwen-max", "qwen-turbo", "qwen"
 /// - Deepseek: "deepseek-chat", "deepseek-reasoner", "deepseek"
+/// - MistralAI: "mistral-small-latest", "mistral-medium-latest", "mistral-large-latest", etc. (requires "mistralai" feature)
+/// - Google Gemini: "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", etc. (requires "gemini" feature)
+/// - AWS Bedrock: "anthropic.claude-3-5-sonnet-20240620-v1:0", "meta.llama3-70b-instruct-v1:0", etc. (requires "bedrock" feature)
+/// - HuggingFace: "microsoft/Phi-3-mini-4k-instruct", "meta-llama/Llama-3.1-8B-Instruct", etc.
 /// - Ollama: "llama3", "mistral", "codellama", etc. (requires "ollama" feature)
 ///
 /// # Parameters
@@ -58,11 +68,12 @@ use crate::llm::ollama::Ollama;
 ///     None,
 ///     None,
 ///     None,
-/// )?;
+/// )
+/// .await?;
 ///
 /// let response = model.invoke("Hello!").await?;
 /// ```
-pub fn init_chat_model(
+pub async fn init_chat_model(
     model: &str,
     temperature: Option<f32>,
     max_tokens: Option<u32>,
@@ -101,7 +112,9 @@ pub fn init_chat_model(
     let model_lower = model_name.to_lowercase();
 
     // Handle Azure OpenAI
-    if provider == Some("azure_openai") || (provider.is_none() && model_lower.starts_with("gpt-") && azure_deployment.is_some()) {
+    if provider == Some("azure_openai")
+        || (provider.is_none() && model_lower.starts_with("gpt-") && azure_deployment.is_some())
+    {
         let mut config = AzureConfig::default();
         if let Some(key) = &options.api_key {
             config = config.with_api_key(key.clone());
@@ -133,8 +146,10 @@ pub fn init_chat_model(
     }
 
     // Claude models
-    if provider == Some("anthropic") || provider == Some("claude")
-        || (provider.is_none() && (model_lower.starts_with("claude-") || model_lower.starts_with("claude")))
+    if provider == Some("anthropic")
+        || provider == Some("claude")
+        || (provider.is_none()
+            && (model_lower.starts_with("claude-") || model_lower.starts_with("claude")))
     {
         let mut llm = Claude::default().with_model(model_name);
         if let Some(key) = &options.api_key {
@@ -162,7 +177,8 @@ pub fn init_chat_model(
 
     // Deepseek models
     if provider == Some("deepseek")
-        || (provider.is_none() && (model_lower.starts_with("deepseek-") || model_lower == "deepseek"))
+        || (provider.is_none()
+            && (model_lower.starts_with("deepseek-") || model_lower == "deepseek"))
     {
         let mut llm = Deepseek::default().with_model(model_name);
         if let Some(key) = &options.api_key {
@@ -175,23 +191,135 @@ pub fn init_chat_model(
         return Ok(Box::new(llm));
     }
 
+    // MistralAI models
+    #[cfg(feature = "mistralai")]
+    {
+        if provider == Some("mistralai")
+            || provider == Some("mistral")
+            || (provider.is_none()
+                && (model_lower.starts_with("mistral-")
+                    || model_lower.starts_with("mixtral-")
+                    || model_lower.starts_with("pixtral-")))
+        {
+            let mut llm = MistralAI::default().with_model(model_name);
+            if let Some(key) = &options.api_key {
+                llm = llm.with_api_key(key.clone());
+            }
+            if let Some(url) = &options.base_url {
+                llm = llm.with_base_url(url.clone());
+            }
+            llm = llm.with_options(options);
+            return Ok(Box::new(llm));
+        }
+    }
+
+    // Google Gemini models
+    #[cfg(feature = "gemini")]
+    {
+        if provider == Some("gemini")
+            || provider == Some("google")
+            || provider == Some("google_genai")
+            || (provider.is_none()
+                && (model_lower.starts_with("gemini-") || model_lower.starts_with("gemini")))
+        {
+            let mut llm = Gemini::default().with_model(model_name);
+            if let Some(key) = &options.api_key {
+                llm = llm.with_api_key(key.clone());
+            }
+            if let Some(url) = &options.base_url {
+                llm = llm.with_base_url(url.clone());
+            }
+            llm = llm.with_options(options);
+            return Ok(Box::new(llm));
+        }
+    }
+
+    // AWS Bedrock models
+    #[cfg(feature = "bedrock")]
+    {
+        if provider == Some("bedrock")
+            || provider == Some("aws_bedrock")
+            || (provider.is_none()
+                && (model_lower.contains("anthropic.claude")
+                    || model_lower.contains("meta.llama")
+                    || model_lower.contains("amazon.titan")))
+        {
+            // Note: Bedrock requires async initialization
+            // For now, we'll create it synchronously which may fail
+            // In production, consider using a factory pattern
+            let bedrock = Bedrock::new().await?;
+            let bedrock = bedrock.with_model(model_name);
+            // Note: Bedrock doesn't support all CallOptions directly
+            // Some options may need to be converted
+            let bedrock = bedrock.with_options(options);
+            return Ok(Box::new(bedrock));
+        }
+    }
+
+    // HuggingFace models
+    {
+        if provider == Some("huggingface")
+            || provider == Some("hf")
+            || (provider.is_none() && model_lower.contains("/"))
+        {
+            let mut llm = HuggingFace::default().with_model(model_name);
+            if let Some(key) = &options.api_key {
+                llm = llm.with_api_key(key.clone());
+            }
+            if let Some(url) = &options.base_url {
+                llm = llm.with_base_url(url.clone());
+            }
+            llm = llm.with_options(options);
+            return Ok(Box::new(llm));
+        }
+    }
+
     // Ollama models (default for unrecognized patterns)
+    // Note: Ollama uses a different options structure (GenerationOptions)
+    // and doesn't support base_url override in the same way as other providers
     #[cfg(feature = "ollama")]
     {
-        let mut llm = Ollama::default().with_model(model_name);
-        if let Some(url) = &options.base_url {
-            llm = llm.with_base_url(url.clone());
+        let mut gen_options = ollama_rs::generation::options::GenerationOptions::default();
+
+        // Convert CallOptions to GenerationOptions where applicable
+        if let Some(temp) = options.temperature {
+            gen_options = gen_options.temperature(temp);
         }
-        llm = llm.with_options(options);
+        if let Some(max_tokens) = options.max_tokens {
+            gen_options = gen_options.num_predict(max_tokens as i32);
+        }
+        if let Some(top_p) = options.top_p {
+            gen_options = gen_options.top_p(top_p);
+        }
+        if let Some(top_k) = options.top_k {
+            gen_options = gen_options.top_k(top_k as u32);
+        }
+        if let Some(seed) = options.seed {
+            gen_options = gen_options.seed(seed as i32);
+        }
+
+        let llm = Ollama::default()
+            .with_model(model_name)
+            .with_options(gen_options);
         return Ok(Box::new(llm));
     }
 
     #[cfg(not(feature = "ollama"))]
     {
-        Err(LLMError::OtherError(format!(
-            "Unsupported model: {}. Supported providers: openai, azure_openai, anthropic, qwen, deepseek. Enable 'ollama' feature for Ollama models.",
-            model
-        )))
+        #[cfg(feature = "mistralai")]
+        {
+            Err(LLMError::OtherError(format!(
+                "Unsupported model: {}. Supported providers: openai, azure_openai, anthropic, qwen, deepseek, mistralai. Enable 'ollama' feature for Ollama models.",
+                model
+            )))
+        }
+        #[cfg(not(feature = "mistralai"))]
+        {
+            Err(LLMError::OtherError(format!(
+                "Unsupported model: {}. Supported providers: openai, azure_openai, anthropic, qwen, deepseek. Enable 'mistralai' feature for MistralAI models. Enable 'ollama' feature for Ollama models.",
+                model
+            )))
+        }
     }
 }
 
@@ -199,20 +327,30 @@ pub fn init_chat_model(
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_init_chat_model_openai() {
-        let result = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None);
+    #[tokio::test]
+    async fn test_init_chat_model_openai() {
+        let result = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None).await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_init_chat_model_with_provider() {
-        let result = init_chat_model("openai:gpt-4o-mini", None, None, None, None, None, None, None);
+    #[tokio::test]
+    async fn test_init_chat_model_with_provider() {
+        let result = init_chat_model(
+            "openai:gpt-4o-mini",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_init_chat_model_with_params() {
+    #[tokio::test]
+    async fn test_init_chat_model_with_params() {
         let result = init_chat_model(
             "gpt-4o-mini",
             Some(0.7),
@@ -222,19 +360,40 @@ mod tests {
             None,
             None,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_init_chat_model_claude() {
-        let result = init_chat_model("claude-3-5-sonnet-20240620", None, None, None, None, None, None, None);
+    #[tokio::test]
+    async fn test_init_chat_model_claude() {
+        let result = init_chat_model(
+            "claude-3-5-sonnet-20240620",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_init_chat_model_invalid() {
-        let result = init_chat_model("invalid-model-xyz", None, None, None, None, None, None, None);
+    #[tokio::test]
+    async fn test_init_chat_model_invalid() {
+        let result = init_chat_model(
+            "invalid-model-xyz",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .await;
         assert!(result.is_err());
     }
 }

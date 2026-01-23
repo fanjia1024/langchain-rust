@@ -22,23 +22,21 @@ impl StructuredOutputSchema for ProductReview {}
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create an agent with structured output using ProviderStrategy
     // This uses the model provider's native structured output capabilities
-    let strategy = ProviderStrategy::<ProductReview>::new()
-        .with_strict(true); // Enable strict schema adherence
+    let strategy = ProviderStrategy::<ProductReview>::new().with_strict(true); // Enable strict schema adherence
 
     let agent = create_agent_with_structured_output(
         "gpt-4o-mini",
         &[],
         Some("You are a helpful assistant that analyzes product reviews."),
         Some(Box::new(strategy)),
+        None, // Middleware (optional)
     )?;
 
     // Analyze a product review
     let result = agent
-        .invoke_messages(vec![
-            langchain_rust::schemas::Message::new_human_message(
-                "Analyze this review: 'Great product: 5 out of 5 stars. Fast shipping, but expensive'"
-            ),
-        ])
+        .invoke_messages(vec![langchain_rust::schemas::Message::new_human_message(
+            "Analyze this review: 'Great product: 5 out of 5 stars. Fast shipping, but expensive'",
+        )])
         .await?;
 
     println!("Agent response: {}", result);

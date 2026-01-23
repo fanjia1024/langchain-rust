@@ -3,7 +3,7 @@ use std::sync::Arc;
 use langchain_rust::{
     agent::{
         create_agent,
-        multi_agent::{HandoffAgentBuilder, HandoffTool},
+        HandoffAgentBuilder, HandoffTool,
     },
     schemas::messages::Message,
     tools::Tool,
@@ -15,23 +15,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     // Create specialized agents
-    let customer_service_agent = Arc::new(
-        create_agent(
-            "gpt-4o-mini",
-            &[],
-            Some("You are a customer service agent. Help customers with their inquiries."),
-            None,
-        )?,
-    );
+    let customer_service_agent = Arc::new(create_agent(
+        "gpt-4o-mini",
+        &[],
+        Some("You are a customer service agent. Help customers with their inquiries."),
+        None,
+    )?);
 
-    let technical_support_agent = Arc::new(
-        create_agent(
-            "gpt-4o-mini",
-            &[],
-            Some("You are a technical support agent. Help with technical issues and troubleshooting."),
-            None,
-        )?,
-    );
+    let technical_support_agent = Arc::new(create_agent(
+        "gpt-4o-mini",
+        &[],
+        Some("You are a technical support agent. Help with technical issues and troubleshooting."),
+        None,
+    )?);
 
     // Create handoff system
     let handoff_system = HandoffAgentBuilder::new()

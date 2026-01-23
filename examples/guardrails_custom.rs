@@ -1,13 +1,13 @@
-use std::sync::Arc;
 use async_trait::async_trait;
 use langchain_rust::agent::{
     create_agent,
-    middleware::{Middleware, MiddlewareContext, MiddlewareError},
+    Middleware, MiddlewareContext, MiddlewareError,
 };
 use langchain_rust::prompt::PromptArgs;
 use langchain_rust::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
 use langchain_rust::schemas::Message;
 use serde_json::json;
+use std::sync::Arc;
 
 /// Custom guardrail: Block requests with excessive length
 struct LengthGuardrail {
@@ -29,10 +29,7 @@ impl Middleware for LengthGuardrail {
         _context: &mut MiddlewareContext,
     ) -> Result<Option<PromptArgs>, MiddlewareError> {
         // Extract input text
-        let input_text = input
-            .get("input")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let input_text = input.get("input").and_then(|v| v.as_str()).unwrap_or("");
 
         if input_text.len() > self.max_length {
             return Err(MiddlewareError::ValidationError(format!(
@@ -65,11 +62,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test with normal input
     println!("Testing with normal input...");
     let result = agent
-        .invoke(json!({
-            "messages": [
-                Message::new_human_message("Hello, how are you?")
-            ]
-        }))
+        .invoke_messages(vec![
+            Message::new_human_message("Hello, how are you?")
+        ])
         .await?;
 
     println!("Result: {}", result);
@@ -78,11 +73,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nTesting with overly long input...");
     let long_input = "x".repeat(2000);
     let result = agent
-        .invoke(json!({
-            "messages": [
-                Message::new_human_message(long_input)
-            ]
-        }))
+        .invoke_messages(vec![
+            Message::new_human_message(long_input)
+        ])
         .await;
 
     match result {

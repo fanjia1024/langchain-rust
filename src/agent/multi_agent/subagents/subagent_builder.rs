@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use crate::{
-    agent::{create_agent, UnifiedAgent, AgentError},
     agent::multi_agent::subagents::SubagentTool,
+    agent::{create_agent, AgentError, UnifiedAgent},
     tools::Tool,
 };
 
@@ -102,7 +102,8 @@ impl SubagentsBuilder {
 
         // Create the main agent with all tools (including subagents)
         let system_prompt = self.system_prompt.unwrap_or_else(|| {
-            "You are a helpful assistant that coordinates specialized subagents to help users.".to_string()
+            "You are a helpful assistant that coordinates specialized subagents to help users."
+                .to_string()
         });
 
         create_agent(&model, &all_tools, Some(&system_prompt), None)

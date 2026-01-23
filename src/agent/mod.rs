@@ -4,7 +4,7 @@ pub use agent::*;
 mod executor;
 pub use executor::*;
 
-mod chat;
+pub mod chat;
 pub use chat::*;
 
 mod open_ai_tools;
@@ -25,7 +25,7 @@ pub use state::*;
 mod structured_output;
 pub use structured_output::*;
 
-mod middleware;
+pub mod middleware;
 pub use middleware::*;
 
 mod multi_agent;
@@ -40,12 +40,14 @@ pub use context_engineering::*;
 use std::sync::Arc;
 
 use crate::{
-    agent::chat::ConversationalAgentBuilder,
-    agent::middleware::Middleware,
     language_models::llm::LLM,
     schemas::StructuredOutputStrategy,
     tools::{Tool, ToolContext, ToolStore},
 };
+
+// Re-export for internal use
+// ConversationalAgentBuilder is already exported via `pub use chat::*;` above
+// Middleware trait is already exported via `pub use middleware::*;` above
 
 /// Create an agent with a simplified API, similar to LangChain Python's `create_agent`.
 ///

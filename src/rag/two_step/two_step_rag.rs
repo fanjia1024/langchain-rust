@@ -32,7 +32,7 @@ impl TwoStepRAG {
     pub async fn invoke(&self, question: &str) -> Result<String, RAGError> {
         let mut prompt_args = PromptArgs::new();
         prompt_args.insert("question".to_string(), serde_json::json!(question));
-        
+
         let result = self.chain.invoke(prompt_args).await?;
         Ok(result)
     }
@@ -41,7 +41,7 @@ impl TwoStepRAG {
     pub async fn call(&self, question: &str) -> Result<GenerateResult, RAGError> {
         let mut prompt_args = PromptArgs::new();
         prompt_args.insert("question".to_string(), serde_json::json!(question));
-        
+
         let result = self.chain.call(prompt_args).await?;
         Ok(result)
     }

@@ -1,12 +1,12 @@
-use std::error::Error;
-use std::sync::Arc;
-use async_trait::async_trait;
-use serde_json::{json, Value};
+use crate::agent::state::Command;
 use crate::schemas::structured_output::{
-    StructuredOutputError, StructuredOutputStrategy, ToolStrategy, validate_against_schema,
+    validate_against_schema, StructuredOutputError, StructuredOutputStrategy, ToolStrategy,
 };
 use crate::tools::{Tool, ToolResult, ToolRuntime};
-use crate::agent::state::Command;
+use async_trait::async_trait;
+use serde_json::{json, Value};
+use std::error::Error;
+use std::sync::Arc;
 
 /// A synthetic tool that represents a structured output schema.
 ///
@@ -57,13 +57,13 @@ where
     fn parameters(&self) -> Value {
         // Return the schema as the parameters
         let mut schema = self.schema();
-        
+
         // Ensure it's wrapped as a tool parameter schema
         if let Some(schema_obj) = schema.as_object_mut() {
             // Remove $schema if present (not needed for tool parameters)
             schema_obj.remove("$schema");
         }
-        
+
         json!({
             "type": "object",
             "properties": schema,
@@ -77,8 +77,7 @@ where
             .map_err(|e| Box::new(e) as Box<dyn Error>)?;
 
         // Serialize the validated input
-        serde_json::to_string(&input)
-            .map_err(|e| Box::new(e) as Box<dyn Error>)
+        serde_json::to_string(&input).map_err(|e| Box::new(e) as Box<dyn Error>)
     }
 
     async fn run_with_runtime(
@@ -123,8 +122,9 @@ pub async fn handle_structured_output_tool_call(
     strategy: &dyn StructuredOutputStrategy,
 ) -> Result<Value, StructuredOutputError> {
     // Parse the tool input
-    let parsed: Value = serde_json::from_str(tool_input)
-        .map_err(|e| StructuredOutputError::ParseError(format!("Failed to parse tool input: {}", e)))?;
+    let parsed: Value = serde_json::from_str(tool_input).map_err(|e| {
+        StructuredOutputError::ParseError(format!("Failed to parse tool input: {}", e))
+    })?;
 
     // Validate against schema
     validate_against_schema(&parsed, &strategy.schema())?;
@@ -170,7 +170,7 @@ impl From<serde_json::Error> for StructuredOutputValidationError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::schemas::structured_output::{ToolStrategy, StructuredOutputSchema};
+    use crate::schemas::structured_output::{StructuredOutputSchema, ToolStrategy};
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 

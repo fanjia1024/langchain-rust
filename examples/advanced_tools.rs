@@ -50,9 +50,7 @@ impl Tool for WeatherTool {
         let location = input["location"]
             .as_str()
             .ok_or("Missing 'location' parameter")?;
-        let units = input["units"]
-            .as_str()
-            .unwrap_or("celsius");
+        let units = input["units"].as_str().unwrap_or("celsius");
         let include_forecast = input["include_forecast"].as_bool().unwrap_or(false);
 
         let temp = if units == "celsius" { 22 } else { 72 };
@@ -94,23 +92,21 @@ impl Tool for LongRunningTool {
         input: Value,
         runtime: &ToolRuntime,
     ) -> Result<ToolResult, Box<dyn Error>> {
-        let task = input["task"]
-            .as_str()
-            .unwrap_or("default");
+        let task = input["task"].as_str().unwrap_or("default");
 
         // Stream progress updates
         runtime.stream(&format!("Starting task: {}", task));
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         runtime.stream("Processing step 1/3...");
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         runtime.stream("Processing step 2/3...");
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         runtime.stream("Processing step 3/3...");
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         runtime.stream("Task completed!");
 
         Ok(ToolResult::text(format!("Completed task: {}", task)))
@@ -123,6 +119,7 @@ async fn main() {
         "gpt-4o-mini",
         &[Arc::new(WeatherTool), Arc::new(LongRunningTool)],
         Some("You are a helpful assistant"),
+        None, // Middleware (optional)
     )
     .expect("Failed to create agent");
 

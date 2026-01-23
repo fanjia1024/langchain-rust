@@ -1,7 +1,10 @@
-use std::sync::Arc;
-use langchain_rust::agent::{create_agent, middleware::{PIIMiddleware, PIIStrategy, PIIType}};
+use langchain_rust::agent::{
+    create_agent,
+    PIIMiddleware, PIIStrategy, PIIType,
+};
 use langchain_rust::schemas::Message;
 use serde_json::json;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,8 +17,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_apply_to_output(true);
 
     // Create PII middleware to mask credit cards in input
-    let credit_card_mask = PIIMiddleware::new(PIIType::CreditCard, PIIStrategy::Mask)
-        .with_apply_to_input(true);
+    let credit_card_mask =
+        PIIMiddleware::new(PIIType::CreditCard, PIIStrategy::Mask).with_apply_to_input(true);
 
     // Create PII middleware to block API keys
     let api_key_block = PIIMiddleware::with_custom_pattern(
@@ -39,14 +42,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test with PII in the input
     println!("Testing PII protection...");
-    
+
     // This should have email redacted
     let result = agent
-        .invoke(json!({
-            "messages": [
-                Message::new_human_message("My email is [email protected]")
-            ]
-        }))
+        .invoke_messages(vec![
+            Message::new_human_message("My email is [email protected]")
+        ])
         .await?;
 
     println!("Result with email: {}", result);

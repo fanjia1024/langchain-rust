@@ -1,15 +1,15 @@
-use std::collections::HashMap;
 use async_trait::async_trait;
 use serde_json::Value;
+use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::{
+    agent::context_engineering::{ModelRequest, ModelResponse},
+    agent::runtime::{Runtime, RuntimeRequest},
     chain::ChainError,
     language_models::GenerateResult,
     prompt::PromptArgs,
     schemas::agent::{AgentAction, AgentEvent, AgentFinish},
-    agent::runtime::{Runtime, RuntimeRequest},
-    agent::context_engineering::{ModelRequest, ModelResponse},
 };
 
 /// Context information available to middleware during execution.
@@ -293,27 +293,27 @@ pub trait Middleware: Send + Sync {
     }
 }
 
-pub mod logging;
-pub mod retry;
-pub mod rate_limit;
-pub mod summarization;
-pub mod human_in_loop;
-pub mod pii_detector;
-pub mod pii;
 pub mod content_filter;
-pub mod safety_guardrail;
 pub mod guardrail_utils;
+pub mod human_in_loop;
+pub mod logging;
+pub mod pii;
+pub mod pii_detector;
+pub mod rate_limit;
+pub mod retry;
+pub mod safety_guardrail;
+pub mod summarization;
 
-pub use logging::LoggingMiddleware;
-pub use retry::RetryMiddleware;
-pub use rate_limit::RateLimitMiddleware;
-pub use summarization::SummarizationMiddleware;
-pub use human_in_loop::HumanInTheLoopMiddleware;
-pub use pii_detector::{PIIDetector, PIIType, PIIMatch, detect_all_pii};
-pub use pii::{PIIMiddleware, PIIStrategy};
 pub use content_filter::ContentFilterMiddleware;
-pub use safety_guardrail::SafetyGuardrailMiddleware;
 pub use guardrail_utils::*;
+pub use human_in_loop::HumanInTheLoopMiddleware;
+pub use logging::{LoggingMiddleware, LogLevel};
+pub use pii::{PIIMiddleware, PIIStrategy};
+pub use pii_detector::{detect_all_pii, PIIDetector, PIIMatch, PIIType};
+pub use rate_limit::RateLimitMiddleware;
+pub use retry::RetryMiddleware;
+pub use safety_guardrail::SafetyGuardrailMiddleware;
+pub use summarization::SummarizationMiddleware;
 
 #[cfg(test)]
 mod tests {

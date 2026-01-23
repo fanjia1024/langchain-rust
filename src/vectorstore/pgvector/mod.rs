@@ -2,7 +2,7 @@ mod builder;
 mod pgvector;
 
 pub use builder::*;
-pub use pgvector::*;
+pub use pgvector::{HNSWIndex, PgFilter, PgLit, PgOptions, Store};
 
 // pgLockIDEmbeddingTable is used for advisor lock to fix issue arising from concurrent
 // creation of the embedding table.The same value represents the same lock.

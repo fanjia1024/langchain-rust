@@ -9,7 +9,7 @@ use langchain_rust::{
     agent::create_agent,
     embedding::openai::openai_embedder::OpenAiEmbedder,
     llm::openai::{OpenAI, OpenAIModel},
-    rag::agentic::{AgenticRAGBuilder, RetrieverInfo},
+    rag::{AgenticRAGBuilder, RetrieverInfo},
     schemas::{Document, Message},
     vectorstore::{pgvector::StoreBuilder, Retriever},
 };
@@ -21,9 +21,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create sample documents
     let documents = vec![
-        Document::new("LangChain is a framework for developing applications powered by language models."),
-        Document::new("RAG stands for Retrieval-Augmented Generation, combining retrieval and generation."),
-        Document::new("Agents can use tools to interact with external systems and retrieve information."),
+        Document::new(
+            "LangChain is a framework for developing applications powered by language models.",
+        ),
+        Document::new(
+            "RAG stands for Retrieval-Augmented Generation, combining retrieval and generation.",
+        ),
+        Document::new(
+            "Agents can use tools to interact with external systems and retrieve information.",
+        ),
     ];
 
     // Create vector store
@@ -36,7 +42,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Add documents to store
-    let _ = add_documents!(store, &documents).await?;
+    use langchain_rust::vectorstore::{VectorStore, pgvector::PgOptions};
+    let _ = store.add_documents(&documents, &PgOptions::default()).await?;
 
     // Create retriever
     let retriever: Arc<dyn langchain_rust::schemas::Retriever> = Arc::new(Retriever::new(store, 3));
@@ -57,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     println!("Agentic RAG Example\n");
-    
+
     // Test 1: Question that requires retrieval
     println!("Question: What is LangChain?");
     let answer = agentic_rag

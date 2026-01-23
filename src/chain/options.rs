@@ -91,7 +91,8 @@ impl ChainCallOptions {
         self
     }
 
-    //TODO:Check if this should be a &str instead of a String
+    // Note: Using String instead of &str to allow the closure to own the data
+    // and be stored in Box<dyn FnMut(...)> for thread-safe sharing
     pub fn with_streaming_func<F, Fut>(mut self, mut func: F) -> Self
     where
         F: FnMut(String) -> Fut + Send + 'static,

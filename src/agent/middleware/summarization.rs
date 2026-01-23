@@ -32,7 +32,9 @@ impl SummarizationMiddleware {
             token_threshold: None,
             message_threshold: Some(50),
             preserve_recent: 10,
-            summarization_prompt: "Summarize the following conversation history, preserving key information:".to_string(),
+            summarization_prompt:
+                "Summarize the following conversation history, preserving key information:"
+                    .to_string(),
         }
     }
 
@@ -91,19 +93,21 @@ impl Middleware for SummarizationMiddleware {
     ) -> Result<Option<PromptArgs>, MiddlewareError> {
         // Check if chat_history exists and needs summarization
         if let Some(chat_history_value) = input.get("chat_history") {
-            if let Ok(history_array) = serde_json::from_value::<Vec<serde_json::Value>>(chat_history_value.clone()) {
+            if let Ok(history_array) =
+                serde_json::from_value::<Vec<serde_json::Value>>(chat_history_value.clone())
+            {
                 let message_count = history_array.len();
-                
+
                 if self.should_summarize(message_count, 0) {
                     // Mark that summarization should happen
                     context.set_custom_data("should_summarize".to_string(), json!(true));
                     context.set_custom_data("message_count".to_string(), json!(message_count));
-                    
+
                     // In a full implementation, we would:
                     // 1. Extract recent messages to preserve
                     // 2. Summarize older messages
                     // 3. Replace chat_history with summarized version + recent messages
-                    
+
                     log::info!(
                         "Summarization triggered: {} messages (threshold: {:?})",
                         message_count,

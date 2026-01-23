@@ -4,10 +4,7 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{
-        create_agent,
-        context_engineering::middleware::DynamicToolsMiddleware,
-    },
+    agent::{context_engineering::middleware::DynamicToolsMiddleware, create_agent},
     schemas::messages::Message,
     tools::{SimpleContext, Tool},
 };
@@ -50,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dynamic_tools = DynamicToolsMiddleware::from_permissions(|ctx| {
         // Get user role from context
         let user_role = ctx.get("user_role").unwrap_or("viewer");
-        
+
         match user_role {
             "admin" => vec!["public_search".to_string(), "admin_delete".to_string()],
             "editor" => vec!["public_search".to_string()],
@@ -59,9 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Alternative: exclude specific tools
-    let exclude_tools = DynamicToolsMiddleware::exclude_tools(
-        vec!["admin_delete".to_string(), "sensitive_tool".to_string()]
-    );
+    let exclude_tools = DynamicToolsMiddleware::exclude_tools(vec![
+        "admin_delete".to_string(),
+        "sensitive_tool".to_string(),
+    ]);
 
     // Create agent with dynamic tools middleware
     let public_tool = Arc::new(PublicTool);
@@ -76,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .with_context(Arc::new(
         SimpleContext::new()
             .with_user_id("user_123".to_string())
-            .with_custom("user_role".to_string(), "viewer".to_string())
+            .with_custom("user_role".to_string(), "viewer".to_string()),
     ));
 
     // Use the agent

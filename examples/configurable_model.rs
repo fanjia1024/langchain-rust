@@ -1,6 +1,4 @@
-use langchain_rust::language_models::{
-    init_chat_model, ConfigurableModel, InvocationConfig,
-};
+use langchain_rust::language_models::{init_chat_model, ConfigurableModel, InvocationConfig};
 use serde_json::json;
 
 #[tokio::main]
@@ -15,7 +13,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
         None,
         None,
-    )?;
+    )
+    .await?;
 
     // Wrap it in a ConfigurableModel
     let configurable = ConfigurableModel::new(base_model)

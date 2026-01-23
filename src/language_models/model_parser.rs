@@ -23,7 +23,9 @@ pub struct ParsedModel {
 /// ```
 pub fn parse_model_string(model: &str) -> Result<ParsedModel, LLMError> {
     if model.is_empty() {
-        return Err(LLMError::OtherError("Model string cannot be empty".to_string()));
+        return Err(LLMError::OtherError(
+            "Model string cannot be empty".to_string(),
+        ));
     }
 
     // Check for provider:model format
