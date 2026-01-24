@@ -9,10 +9,32 @@ pub use crate::retrievers::RetrieverError;
 pub use crate::tools::ToolError;
 pub use crate::vectorstore::VectorStoreError;
 
+// Re-export agent-related errors for convenience
+pub use crate::agent::AgentError;
+pub use crate::rag::RAGError;
+// Note: MultiAgentError is re-exported through agent module
+
+// Re-export error utilities
+pub mod utils;
+pub use utils::{ErrorCode, ErrorContext, error_context, error_info};
+
 /// 统一的错误枚举，组合所有子模块错误
 ///
 /// 这个枚举作为整个项目的顶层错误类型，
 /// 允许所有子模块的错误向上传播。
+///
+/// # 使用示例
+///
+/// ```rust,ignore
+/// use langchain_rust::error::LangChainError;
+///
+/// async fn example() -> Result<(), LangChainError> {
+///     // 所有子模块错误都可以自动转换
+///     some_agent_operation().await?;
+///     some_rag_operation().await?;
+///     Ok(())
+/// }
+/// ```
 #[derive(thiserror::Error, Debug)]
 pub enum LangChainError {
     #[error("LLM error: {0}")]
@@ -29,6 +51,15 @@ pub enum LangChainError {
 
     #[error("Tool error: {0}")]
     ToolError(#[from] ToolError),
+
+    #[error("Agent error: {0}")]
+    AgentError(#[from] crate::agent::AgentError),
+
+    #[error("RAG error: {0}")]
+    RAGError(#[from] crate::rag::RAGError),
+
+    #[error("Multi-agent error: {0}")]
+    MultiAgentError(#[from] crate::agent::MultiAgentError),
 
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
@@ -91,6 +122,41 @@ mod tests {
         match langchain_error {
             LangChainError::RetrieverError(_) => {}
             _ => panic!("Expected RetrieverError variant"),
+        }
+    }
+
+    #[test]
+    fn test_agent_error_creation() {
+        let agent_error = crate::agent::AgentError::OtherError("test agent".to_string());
+        let langchain_error: LangChainError = agent_error.into();
+
+        match langchain_error {
+            LangChainError::AgentError(_) => {}
+            _ => panic!("Expected AgentError variant"),
+        }
+    }
+
+    #[test]
+    fn test_rag_error_creation() {
+        let rag_error = crate::rag::RAGError::InvalidConfiguration("test config".to_string());
+        let langchain_error: LangChainError = rag_error.into();
+
+        match langchain_error {
+            LangChainError::RAGError(_) => {}
+            _ => panic!("Expected RAGError variant"),
+        }
+    }
+
+    #[test]
+    fn test_multi_agent_error_creation() {
+        let multi_agent_error = crate::agent::multi_agent::MultiAgentError::AgentNotFound(
+            "test_agent".to_string(),
+        );
+        let langchain_error: LangChainError = multi_agent_error.into();
+
+        match langchain_error {
+            LangChainError::MultiAgentError(_) => {}
+            _ => panic!("Expected MultiAgentError variant"),
         }
     }
 }

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 pub mod configurable;
+pub mod common_config;
 pub mod init;
 pub mod invocation_config;
 pub mod llm;
@@ -14,6 +15,9 @@ mod error;
 pub use error::*;
 
 pub use configurable::ConfigurableModel;
+pub use common_config::{
+    LLMBuilder, LLMConfig, LLMHelpers, LLMInitConfig, StreamingLLM,
+};
 pub use init::init_chat_model;
 pub use invocation_config::InvocationConfig;
 pub use model_parser::{parse_model_string, ParsedModel};

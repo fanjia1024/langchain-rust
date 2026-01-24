@@ -315,6 +315,10 @@ pub use retry::RetryMiddleware;
 pub use safety_guardrail::SafetyGuardrailMiddleware;
 pub use summarization::SummarizationMiddleware;
 
+// Re-export middleware chain executor
+pub mod chain;
+pub use chain::{MiddlewareChainExecutor, MiddlewareChainConfig, MiddlewareResult};
+
 #[cfg(test)]
 mod tests {
     use super::*;

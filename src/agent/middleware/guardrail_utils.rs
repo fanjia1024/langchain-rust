@@ -101,21 +101,10 @@ pub fn contains_profanity(text: &str) -> bool {
 }
 
 /// Calculate text similarity using simple word overlap.
+///
+/// This is a re-export of the unified text_similarity function from utils.
 pub fn text_similarity(text1: &str, text2: &str) -> f64 {
-    let words1: std::collections::HashSet<String> =
-        text1.split_whitespace().map(|w| w.to_lowercase()).collect();
-
-    let words2: std::collections::HashSet<String> =
-        text2.split_whitespace().map(|w| w.to_lowercase()).collect();
-
-    let intersection: usize = words1.intersection(&words2).count();
-    let union: usize = words1.union(&words2).count();
-
-    if union == 0 {
-        0.0
-    } else {
-        intersection as f64 / union as f64
-    }
+    crate::utils::text_similarity(text1, text2)
 }
 
 #[cfg(test)]

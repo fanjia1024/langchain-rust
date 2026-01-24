@@ -1,16 +1,18 @@
+// Public modules for external API
 pub mod chain_trait;
 pub use chain_trait::*;
 
 pub mod conversational;
 pub use conversational::*;
 
-pub use llm_chain::*;
 pub mod llm_chain;
+pub use llm_chain::*;
 
+// Internal modules (crate-only access)
 mod sequential;
 pub use sequential::*;
 
-pub mod sql_datbase;
+mod sql_datbase;
 pub use sql_datbase::*;
 
 mod stuff_documents;
@@ -26,3 +28,4 @@ mod error;
 pub use error::*;
 
 pub mod options;
+pub use options::*;

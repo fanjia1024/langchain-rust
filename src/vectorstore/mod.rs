@@ -38,7 +38,11 @@ pub mod pinecone;
 pub mod weaviate;
 
 mod vectorstore;
+mod base;
 
 pub use error::*;
 pub use options::*;
 pub use vectorstore::*;
+pub use base::{
+    VectorStoreBaseConfig, VectorStoreHelpers, VectorStoreInitializable, VectorStoreBatch,
+};

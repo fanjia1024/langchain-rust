@@ -4,7 +4,7 @@ pub use agent::*;
 mod executor;
 pub use executor::*;
 
-pub mod chat;
+mod chat;
 pub use chat::*;
 
 mod open_ai_tools;
@@ -25,7 +25,7 @@ pub use state::*;
 mod structured_output;
 pub use structured_output::*;
 
-pub mod middleware;
+mod middleware;
 pub use middleware::*;
 
 mod multi_agent;
@@ -34,7 +34,7 @@ pub use multi_agent::*;
 mod runtime;
 pub use runtime::*;
 
-pub mod context_engineering;
+mod context_engineering;
 pub use context_engineering::*;
 
 use std::sync::Arc;
@@ -57,11 +57,25 @@ use crate::{
 /// - Optional system prompt
 /// - Optional middleware
 ///
+/// # Arguments
+///
+/// * `model` - Model identifier string (e.g., "gpt-4o-mini", "claude-3-sonnet")
+/// * `tools` - Slice of tools available to the agent
+/// * `system_prompt` - Optional system prompt to guide agent behavior
+/// * `middleware` - Optional list of middleware to apply during execution
+///
+/// # Returns
+///
+/// Returns a `Result<UnifiedAgent, AgentError>` containing the created agent or an error.
+///
 /// # Example
-/// ```rust,ignore
+///
+/// ```rust,no_run
+/// use std::sync::Arc;
 /// use langchain_rust::agent::create_agent;
 /// use langchain_rust::agent::middleware::LoggingMiddleware;
 ///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let middleware = vec![Arc::new(LoggingMiddleware::new())];
 /// let agent = create_agent(
 ///     "gpt-4o-mini",
@@ -69,6 +83,12 @@ use crate::{
 ///     Some("You are a helpful assistant"),
 ///     Some(middleware),
 /// )?;
+///
+/// let result = agent.invoke_messages(
+///     vec![langchain_rust::schemas::Message::new_human_message("Hello")]
+/// ).await?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn create_agent(
     model: &str,
