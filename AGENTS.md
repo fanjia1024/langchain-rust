@@ -1,4 +1,4 @@
-# Agent Guidelines for langchain-rs
+# Agent Guidelines for langchain-ai-rs
 
 ## Build, Lint & Test Commands
 
@@ -69,7 +69,7 @@ impl OpenAI<OpenAIConfig> {
 - Use `crate::` for internal imports
 - Group external imports together, internal imports separately
 - Use `pub use module::*` for re-exports in `mod.rs`
-- Avoid absolute paths like `langchain_rs::chain`
+- Avoid absolute paths like `langchain_ai_rs::chain`
 
 ### Async/Await Patterns
 - Use `#[async_trait]` for trait methods
@@ -116,7 +116,7 @@ async fn test_llm_invoke() {
 ### Skills (progressive disclosure)
 - Directory-based skills: each skill is a directory with `SKILL.md` and YAML frontmatter (`name`, `description`). See [Skills](https://docs.langchain.com/oss/python/deepagents/skills).
 - Use `with_skill_dir(path)` / `with_skill_dirs(dirs)` on [DeepAgentConfig]. At startup only frontmatter is read; when the user message matches a skill (by description/name), its full content is loaded and injected as a "## Skills" system message for that turn.
-- Types and helpers in `langchain_rs::agent::deep_agent::skills`: `SkillMeta`, `load_skill_index`, `match_skills`, `load_skill_full_content`. Middleware: `SkillsMiddleware`, `build_skills_middleware`. Example: `deep_agent_skills`.
+- Types and helpers in `langchain_ai_rs::agent::deep_agent::skills`: `SkillMeta`, `load_skill_index`, `match_skills`, `load_skill_full_content`. Middleware: `SkillsMiddleware`, `build_skills_middleware`. Example: `deep_agent_skills`.
 - Legacy: `skill_paths` and `skill_contents` still load at build time and append to the system prompt (no matching).
 
 ### Deep Agent middleware alignment

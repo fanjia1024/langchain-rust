@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use langchain_rs::tools::{SpeechStorage, Text2SpeechOpenAI, Tool};
+use langchain_ai_rs::tools::{SpeechStorage, Text2SpeechOpenAI, Tool};
 
 #[allow(dead_code)]
 struct XStorage {}

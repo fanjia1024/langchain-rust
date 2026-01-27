@@ -10,7 +10,7 @@ use crate::schemas::agent::AgentAction;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_rs::agent::middleware::RetryMiddleware;
+/// use langchain_ai_rs::agent::middleware::RetryMiddleware;
 ///
 /// let middleware = RetryMiddleware::new()
 ///     .with_max_retries(3)

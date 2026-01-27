@@ -57,7 +57,7 @@ use crate::llm::HuggingFace;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_rs::language_models::init_chat_model;
+/// use langchain_ai_rs::language_models::init_chat_model;
 ///
 /// let model = init_chat_model(
 ///     "gpt-4o-mini",

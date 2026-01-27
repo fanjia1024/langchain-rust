@@ -14,8 +14,8 @@ use crate::schemas::messages::Message;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_rs::agent::middleware::SafetyGuardrailMiddleware;
-/// use langchain_rs::language_models::init_chat_model;
+/// use langchain_ai_rs::agent::middleware::SafetyGuardrailMiddleware;
+/// use langchain_ai_rs::language_models::init_chat_model;
 ///
 /// let safety_model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None)?;
 /// let middleware = SafetyGuardrailMiddleware::new(safety_model)

@@ -1,5 +1,5 @@
 #[cfg(feature = "ollama")]
-use langchain_rs::{language_models::llm::LLM, llm::ollama::client::Ollama};
+use langchain_ai_rs::{language_models::llm::LLM, llm::ollama::client::Ollama};
 
 #[cfg(feature = "ollama")]
 #[tokio::main]

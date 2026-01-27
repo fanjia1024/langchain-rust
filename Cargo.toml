@@ -1,6 +1,6 @@
 workspace = { members = ["examples/vector_store_surrealdb"] }
 [package]
-name = "langchain-rs"
+name = "langchain-ai-rs"
 version = "4.6.1"
 edition = "2021"
 publish = true
@@ -8,7 +8,7 @@ repository = "https://github.com/fanjia1024/langchain-rust"
 license = "MIT"
 description = "LangChain for Rust, the easiest way to write LLM-based programs in Rust"
 keywords = ["chain", "chatgpt", "llm", "langchain","deepagent"]
-documentation = "https://docs.rs/langchain-rs"
+documentation = "https://docs.rs/langchain-ai-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use futures_util::StreamExt;
-use langchain_rs::{
+use langchain_ai_rs::{
     chain::{Chain, ConversationalRetrieverChainBuilder},
     error::RetrieverError,
     fmt_message, fmt_template,

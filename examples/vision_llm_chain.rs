@@ -1,9 +1,9 @@
 use base64::prelude::*;
-use langchain_rs::chain::{Chain, LLMChainBuilder};
-use langchain_rs::llm::OpenAI;
-use langchain_rs::prompt::HumanMessagePromptTemplate;
-use langchain_rs::schemas::Message;
-use langchain_rs::{fmt_message, fmt_template, message_formatter, prompt_args, template_fstring};
+use langchain_ai_rs::chain::{Chain, LLMChainBuilder};
+use langchain_ai_rs::llm::OpenAI;
+use langchain_ai_rs::prompt::HumanMessagePromptTemplate;
+use langchain_ai_rs::schemas::Message;
+use langchain_ai_rs::{fmt_message, fmt_template, message_formatter, prompt_args, template_fstring};
 
 #[tokio::main]
 async fn main() {
@@ -20,7 +20,7 @@ async fn main() {
         )])),
     ];
 
-    // let open_ai = OpenAI::new(langchain_rs::llm::ollama::openai::OllamaConfig::default())
+    // let open_ai = OpenAI::new(langchain_ai_rs::llm::ollama::openai::OllamaConfig::default())
     //     .with_model("llava");
     let open_ai = OpenAI::default();
     let chain = LLMChainBuilder::new()

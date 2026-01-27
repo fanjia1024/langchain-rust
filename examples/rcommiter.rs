@@ -1,11 +1,11 @@
 use std::io::{self, BufRead};
 use std::process::{Command, Stdio};
 
-use langchain_rs::chain::chain_trait::Chain;
-use langchain_rs::chain::llm_chain::LLMChainBuilder;
-use langchain_rs::llm::openai::OpenAI;
-use langchain_rs::prompt::HumanMessagePromptTemplate;
-use langchain_rs::{prompt_args, template_jinja2};
+use langchain_ai_rs::chain::chain_trait::Chain;
+use langchain_ai_rs::chain::llm_chain::LLMChainBuilder;
+use langchain_ai_rs::llm::openai::OpenAI;
+use langchain_ai_rs::prompt::HumanMessagePromptTemplate;
+use langchain_ai_rs::{prompt_args, template_jinja2};
 
 //to try this in action , add something to this file stage it an run it
 #[tokio::main]

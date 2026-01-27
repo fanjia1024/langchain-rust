@@ -3,7 +3,7 @@
 //! This example demonstrates how to use the HTMLSplitter to split HTML documents
 //! based on HTML tag structure.
 
-use langchain_rs::text_splitter::{HTMLSplitter, TextSplitter};
+use langchain_ai_rs::text_splitter::{HTMLSplitter, TextSplitter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

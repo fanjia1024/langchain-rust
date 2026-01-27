@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use langchain_rs::agent::{create_agent, Middleware, MiddlewareContext, MiddlewareError};
-use langchain_rs::schemas::agent::AgentAction;
-use langchain_rs::schemas::Message;
+use langchain_ai_rs::agent::{create_agent, Middleware, MiddlewareContext, MiddlewareError};
+use langchain_ai_rs::schemas::agent::AgentAction;
+use langchain_ai_rs::schemas::Message;
 use std::sync::Arc;
 
 /// Custom middleware that adds a prefix to all tool observations

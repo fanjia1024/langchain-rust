@@ -4,7 +4,7 @@
 // OPENAI_API_KEY for embedder.
 
 #[cfg(feature = "weaviate")]
-use langchain_rs::{
+use langchain_ai_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder, schemas::Document,
     vectorstore::weaviate::StoreBuilder, vectorstore::VecStoreOptions, vectorstore::VectorStore,
 };
@@ -20,7 +20,7 @@ async fn main() {
         .build()
         .unwrap();
 
-    let doc1 = Document::new("langchain-rs is a port of the langchain python library to rust.");
+    let doc1 = Document::new("langchain-ai-rs is a port of the langchain python library to rust.");
     let doc2 = Document::new("langchaingo is a port of langchain to the go language.");
     let doc3 = Document::new("Capital of USA is Washington D.C. Capital of France is Paris.");
 

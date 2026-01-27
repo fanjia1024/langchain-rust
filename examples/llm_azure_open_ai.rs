@@ -1,4 +1,4 @@
-use langchain_rs::{
+use langchain_ai_rs::{
     language_models::llm::LLM,
     llm::openai::{AzureConfig, OpenAI},
 };

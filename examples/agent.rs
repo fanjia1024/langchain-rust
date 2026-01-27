@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{AgentExecutor, ConversationalAgentBuilder},
     chain::{options::ChainCallOptions, Chain},
     llm::openai::{OpenAI, OpenAIModel},

@@ -94,7 +94,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn git_commit_loader() {
-        let git_commit_loader = GitCommitLoader::from_path("/code/langchain-rs").unwrap();
+        let git_commit_loader = GitCommitLoader::from_path("/code/langchain-ai-rs").unwrap();
 
         let documents = git_commit_loader
             .load()

@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{create_agent, DynamicPromptMiddleware},
     schemas::messages::Message,
     tools::{SimpleContext, ToolContext},
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create agent with dynamic prompt middleware
     // DynamicPromptMiddleware implements Middleware trait
-    let middleware: Vec<Arc<dyn langchain_rs::agent::Middleware>> = vec![Arc::new(dynamic_prompt)];
+    let middleware: Vec<Arc<dyn langchain_ai_rs::agent::Middleware>> = vec![Arc::new(dynamic_prompt)];
 
     let agent = create_agent(
         "gpt-4o-mini",

@@ -1,8 +1,8 @@
-use langchain_rs::langgraph::{
+use langchain_ai_rs::langgraph::{
     function_node_with_store, InMemorySaver, InMemoryStore, LangGraphError, MessagesState,
     RunnableConfig, StateGraph, END, START,
 };
-use langchain_rs::schemas::messages::Message;
+use langchain_ai_rs::schemas::messages::Message;
 
 /// Basic memory example for LangGraph
 ///
@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "call_model",
         |state: &MessagesState,
          config: &RunnableConfig,
-         store: langchain_rs::langgraph::StoreBox| {
+         store: langchain_ai_rs::langgraph::StoreBox| {
             let user_id = config.get_user_id().unwrap_or("default".to_string());
             let last_message = state
                 .messages

@@ -3,7 +3,7 @@
 //! This example demonstrates how to use the WikipediaRetriever to search
 //! and retrieve articles from Wikipedia.
 
-use langchain_rs::{
+use langchain_ai_rs::{
     chain::{Chain, ConversationalRetrieverChainBuilder},
     llm::{OpenAI, OpenAIModel},
     memory::SimpleMemory,

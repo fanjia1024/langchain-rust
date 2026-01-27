@@ -10,7 +10,7 @@
 //! cargo run --example deep_agent_basic
 //! ```
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{create_deep_agent, DeepAgentConfig},
     chain::Chain,
     prompt_args,

@@ -19,7 +19,7 @@
 对于大量文档的 embedding，考虑分批并行处理：
 
 ```rust
-use langchain_rs::utils::batch_process_result;
+use langchain_ai_rs::utils::batch_process_result;
 
 // 分批并行处理 embedding
 let embeddings = batch_process_result(
@@ -36,7 +36,7 @@ let embeddings = batch_process_result(
 如果有多个独立的查询，可以并行执行：
 
 ```rust
-use langchain_rs::utils::join_all;
+use langchain_ai_rs::utils::join_all;
 
 let queries = vec!["query1", "query2", "query3"];
 let results = join_all(

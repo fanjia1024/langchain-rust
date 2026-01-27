@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::create_agent,
     error::ToolError,
     tools::{
@@ -16,7 +16,7 @@ use serde_json::json;
 struct GetUserInfoTool;
 
 #[async_trait::async_trait]
-impl langchain_rs::tools::Tool for GetUserInfoTool {
+impl langchain_ai_rs::tools::Tool for GetUserInfoTool {
     fn name(&self) -> String {
         "get_user_info".to_string()
     }
@@ -80,7 +80,7 @@ impl langchain_rs::tools::Tool for GetUserInfoTool {
 struct SaveUserInfoTool;
 
 #[async_trait::async_trait]
-impl langchain_rs::tools::Tool for SaveUserInfoTool {
+impl langchain_ai_rs::tools::Tool for SaveUserInfoTool {
     fn name(&self) -> String {
         "save_user_info".to_string()
     }
@@ -181,7 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
 
     // Create tools
-    let tools: Vec<Arc<dyn langchain_rs::tools::Tool>> =
+    let tools: Vec<Arc<dyn langchain_ai_rs::tools::Tool>> =
         vec![Arc::new(GetUserInfoTool), Arc::new(SaveUserInfoTool)];
 
     // Create agent with store

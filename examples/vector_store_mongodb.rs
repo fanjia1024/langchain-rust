@@ -4,7 +4,7 @@
 // OPENAI_API_KEY for embedder.
 
 #[cfg(feature = "mongodb")]
-use langchain_rs::{
+use langchain_ai_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder, schemas::Document,
     vectorstore::mongodb::StoreBuilder, vectorstore::VecStoreOptions, vectorstore::VectorStore,
 };
@@ -16,7 +16,7 @@ use mongodb::Client;
 async fn main() {
     let uri = std::env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".into());
     let client = Client::with_uri_str(&uri).await.unwrap();
-    let db = client.database("langchain_rs");
+    let db = client.database("langchain_ai_rs");
     let collection = db.collection::<mongodb::bson::Document>("vectors");
 
     let embedder = OpenAiEmbedder::default();
@@ -27,7 +27,7 @@ async fn main() {
         .build()
         .unwrap();
 
-    let doc1 = Document::new("langchain-rs is a port of the langchain python library to rust.");
+    let doc1 = Document::new("langchain-ai-rs is a port of the langchain python library to rust.");
     let doc2 = Document::new("langchaingo is a port of langchain to the go language.");
     let doc3 = Document::new("Capital of USA is Washington D.C. Capital of France is Paris.");
 

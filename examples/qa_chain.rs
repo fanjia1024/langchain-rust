@@ -1,4 +1,4 @@
-use langchain_rs::{
+use langchain_ai_rs::{
     chain::{Chain, StuffDocumentBuilder},
     llm::openai::OpenAI,
     prompt_args,

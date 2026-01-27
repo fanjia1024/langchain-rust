@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     chain::{Chain, ConversationalRetrieverChainBuilder},
     llm::{OpenAI, OpenAIModel},
     memory::SimpleMemory,

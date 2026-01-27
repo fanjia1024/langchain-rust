@@ -1,8 +1,8 @@
-use langchain_rs::agent::{
+use langchain_ai_rs::agent::{
     create_agent, ContentFilterMiddleware, HumanInTheLoopMiddleware, PIIMiddleware, PIIStrategy,
     PIIType,
 };
-use langchain_rs::schemas::Message;
+use langchain_ai_rs::schemas::Message;
 use std::sync::Arc;
 
 #[tokio::main]

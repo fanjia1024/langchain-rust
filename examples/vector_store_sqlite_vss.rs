@@ -5,7 +5,7 @@
 // https://github.com/launchbadge/sqlx/issues/3147.
 
 #[cfg(feature = "sqlite-vss")]
-use langchain_rs::{
+use langchain_ai_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     schemas::Document,
     vectorstore::{sqlite_vss::StoreBuilder, VecStoreOptions, VectorStore},
@@ -36,7 +36,7 @@ async fn main() {
 
     // Add documents to the database
     let doc1 = Document::new(
-        "langchain-rs is a port of the langchain python library to rust and was written in 2024.",
+        "langchain-ai-rs is a port of the langchain python library to rust and was written in 2024.",
     );
     let doc2 = Document::new(
         "langchaingo is a port of the langchain python library to go language and was written in 2023."

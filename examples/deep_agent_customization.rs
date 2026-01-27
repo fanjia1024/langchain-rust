@@ -18,7 +18,7 @@
 
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{
         create_deep_agent, create_deep_agent_from_llm, detect_and_create_llm, DeepAgentConfig,
         LoggingMiddleware,

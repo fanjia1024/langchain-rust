@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{context_engineering::middleware::EnhancedDynamicPromptMiddleware, create_agent},
     schemas::messages::Message,
     tools::{InMemoryStore, SimpleContext},
@@ -24,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Alternative: from store
     let _store_based_prompt = EnhancedDynamicPromptMiddleware::from_store(
-        |_store: &dyn langchain_rs::tools::ToolStore,
-         ctx: &dyn langchain_rs::tools::ToolContext| {
+        |_store: &dyn langchain_ai_rs::tools::ToolStore,
+         ctx: &dyn langchain_ai_rs::tools::ToolContext| {
             // In a real implementation, you'd read user preferences from store
             let user_id = ctx.user_id().unwrap_or("unknown");
             format!("You are assisting user {}.", user_id)

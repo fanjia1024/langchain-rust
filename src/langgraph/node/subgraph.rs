@@ -20,7 +20,7 @@ use crate::langgraph::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_rs::langgraph::{StateGraph, MessagesState, CompiledGraph};
+/// use langchain_ai_rs::langgraph::{StateGraph, MessagesState, CompiledGraph};
 ///
 /// // Create a subgraph
 /// let mut subgraph = StateGraph::<MessagesState>::new();

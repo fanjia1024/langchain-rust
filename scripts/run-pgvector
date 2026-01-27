@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 docker run -d \
-  -e POSTGRES_DB=langchain-rs \
+  -e POSTGRES_DB=langchain-ai-rs \
   -e POSTGRES_USER=username \
   -e POSTGRES_PASSWORD=password \
   -e PGDATA=/var/lib/postgresql/data/pgdata \
-  -v pgvolume-langchain-rs:/var/lib/postgresql/data \
+  -v pgvolume-langchain-ai-rs:/var/lib/postgresql/data \
   -p 5432:5432 \
   --name pgvector \
   pgvector/pgvector:pg16

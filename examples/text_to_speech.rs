@@ -1,7 +1,7 @@
 use std::{io::Cursor, process::Stdio};
 
 use futures::StreamExt;
-use langchain_rs::{
+use langchain_ai_rs::{
     document_loaders::{HtmlLoader, Loader},
     schemas::Document,
     text_splitter::{PlainTextSplitter, PlainTextSplitterOptions, TextSplitter},

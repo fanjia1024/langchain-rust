@@ -29,7 +29,7 @@ impl Command {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_rs::langgraph::interrupts::Command;
+    /// use langchain_ai_rs::langgraph::interrupts::Command;
     ///
     /// let cmd = Command::resume(true);
     /// let cmd = Command::resume("approved");
@@ -45,7 +45,7 @@ impl Command {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_rs::langgraph::interrupts::Command;
+    /// use langchain_ai_rs::langgraph::interrupts::Command;
     ///
     /// let cmd = Command::goto("approve_node");
     /// ```

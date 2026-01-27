@@ -35,7 +35,7 @@ pub trait ValidatedBuilder<T> {
 /// # 示例
 ///
 /// ```rust,ignore
-/// use langchain_rs::utils::simple_builder;
+/// use langchain_ai_rs::utils::simple_builder;
 ///
 /// simple_builder! {
 ///     pub struct MyBuilder {

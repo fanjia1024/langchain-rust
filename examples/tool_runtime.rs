@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{create_agent_with_runtime, Command},
     chain::Chain,
     error::ToolError,
@@ -44,7 +44,7 @@ impl Tool for StateAwareTool {
             .filter(|m| {
                 matches!(
                     m.message_type,
-                    langchain_rs::schemas::MessageType::HumanMessage
+                    langchain_ai_rs::schemas::MessageType::HumanMessage
                 )
             })
             .count();
@@ -53,7 +53,7 @@ impl Tool for StateAwareTool {
             .filter(|m| {
                 matches!(
                     m.message_type,
-                    langchain_rs::schemas::MessageType::AIMessage
+                    langchain_ai_rs::schemas::MessageType::AIMessage
                 )
             })
             .count();

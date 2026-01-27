@@ -1,6 +1,6 @@
-use langchain_rs::language_models::llm::LLM;
-use langchain_rs::llm::Qwen;
-use langchain_rs::schemas::Message;
+use langchain_ai_rs::language_models::llm::LLM;
+use langchain_ai_rs::llm::Qwen;
+use langchain_ai_rs::schemas::Message;
 
 #[tokio::main]
 async fn main() {

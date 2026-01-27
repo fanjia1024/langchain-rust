@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::{create_agent, HandoffAgentBuilder},
     schemas::messages::Message,
 };

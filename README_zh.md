@@ -2,13 +2,13 @@
 
 [![Latest Version]][crates.io]
 
-[Latest Version]: https://img.shields.io/crates/v/langchain-rs.svg
-[crates.io]: https://crates.io/crates/langchain-rs
+[Latest Version]: https://img.shields.io/crates/v/langchain-ai-rs.svg
+[crates.io]: https://crates.io/crates/langchain-ai-rs
 
 ⚡ 使用 Rust 通过组合性构建 LLM 应用程序！⚡
 
 [![Discord](https://dcbadge.vercel.app/api/server/JJFcTFbanu?style=for-the-badge)](https://discord.gg/JJFcTFbanu)
-[![Docs: Tutorial](https://img.shields.io/badge/docs-tutorial-success?style=for-the-badge&logo=appveyor)](https://langchain-rs.sellie.tech/get-started/quickstart)
+[![Docs: Tutorial](https://img.shields.io/badge/docs-tutorial-success?style=for-the-badge&logo=appveyor)](https://langchain-ai-rs.sellie.tech/get-started/quickstart)
 
 ## 🤔 这是什么？
 
@@ -41,14 +41,14 @@
 cargo add serde_json
 ```
 
-### 步骤 2：添加 `langchain-rs`
+### 步骤 2：添加 `langchain-ai-rs`
 
-然后，您可以将 `langchain-rs` 添加到您的 Rust 项目中。
+然后，您可以将 `langchain-ai-rs` 添加到您的 Rust 项目中。
 
 #### 简单安装
 
 ```bash
-cargo add langchain-rs
+cargo add langchain-ai-rs
 ```
 
 #### 使用向量存储
@@ -56,13 +56,13 @@ cargo add langchain-rs
 ##### PostgreSQL (pgvector)
 
 ```bash
-cargo add langchain-rs --features postgres
+cargo add langchain-ai-rs --features postgres
 ```
 
 ##### Qdrant
 
 ```bash
-cargo add langchain-rs --features qdrant
+cargo add langchain-ai-rs --features qdrant
 ```
 
 ##### SQLite (VSS)
@@ -70,7 +70,7 @@ cargo add langchain-rs --features qdrant
 从 <https://github.com/asg017/sqlite-vss> 下载额外的 sqlite_vss 库
 
 ```bash
-cargo add langchain-rs --features sqlite-vss
+cargo add langchain-ai-rs --features sqlite-vss
 ```
 
 ##### SQLite (Vec)
@@ -78,55 +78,55 @@ cargo add langchain-rs --features sqlite-vss
 从 <https://github.com/asg017/sqlite-vec> 下载额外的 sqlite_vec 库
 
 ```bash
-cargo add langchain-rs --features sqlite-vec
+cargo add langchain-ai-rs --features sqlite-vec
 ```
 
 ##### SurrealDB
 
 ```bash
-cargo add langchain-rs --features surrealdb
+cargo add langchain-ai-rs --features surrealdb
 ```
 
 ##### OpenSearch
 
 ```bash
-cargo add langchain-rs --features opensearch
+cargo add langchain-ai-rs --features opensearch
 ```
 
 ##### In-Memory
 
 ```bash
-cargo add langchain-rs --features in-memory
+cargo add langchain-ai-rs --features in-memory
 ```
 
 ##### Chroma
 
 ```bash
-cargo add langchain-rs --features chroma
+cargo add langchain-ai-rs --features chroma
 ```
 
 ##### FAISS (hnsw_rs)
 
 ```bash
-cargo add langchain-rs --features faiss
+cargo add langchain-ai-rs --features faiss
 ```
 
 ##### MongoDB Atlas Vector Search
 
 ```bash
-cargo add langchain-rs --features mongodb
+cargo add langchain-ai-rs --features mongodb
 ```
 
 ##### Pinecone
 
 ```bash
-cargo add langchain-rs --features pinecone
+cargo add langchain-ai-rs --features pinecone
 ```
 
 ##### Weaviate
 
 ```bash
-cargo add langchain-rs --features weaviate
+cargo add langchain-ai-rs --features weaviate
 ```
 
 #### 使用 LLM 提供商
@@ -134,25 +134,25 @@ cargo add langchain-rs --features weaviate
 ##### Ollama
 
 ```bash
-cargo add langchain-rs --features ollama
+cargo add langchain-ai-rs --features ollama
 ```
 
 ##### MistralAI
 
 ```bash
-cargo add langchain-rs --features mistralai
+cargo add langchain-ai-rs --features mistralai
 ```
 
 ##### Google Gemini
 
 ```bash
-cargo add langchain-rs --features gemini
+cargo add langchain-ai-rs --features gemini
 ```
 
 ##### AWS Bedrock
 
 ```bash
-cargo add langchain-rs --features bedrock
+cargo add langchain-ai-rs --features bedrock
 ```
 
 #### 使用文档加载器
@@ -160,19 +160,19 @@ cargo add langchain-rs --features bedrock
 ##### PDF (pdf-extract)
 
 ```bash
-cargo add langchain-rs --features pdf-extract
+cargo add langchain-ai-rs --features pdf-extract
 ```
 
 ##### PDF (lopdf)
 
 ```bash
-cargo add langchain-rs --features lopdf
+cargo add langchain-ai-rs --features lopdf
 ```
 
 ##### HTML 转 Markdown
 
 ```bash
-cargo add langchain-rs --features html-to-markdown
+cargo add langchain-ai-rs --features html-to-markdown
 ```
 
 #### 使用代码解析
@@ -180,13 +180,13 @@ cargo add langchain-rs --features html-to-markdown
 ##### Tree-sitter（用于源代码解析，需要 0.26+）
 
 ```bash
-cargo add langchain-rs --features tree-sitter
+cargo add langchain-ai-rs --features tree-sitter
 ```
 
 #### 使用 FastEmbed（本地嵌入）
 
 ```bash
-cargo add langchain-rs --features fastembed
+cargo add langchain-ai-rs --features fastembed
 ```
 
 ## 🚀 快速开始
@@ -194,7 +194,7 @@ cargo add langchain-rs --features fastembed
 ### 简单的 LLM 调用
 
 ```rust
-use langchain_rs::llm::openai::{OpenAI, OpenAIModel};
+use langchain_ai_rs::llm::openai::{OpenAI, OpenAIModel};
 
 #[tokio::main]
 async fn main() {
@@ -209,7 +209,7 @@ async fn main() {
 `init_chat_model` 函数提供了统一的接口来初始化任何支持的 LLM：
 
 ```rust
-use langchain_rs::language_models::init_chat_model;
+use langchain_ai_rs::language_models::init_chat_model;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -237,7 +237,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 对话链
 
 ```rust
-use langchain_rs::{
+use langchain_ai_rs::{
     chain::{Chain, LLMChainBuilder},
     fmt_message, fmt_placeholder, fmt_template,
     llm::openai::{OpenAI, OpenAIModel},
@@ -288,7 +288,7 @@ async fn main() {
 
 ```rust
 use std::sync::Arc;
-use langchain_rs::{
+use langchain_ai_rs::{
     agent::create_agent,
     schemas::messages::Message,
     tools::CommandExecutor,
@@ -542,9 +542,9 @@ export AWS_REGION="us-east-1"
 
 ## 📖 文档
 
-- [官方文档](https://langchain-rs.sellie.tech/get-started/quickstart)
+- [官方文档](https://langchain-ai-rs.sellie.tech/get-started/quickstart)
 - [示例目录](examples/)
-- [API 文档](https://docs.rs/langchain-rs)
+- [API 文档](https://docs.rs/langchain-ai-rs)
 
 ## 🤝 贡献
 
@@ -561,7 +561,7 @@ export AWS_REGION="us-east-1"
 
 ## 🔗 链接
 
-- [Crates.io](https://crates.io/crates/langchain-rs)
-- [文档](https://langchain-rs.sellie.tech)
+- [Crates.io](https://crates.io/crates/langchain-ai-rs)
+- [文档](https://langchain-ai-rs.sellie.tech)
 - [Discord](https://discord.gg/JJFcTFbanu)
-- [GitHub 仓库](https://github.com/Abraxas-365/langchain-rs)
+- [GitHub 仓库](https://github.com/Abraxas-365/langchain-ai-rs)
