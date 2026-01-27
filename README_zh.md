@@ -1,4 +1,4 @@
-# 🦜️🔗LangChain Rust
+# 🦜️🔗LangChain AI Rust
 
 [![Latest Version]][crates.io]
 
@@ -215,15 +215,16 @@ use langchain_ai_rs::language_models::init_chat_model;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 初始化任何支持的模型
     let model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None).await?;
-    
+
     let response = model.invoke("你好，世界！").await?;
     println!("{}", response);
-    
+
     Ok(())
 }
 ```
 
 支持的模型格式：
+
 - `gpt-4o-mini`, `gpt-4o`, `gpt-4-turbo` (OpenAI)
 - `claude-3-5-sonnet-20241022` (Anthropic)
 - `mistralai/mistral-large-latest` (MistralAI)
@@ -297,7 +298,7 @@ use langchain_ai_rs::{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let command_executor = Arc::new(CommandExecutor::default());
-    
+
     let agent = create_agent(
         "gpt-4o-mini",
         &[command_executor],
@@ -379,12 +380,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 文本分割器 (Text Splitters)
 
 #### 基于文本结构
+
 - [x] [递归字符分割器](examples/text_splitter_recursive_character.rs) - 推荐默认，按分隔符递归分割
 - [x] 字符分割器 - 使用单个分隔符的简单字符分割
 - [x] 纯文本分割器 - 基础文本分割
 - [x] Token 分割器 - 基于 Token 的分割（Tiktoken）
 
 #### 基于文档结构
+
 - [x] Markdown 分割器 - 按 Markdown 结构分割
 - [x] [HTML 分割器](examples/text_splitter_html.rs) - 按 HTML 标签分割
 - [x] [JSON 分割器](examples/text_splitter_json.rs) - 按 JSON 对象/数组分割
@@ -399,29 +402,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 检索器 (Retrievers)
 
 #### 外部索引检索器
+
 - [x] [Wikipedia 检索器](examples/retriever_wikipedia.rs) - 检索 Wikipedia 文章
 - [x] Arxiv 检索器 - 从 arXiv 检索学术论文
 - [x] Tavily 搜索 API 检索器 - 实时网络搜索
 
 #### 基于算法的检索器
+
 - [x] BM25 检索器 - BM25 算法文本检索
 - [x] TF-IDF 检索器 - 基于 TF-IDF 的检索
 - [x] SVM 检索器 - 基于支持向量机的检索
 
 #### 重排序器
+
 - [x] Cohere 重排序器 - 使用 Cohere API 重排序
 - [x] FlashRank 重排序器 - 本地 ONNX 模型重排序
 - [x] Contextual AI 重排序器 - Contextual AI API 重排序
 
 #### 混合检索器
+
 - [x] [合并检索器](examples/retriever_merger.rs) - 合并多个检索器结果
 - [x] 集成检索器 - 多个检索器的投票机制
 
 #### 查询增强检索器
+
 - [x] 查询重写检索器 - 基于 LLM 的查询重写
 - [x] 多查询检索器 - 生成多个查询变体
 
 #### 文档压缩检索器
+
 - [x] 嵌入冗余过滤器 - 基于相似度过滤冗余文档
 
 ### 工具
@@ -476,6 +485,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 文档加载器
 
 #### 常见文件类型
+
 - [x] PDF (pdf-extract 或 lopdf)
 - [x] HTML
 - [x] HTML 转 Markdown
@@ -488,22 +498,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] XML（需要 `xml` 特性）
 
 #### Office 文档
+
 - [x] Excel (.xlsx, .xls)（需要 `excel` 特性）
 - [x] Word、PowerPoint 等（通过 PandocLoader）
 
 #### 网页加载器
+
 - [x] WebBaseLoader - 从 URL 加载内容
 - [x] RecursiveURLLoader - 递归抓取网站
 - [x] SitemapLoader - 从 sitemap.xml 加载所有 URL（需要 `xml` 特性）
 
 #### 云存储
+
 - [x] AWS S3（需要 `aws-s3` 特性）
 
 #### 生产力工具
+
 - [x] GitHub（需要 `github` 特性）
 - [x] Git 提交（需要 `git` 特性）
 
 #### 其他
+
 - [x] 源代码（需要 tree-sitter 特性）
 - [x] Pandoc（各种格式：docx、epub、html、ipynb、markdown 等）
 
@@ -514,26 +529,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### 环境变量
 
 对于 OpenAI：
+
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
 
 对于 Anthropic：
+
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
 ```
 
 对于 MistralAI：
+
 ```bash
 export MISTRAL_API_KEY="your-api-key"
 ```
 
 对于 Google Gemini：
+
 ```bash
 export GOOGLE_API_KEY="your-api-key"
 ```
 
 对于 AWS Bedrock：
+
 ```bash
 export AWS_ACCESS_KEY_ID="your-access-key"
 export AWS_SECRET_ACCESS_KEY="your-secret-key"
@@ -564,4 +584,4 @@ export AWS_REGION="us-east-1"
 - [Crates.io](https://crates.io/crates/langchain-ai-rs)
 - [文档](https://langchain-ai-rs.sellie.tech)
 - [Discord](https://discord.gg/JJFcTFbanu)
-- [GitHub 仓库](https://github.com/Abraxas-365/langchain-ai-rs)
+- [GitHub 仓库](https://github.com/fanjia1024/langchain-rust)

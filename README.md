@@ -1,4 +1,4 @@
-# 🦜️🔗LangChain Rust
+# 🦜️🔗LangChain AI Rust
 
 [![Latest Version]][crates.io]
 
@@ -215,15 +215,16 @@ use langchain_ai_rs::language_models::init_chat_model;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize any supported model
     let model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None).await?;
-    
+
     let response = model.invoke("Hello, world!").await?;
     println!("{}", response);
-    
+
     Ok(())
 }
 ```
 
 Supported model formats:
+
 - `gpt-4o-mini`, `gpt-4o`, `gpt-4-turbo` (OpenAI)
 - `claude-3-5-sonnet-20241022` (Anthropic)
 - `mistralai/mistral-large-latest` (MistralAI)
@@ -297,7 +298,7 @@ use langchain_ai_rs::{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let command_executor = Arc::new(CommandExecutor::default());
-    
+
     let agent = create_agent(
         "gpt-4o-mini",
         &[command_executor],
@@ -379,12 +380,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Text Splitters
 
 #### Text Structure-Based
+
 - [x] [RecursiveCharacterTextSplitter](examples/text_splitter_recursive_character.rs) - Recommended default, splits recursively by separators
 - [x] CharacterTextSplitter - Simple character-based splitting with single separator
 - [x] PlainTextSplitter - Basic text splitting
 - [x] TokenSplitter - Token-based splitting (Tiktoken)
 
 #### Document Structure-Based
+
 - [x] MarkdownSplitter - Split Markdown by structure
 - [x] [HTMLSplitter](examples/text_splitter_html.rs) - Split HTML by tags
 - [x] [JsonSplitter](examples/text_splitter_json.rs) - Split JSON by objects/arrays
@@ -399,29 +402,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Retrievers
 
 #### External Index Retrievers
+
 - [x] [Wikipedia Retriever](examples/retriever_wikipedia.rs) - Retrieve Wikipedia articles
 - [x] Arxiv Retriever - Retrieve academic papers from arXiv
 - [x] Tavily Search API Retriever - Real-time web search
 
 #### Algorithm-Based Retrievers
+
 - [x] BM25 Retriever - BM25 algorithm for text retrieval
 - [x] TF-IDF Retriever - TF-IDF based retrieval
 - [x] SVM Retriever - Support Vector Machine based retrieval
 
 #### Rerankers
+
 - [x] Cohere Reranker - Rerank using Cohere API
 - [x] FlashRank Reranker - Local ONNX model reranking
 - [x] Contextual AI Reranker - Contextual AI API reranking
 
 #### Hybrid Retrievers
+
 - [x] [Merger Retriever](examples/retriever_merger.rs) - Combine multiple retrievers
 - [x] Ensemble Retriever - Voting mechanism from multiple retrievers
 
 #### Query Enhancement Retrievers
+
 - [x] RePhrase Query Retriever - LLM-based query rephrasing
 - [x] Multi Query Retriever - Generate multiple query variations
 
 #### Document Compression Retrievers
+
 - [x] Embeddings Redundant Filter - Filter redundant documents by similarity
 
 ### Tools
@@ -476,6 +485,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Document Loaders
 
 #### Common File Types
+
 - [x] PDF (pdf-extract or lopdf)
 - [x] HTML
 - [x] HTML to Markdown
@@ -488,22 +498,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] XML (with `xml` feature)
 
 #### Office Documents
+
 - [x] Excel (.xlsx, .xls) (with `excel` feature)
 - [x] Word, PowerPoint, and more via PandocLoader
 
 #### Web Loaders
+
 - [x] WebBaseLoader - Load content from URLs
 - [x] RecursiveURLLoader - Recursively crawl websites
 - [x] SitemapLoader - Load all URLs from sitemap.xml (with `xml` feature)
 
 #### Cloud Storage
+
 - [x] AWS S3 (with `aws-s3` feature)
 
 #### Productivity Tools
+
 - [x] GitHub (with `github` feature)
 - [x] Git Commits (with `git` feature)
 
 #### Other
+
 - [x] Source Code (with tree-sitter feature)
 - [x] Pandoc (various formats: docx, epub, html, ipynb, markdown, etc.)
 
@@ -514,26 +529,31 @@ See the [examples](examples/) directory for complete examples of each feature.
 ### Environment Variables
 
 For OpenAI:
+
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
 
 For Anthropic:
+
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
 ```
 
 For MistralAI:
+
 ```bash
 export MISTRAL_API_KEY="your-api-key"
 ```
 
 For Google Gemini:
+
 ```bash
 export GOOGLE_API_KEY="your-api-key"
 ```
 
 For AWS Bedrock:
+
 ```bash
 export AWS_ACCESS_KEY_ID="your-access-key"
 export AWS_SECRET_ACCESS_KEY="your-secret-key"
@@ -564,4 +584,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Crates.io](https://crates.io/crates/langchain-ai-rs)
 - [Documentation](https://langchain-ai-rs.sellie.tech)
 - [Discord](https://discord.gg/JJFcTFbanu)
-- [GitHub Repository](https://github.com/Abraxas-365/langchain-ai-rs)
+- [GitHub Repository](https://github.com/fanjia1024/langchain-rust)
