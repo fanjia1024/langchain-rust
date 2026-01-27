@@ -85,3 +85,9 @@ impl From<crate::embedding::EmbedderError> for VectorStoreError {
         VectorStoreError::InternalError(format!("Embedding error: {}", e))
     }
 }
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for VectorStoreError {
+    fn from(e: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        VectorStoreError::Unknown(e.to_string())
+    }
+}

@@ -1,6 +1,8 @@
 mod agent;
 pub use agent::*;
 
+mod message_repair;
+
 mod executor;
 pub use executor::*;
 
@@ -37,12 +39,15 @@ pub use runtime::*;
 mod context_engineering;
 pub use context_engineering::*;
 
+mod deep_agent;
+pub use deep_agent::*;
+
 use std::sync::Arc;
 
 use crate::{
     language_models::llm::LLM,
     schemas::StructuredOutputStrategy,
-    tools::{Tool, ToolContext, ToolStore},
+    tools::{FileBackend, Tool, ToolContext, ToolStore},
 };
 
 // Re-export for internal use
@@ -96,7 +101,7 @@ pub fn create_agent(
     system_prompt: Option<&str>,
     middleware: Option<Vec<Arc<dyn Middleware>>>,
 ) -> Result<UnifiedAgent, AgentError> {
-    create_agent_with_runtime(model, tools, system_prompt, None, None, None, middleware)
+    create_agent_with_runtime(model, tools, system_prompt, None, None, None, middleware, None)
 }
 
 /// Create an agent with structured output support.
@@ -115,10 +120,11 @@ pub fn create_agent_with_structured_output(
         None,
         response_format,
         middleware,
+        None,
     )
 }
 
-/// Create an agent with runtime support (context and store).
+/// Create an agent with runtime support (context, store, and optional file backend).
 pub fn create_agent_with_runtime(
     model: &str,
     tools: &[Arc<dyn Tool>],
@@ -127,6 +133,7 @@ pub fn create_agent_with_runtime(
     store: Option<Arc<dyn ToolStore>>,
     response_format: Option<Box<dyn StructuredOutputStrategy>>,
     middleware: Option<Vec<Arc<dyn Middleware>>>,
+    file_backend: Option<Arc<dyn FileBackend>>,
 ) -> Result<UnifiedAgent, AgentError> {
     // Detect and create LLM from model string
     let llm = detect_and_create_llm(model)?;
@@ -161,6 +168,10 @@ pub fn create_agent_with_runtime(
         unified_agent = unified_agent.with_middleware(mw);
     }
 
+    if let Some(fb) = file_backend {
+        unified_agent = unified_agent.with_file_backend(Some(fb));
+    }
+
     Ok(unified_agent)
 }
 
@@ -185,4 +196,53 @@ pub fn create_agent_from_llm<L: Into<Box<dyn LLM>>>(
     );
 
     Ok(UnifiedAgent::new(agent))
+}
+
+/// Create an agent from an LLM with full runtime (context, store, middleware, response format).
+///
+/// Used by Deep Agent when creating from a custom LLM instance.
+pub fn create_agent_with_runtime_from_llm<L: Into<Box<dyn LLM>>>(
+    llm: L,
+    tools: &[Arc<dyn Tool>],
+    system_prompt: Option<&str>,
+    context: Option<Arc<dyn ToolContext>>,
+    store: Option<Arc<dyn ToolStore>>,
+    response_format: Option<Box<dyn StructuredOutputStrategy>>,
+    middleware: Option<Vec<Arc<dyn Middleware>>>,
+    file_backend: Option<Arc<dyn FileBackend>>,
+) -> Result<UnifiedAgent, AgentError> {
+    let prefix = system_prompt
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "You are a helpful assistant.".to_string());
+
+    let agent: Box<dyn Agent> = Box::new(
+        ConversationalAgentBuilder::new()
+            .tools(tools)
+            .prefix(prefix)
+            .build(llm)?,
+    );
+
+    let mut unified_agent = UnifiedAgent::new(agent);
+
+    if let Some(ctx) = context {
+        unified_agent = unified_agent.with_context(ctx);
+    }
+
+    if let Some(s) = store {
+        unified_agent = unified_agent.with_store(s);
+    }
+
+    if let Some(rf) = response_format {
+        unified_agent = unified_agent.with_response_format(rf);
+    }
+
+    if let Some(mw) = middleware {
+        unified_agent = unified_agent.with_middleware(mw);
+    }
+
+    if let Some(fb) = file_backend {
+        unified_agent = unified_agent.with_file_backend(Some(fb));
+    }
+
+    Ok(unified_agent)
 }

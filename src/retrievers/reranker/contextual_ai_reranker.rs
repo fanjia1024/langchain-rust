@@ -6,6 +6,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// Configuration for Contextual AI reranker
@@ -136,11 +137,13 @@ impl Retriever for ContextualAIReranker {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
         
         // Rerank documents
-        self.rerank(query, documents).await
+        self.rerank(query, documents)
+            .await
+            .map_err(|e| RetrieverError::RerankerError(e.to_string()))
     }
 }

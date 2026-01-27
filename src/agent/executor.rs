@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 use super::{
     agent::Agent,
     context_engineering::{ModelRequest, ModelResponse},
+    message_repair,
     middleware::Middleware,
     middleware::MiddlewareContext,
     runtime::{Runtime, RuntimeRequest},
@@ -24,7 +25,7 @@ use crate::{
         memory::BaseMemory,
         StructuredOutputStrategy,
     },
-    tools::{Tool, ToolContext, ToolRuntime, ToolStore},
+    tools::{FileBackend, Tool, ToolContext, ToolRuntime, ToolStore},
 };
 
 /// Convert message-based input format to standard prompt args.
@@ -85,6 +86,7 @@ where
     pub(crate) store: Arc<dyn ToolStore>,
     response_format: Option<Box<dyn StructuredOutputStrategy>>,
     middleware: Vec<Arc<dyn Middleware>>,
+    file_backend: Option<Arc<dyn FileBackend>>,
 }
 
 impl<A> AgentExecutor<A>
@@ -102,7 +104,13 @@ where
             store: Arc::new(crate::tools::InMemoryStore::new()),
             response_format: None,
             middleware: Vec::new(),
+            file_backend: None,
         }
+    }
+
+    pub fn with_file_backend(mut self, file_backend: Option<Arc<dyn FileBackend>>) -> Self {
+        self.file_backend = file_backend;
+        self
     }
 
     pub fn with_context(mut self, context: Arc<dyn ToolContext>) -> Self {
@@ -209,12 +217,13 @@ where
         log::debug!("steps: {:?}", steps);
         if let Some(memory) = &self.memory {
             let memory = memory.lock().await;
-            input_variables.insert("chat_history".to_string(), json!(memory.messages()));
+            let mut history = memory.messages();
+            history = message_repair::repair_dangling_tool_calls(history);
+            input_variables.insert("chat_history".to_string(), json!(history));
         } else {
-            input_variables.insert(
-                "chat_history".to_string(),
-                json!(SimpleMemory::new().messages()),
-            );
+            let mut history = SimpleMemory::new().messages();
+            history = message_repair::repair_dangling_tool_calls(history);
+            input_variables.insert("chat_history".to_string(), json!(history));
         }
 
         // Create runtime for middleware
@@ -394,12 +403,15 @@ where
 
                         // Create ToolRuntime for tools that need it
                         let tool_call_id = format!("call_{}", steps.len());
-                        let tool_runtime = ToolRuntime::new(
+                        let mut tool_runtime = ToolRuntime::new(
                             Arc::clone(&self.state),
                             Arc::clone(&self.context),
                             Arc::clone(&self.store),
                             tool_call_id,
                         );
+                        if let Some(ref fb) = self.file_backend {
+                            tool_runtime = tool_runtime.with_file_backend(Arc::clone(fb));
+                        }
 
                         // Check if tool requires runtime
                         let observation_result: Result<String, String> = if tool.requires_runtime()

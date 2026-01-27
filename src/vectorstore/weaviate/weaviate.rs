@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::error::Error;
 
 use async_trait::async_trait;
 use serde_json::Value;
@@ -11,7 +10,7 @@ use weaviate_community::WeaviateClient;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -30,13 +29,15 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &WeaviateOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let _ = opt;
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err("Number of vectors and documents do not match".into());
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
         let mut ids = Vec::with_capacity(docs.len());
         for (doc, vec_f64) in docs.iter().zip(vectors.into_iter()) {
@@ -51,7 +52,11 @@ impl VectorStore for Store {
                 .with_id(id)
                 .with_vector(vec_f64)
                 .build();
-            self.client.objects.create(&obj, None).await?;
+            self.client
+                .objects
+                .create(&obj, None)
+                .await
+                .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         }
         Ok(ids)
     }
@@ -61,7 +66,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &WeaviateOptions,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let qv = embedder.embed_query(query).await?;
         let near_vector_str = serde_json::to_string(&serde_json::json!({ "vector": qv }))?;
@@ -75,22 +80,29 @@ impl VectorStore for Store {
             }
         }
         let query_result = get.build();
-        let raw = self.client.query.get(query_result).await?;
+        let raw = self
+            .client
+            .query
+            .get(query_result)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         let score_threshold = opt.score_threshold.map(f64::from).unwrap_or(f64::NEG_INFINITY);
         let docs = parse_get_response(&raw, &self.class_name, score_threshold)?;
         Ok(docs)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &WeaviateOptions) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &WeaviateOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
         for id in ids {
-            let uuid = Uuid::parse_str(id).map_err(|e| format!("invalid uuid {}: {}", id, e))?;
+            let uuid = Uuid::parse_str(id)
+                .map_err(|e| VectorStoreError::InvalidParameter(format!("invalid uuid {}: {}", id, e)))?;
             self.client
                 .objects
                 .delete(&self.class_name, &uuid, None, None)
-                .await?;
+                .await
+                .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         }
         Ok(())
     }
@@ -100,16 +112,16 @@ fn parse_get_response(
     raw: &Value,
     class_name: &str,
     score_threshold: f64,
-) -> Result<Vec<Document>, Box<dyn Error>> {
+) -> Result<Vec<Document>, VectorStoreError> {
         let get = raw
         .get("data")
         .and_then(|d| d.get("Get"))
         .and_then(|g| g.get(class_name))
         .and_then(|c| c.as_array())
         .ok_or_else(|| {
-            Box::<dyn std::error::Error>::from(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("expected data.Get.{} in Weaviate response", class_name),
+            VectorStoreError::DeserializationError(format!(
+                "expected data.Get.{} in Weaviate response",
+                class_name
             ))
         })?;
     let mut out = Vec::new();

@@ -142,14 +142,16 @@ impl Store {
             self.embedder_table_name
         ))
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         sqlx::query(&format!(
             r#"DROP TABLE IF EXISTS {}"#,
             self.collection_table_name
         ))
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         Ok(())
     }
@@ -158,7 +160,8 @@ impl Store {
         sqlx::query(r#"DELETE FROM collection WHERE uuid = $1"#)
             .bind(&self.collection_uuid)
             .execute(&self.pool)
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }
@@ -203,7 +206,11 @@ impl VectorStore for Store {
             ));
         }
 
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let mut ids = Vec::with_capacity(docs.len());
 
@@ -225,10 +232,13 @@ impl VectorStore for Store {
             .bind(json!(&doc.metadata))
             .bind(&self.collection_uuid)
             .execute(&mut *tx)
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         }
 
-        tx.commit().await?;
+        tx.commit()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         Ok(ids)
     }
@@ -290,19 +300,20 @@ impl VectorStore for Store {
             ))
             .bind(limit as i32)
             .fetch_all(&self.pool)
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let docs = rows
             .into_iter()
             .map(|row| {
-                let page_content: String = row.try_get(0)?;
-                let metadata_json: Value = row.try_get(1)?;
-                let score: f64 = row.try_get(2)?;
+                let page_content: String = row.try_get(0).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let metadata_json: Value = row.try_get(1).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let score: f64 = row.try_get(2).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
                 let metadata = if let Value::Object(obj) = metadata_json {
                     obj.into_iter().collect()
                 } else {
-                    HashMap::new() // Or handle this case as needed
+                    HashMap::new()
                 };
 
                 Ok(Document {
@@ -311,7 +322,7 @@ impl VectorStore for Store {
                     score,
                 })
             })
-            .collect::<Result<Vec<Document>, sqlx::Error>>()?;
+            .collect::<Result<Vec<Document>, VectorStoreError>>()?;
 
         Ok(docs)
     }
@@ -331,7 +342,10 @@ impl VectorStore for Store {
         for id in ids {
             query = query.bind(id);
         }
-        query.execute(&self.pool).await?;
+        query
+            .execute(&self.pool)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }

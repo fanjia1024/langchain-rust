@@ -5,6 +5,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::embedding::embedder_trait::Embedder;
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// Configuration for embeddings redundant filter
@@ -128,11 +129,13 @@ impl Retriever for EmbeddingsRedundantFilter {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
-        
+
         // Filter redundant documents
-        self.filter_redundant(documents).await
+        self.filter_redundant(documents)
+            .await
+            .map_err(|e| RetrieverError::DocumentProcessingError(e.to_string()))
     }
 }

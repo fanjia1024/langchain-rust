@@ -4,6 +4,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use serde_json::Value;
 
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// Configuration for SVM retriever
@@ -134,7 +135,7 @@ impl Retriever for SVMRetriever {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         // Build query feature vector (simplified)
         let query_tokens = Self::tokenize(query);
         let mut query_term_counts: HashMap<String, usize> = HashMap::new();

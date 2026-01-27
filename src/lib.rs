@@ -4,6 +4,7 @@ pub mod chain;
 pub mod document_loaders;
 pub mod embedding;
 pub mod error;
+pub mod langgraph;
 pub mod language_models;
 pub mod llm;
 pub mod memory;

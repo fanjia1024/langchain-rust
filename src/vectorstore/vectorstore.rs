@@ -11,7 +11,7 @@ use super::VecStoreOptions;
 // form of vector embeddings.
 #[async_trait]
 pub trait VectorStore: Send + Sync {
-    type Options;
+    type Options: Send + Sync;
 
     async fn add_documents(
         &self,

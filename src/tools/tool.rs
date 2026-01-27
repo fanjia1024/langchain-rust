@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::string::String;
 
 use async_trait::async_trait;

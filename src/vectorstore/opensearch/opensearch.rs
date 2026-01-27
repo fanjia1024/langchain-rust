@@ -16,7 +16,7 @@ pub use opensearch::OpenSearch;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -105,16 +105,15 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &Self::Options,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let vectors = embedder.embed_documents(&texts).await?;
 
         if vectors.len() != docs.len() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Number of vectors and documents do not match",
-            )));
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
 
         let mut body: Vec<JsonBody<_>> = Vec::with_capacity(docs.len() * 2);
@@ -136,11 +135,15 @@ impl VectorStore for Store {
             .bulk(BulkParts::Index(&self.index))
             .body(body)
             .send()
-            .await?
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
             .error_for_status_code()
-            .map_err(|e| Box::new(e))?;
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
-        let response_body = response.json::<Value>().await?;
+        let response_body = response
+            .json::<Value>()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let ids = response_body["items"]
             .as_array()
@@ -157,7 +160,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &Self::Options,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let query_vector = self.embedder.embed_query(query).await?;
         let query = build_similarity_search_query(
             query_vector,
@@ -174,9 +177,13 @@ impl VectorStore for Store {
             .size(3)
             .body(query)
             .send()
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
-        let response_body = response.json::<Value>().await?;
+        let response_body = response
+            .json::<Value>()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let aoss_documents = response_body["hits"]["hits"]
             .as_array()
@@ -209,7 +216,7 @@ impl VectorStore for Store {
         Ok(documents)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
@@ -221,9 +228,10 @@ impl VectorStore for Store {
             .bulk(BulkParts::Index(&self.index))
             .body(body)
             .send()
-            .await?
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
             .error_for_status_code()
-            .map_err(Box::new)?;
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }

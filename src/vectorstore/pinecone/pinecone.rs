@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::error::Error;
 
 use async_trait::async_trait;
 use pinecone_rs::models::{Match, QueryRequest, QueryResponse, Vector};
@@ -43,12 +42,14 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &PineconeOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err("Number of vectors and documents do not match".into());
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
         let ids: Vec<String> = docs
             .iter()
@@ -70,7 +71,10 @@ impl VectorStore for Store {
                 }
             })
             .collect();
-        self.index.upsert(namespace, vectors).await?;
+        self.index
+            .upsert(namespace, vectors)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(ids)
     }
 
@@ -79,7 +83,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &PineconeOptions,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let qv = embedder.embed_query(query).await?;
         let qv_f32: Vec<f32> = qv.into_iter().map(|x| x as f32).collect();
@@ -95,7 +99,11 @@ impl VectorStore for Store {
             sparse_vector: None,
             id: None,
         };
-        let resp: QueryResponse = self.index.query(request).await?;
+        let resp: QueryResponse = self
+            .index
+            .query(request)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         let score_threshold = opt.score_threshold.map(f64::from).unwrap_or(f64::NEG_INFINITY);
         let docs: Vec<Document> = resp
             .matches
@@ -130,7 +138,7 @@ impl VectorStore for Store {
         Ok(docs)
     }
 
-    async fn delete(&self, _ids: &[String], _opt: &PineconeOptions) -> Result<(), Box<dyn Error>> {
-        Err(Box::new(VectorStoreError::DeleteNotSupported))
+    async fn delete(&self, _ids: &[String], _opt: &PineconeOptions) -> Result<(), VectorStoreError> {
+        Err(VectorStoreError::DeleteNotSupported)
     }
 }

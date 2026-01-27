@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use std::error::Error;
 
 use async_trait::async_trait;
+
+use crate::error::RetrieverError;
 use reqwest::Client;
 use serde_json::{json, Value};
 
@@ -71,7 +72,7 @@ impl TavilySearchAPIRetriever {
     }
 
     /// Search using Tavily API
-    async fn search(&self, query: &str) -> Result<Vec<Document>, Box<dyn Error>> {
+    async fn search(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         let url = "https://api.tavily.com/search";
 
         let mut request_body = json!({
@@ -87,15 +88,16 @@ impl TavilySearchAPIRetriever {
             .post(url)
             .json(&request_body)
             .send()
-            .await?;
+            .await
+            .map_err(|e| RetrieverError::TavilyError(e.to_string()))?;
 
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(format!("Tavily API error ({}): {}", status, error_text).into());
+            return Err(RetrieverError::TavilyError(format!("{}: {}", status, error_text)));
         }
 
-        let json: Value = response.json().await?;
+        let json: Value = response.json().await.map_err(|e| RetrieverError::TavilyError(e.to_string()))?;
 
         let mut documents = Vec::new();
 
@@ -151,7 +153,7 @@ impl Retriever for TavilySearchAPIRetriever {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         self.search(query).await
     }
 }

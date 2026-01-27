@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
+use crate::error::RetrieverError;
 use crate::language_models::llm::LLM;
 use crate::schemas::{Document, Retriever};
 
@@ -116,9 +117,12 @@ impl Retriever for MultiQueryRetriever {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         // Generate multiple query variations
-        let queries = self.generate_queries(query).await?;
+        let queries = self
+            .generate_queries(query)
+            .await
+            .map_err(|e| RetrieverError::DocumentProcessingError(e.to_string()))?;
         
         // Retrieve documents for each query
         let mut all_results = Vec::new();

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Compilation Fixes (2025-01-27)
+
+#### Fixed
+
+- **LangGraph**
+  - 为 `StateGraph`、`CompiledGraph`、`SuperStepExecutor`、`SubgraphNode`、`SubgraphNodeWithTransform` 等补充 `S: State + 'static` / `SubState: State + 'static` 约束，满足生命周期与 `Send` 要求
+  - 修正 `compile_with_persistence` 中 E0505：先取得 `self.nodes` 再调用 `propagate_persistence_to_subgraphs`，避免在借用期间移动
+  - 为 `stream`、`stream_with_options`、`stream_internal`、`stream_with_mode`、`stream_with_modes`、`astream_with_config_and_mode` 增加正确生命周期 `'a`，使 stream 合法捕获 `&self`
+  - `stream_internal` 内将可能产生 `Result` 的 `?` 改为显式 `match`，保证 stream 产出类型为 `StreamEvent<S>`
+  - `StateSnapshot<S>` 增加 `#[serde(bound = "S: Serialize + serde::de::DeserializeOwned")]`，解决 E0283
+  - `save_checkpoint` 增加 `S: State + 'static`
+  - SQLite 持久化：`SqliteSaver` 使用 `PhantomData<S>`；在 `query_row`/`query_map` 闭包内将 serde 错误映射为 `rusqlite::Error`；`PersistenceError` 实现 `From<rusqlite::Error>`
+
+- **VectorStore**
+  - Trait 中为 `type Options` 增加 `Send + Sync` 约束，满足默认批量实现的 future `Send`
+  - 为 `VectorStoreError` 实现 `From<Box<dyn Error + Send + Sync>>`
+  - 各实现（faiss, weaviate, chroma, pinecone, mongodb, surrealdb, sqlite_vss, sqlite_vec, opensearch, pgvector）统一返回 `VectorStoreError`，并在内部用 `.map_err(...)` 或 `?` 转换错误
+
+- **Retrievers**
+  - `get_relevant_documents` 统一返回 `Result<Vec<Document>, RetrieverError>`：FlashRankReranker、ContextualAIReranker、CohereReranker、TFIDFRetriever、BM25Retriever、SVMRetriever
+
+- **Document loaders**
+  - toml_loader / xml_loader：使用 `async_stream::stream` 宏替代 `futures::stream`
+  - excel_loader：通过临时文件调用 `open_workbook_auto`；使用 `calamine::Data` 匹配单元格，移除不存在的 `Duration` 分支；去除重复 `Cursor` 引用
+  - github_loader：按 octocrab 的 `Content` 结构体使用 `type`、`content` 等字段区分文件/目录，不再按不存在的 `File`/`Dir` 枚举匹配
+  - aws_s3_loader：`response.is_truncated()` 改为 `.unwrap_or(false)`，满足 `bool` 类型
+
 ### Architecture Optimization (2025-01-24)
 
 #### Added

@@ -6,8 +6,9 @@ use std::{
     pin::Pin,
 };
 
+use async_stream::stream;
 use async_trait::async_trait;
-use futures::{stream, Stream};
+use futures::Stream;
 
 #[cfg(feature = "toml")]
 use toml;

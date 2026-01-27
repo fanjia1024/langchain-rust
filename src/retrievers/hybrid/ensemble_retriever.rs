@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde_json::Value;
 
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// Voting strategy for ensemble retriever
@@ -194,7 +194,7 @@ impl Retriever for EnsembleRetriever {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         // Retrieve from all retrievers
         let mut all_results = Vec::new();
         for retriever in &self.retrievers {

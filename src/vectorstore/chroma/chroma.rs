@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -9,7 +8,7 @@ use serde_json::{Map, Value};
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -27,12 +26,14 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &ChromaOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err("Number of vectors and documents do not match".into());
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
         let ids: Vec<String> = docs
             .iter()
@@ -52,7 +53,10 @@ impl VectorStore for Store {
             metadatas: Some(metadatas),
             documents: Some(docs.iter().map(|d| d.page_content.as_str()).collect()),
         };
-        self.collection.upsert(entries, None).await?;
+        self.collection
+            .upsert(entries, None)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(ids)
     }
 
@@ -61,7 +65,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &ChromaOptions,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let qv = embedder.embed_query(query).await?;
         let qv_f32: Vec<f32> = qv.into_iter().map(|x| x as f32).collect();
@@ -73,7 +77,11 @@ impl VectorStore for Store {
             where_document: None,
             include: Some(vec!["documents", "metadatas", "distances"]),
         };
-        let result: QueryResult = self.collection.query(query_opts, None).await?;
+        let result: QueryResult = self
+            .collection
+            .query(query_opts, None)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         let documents = result.documents.and_then(|d| d.into_iter().next());
         let metadatas = result.metadatas.and_then(|m| m.into_iter().next());
         let distances = result.distances.and_then(|d| d.into_iter().next());
@@ -102,12 +110,15 @@ impl VectorStore for Store {
         Ok(docs)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &ChromaOptions) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &ChromaOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
         let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
-        self.collection.delete(Some(id_refs), None, None).await?;
+        self.collection
+            .delete(Some(id_refs), None, None)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }

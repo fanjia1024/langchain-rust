@@ -105,13 +105,13 @@ impl Loader for GitHubLoader {
                     .map_err(|e| LoaderError::OtherError(format!("GitHub API error: {}", e)))?;
 
                 for item in contents.items {
-                    match item {
-                        octocrab::models::repos::Content::File { content, name, path, .. } => {
-                            // Decode base64 content
+                    let item_type = item.r#type.as_str();
+                    if item_type == "file" {
+                        if let Some(content_b64) = &item.content {
                             let decoded = {
                                 use base64::Engine;
                                 base64::engine::general_purpose::STANDARD
-                                    .decode(&content.replace('\n', ""))
+                                    .decode(content_b64.replace('\n', ""))
                                     .map_err(|e| LoaderError::OtherError(format!("Base64 decode error: {}", e)))?
                             };
 
@@ -122,20 +122,15 @@ impl Loader for GitHubLoader {
                             metadata.insert("source_type".to_string(), Value::from("github"));
                             metadata.insert("owner".to_string(), Value::from(config.owner.clone()));
                             metadata.insert("repo".to_string(), Value::from(config.repo.clone()));
-                            metadata.insert("path".to_string(), Value::from(path.clone()));
-                            metadata.insert("name".to_string(), Value::from(name.clone()));
+                            metadata.insert("path".to_string(), Value::from(item.path.clone()));
+                            metadata.insert("name".to_string(), Value::from(item.name.clone()));
                             metadata.insert("branch".to_string(), Value::from(ref_name));
 
                             let doc = Document::new(content_str).with_metadata(metadata);
                             yield Ok(doc);
                         }
-                        octocrab::models::repos::Content::Dir { path, .. } => {
-                            // Recursively load directory contents
-                            // This would require additional API calls
-                            // For now, we'll skip directories
-                        }
-                        _ => {}
                     }
+                    // Dir and other types: skip (would require additional API calls for recursion)
                 }
             }
             #[cfg(not(feature = "github"))]

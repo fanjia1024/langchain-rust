@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
@@ -30,17 +29,19 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &FaissOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err("Number of vectors and documents do not match".into());
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
         let mut ids = Vec::with_capacity(docs.len());
-        let mut hnsw = self.hnsw.write().map_err(|e| e.to_string())?;
-        let mut docstore = self.docstore.write().map_err(|e| e.to_string())?;
-        let mut id_vec = self.ids.write().map_err(|e| e.to_string())?;
+        let mut hnsw = self.hnsw.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let mut docstore = self.docstore.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let mut id_vec = self.ids.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         for (doc, vector) in docs.iter().zip(vectors.iter()) {
             let id = uuid::Uuid::new_v4().to_string();
             ids.push(id.clone());
@@ -60,13 +61,13 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &FaissOptions,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let qv = embedder.embed_query(query).await?;
         let qv_f32: Vec<f32> = qv.into_iter().map(|x| x as f32).collect();
         let ef = (limit * 2).max(32);
-        let hnsw = self.hnsw.read().map_err(|e| e.to_string())?;
-        let docstore = self.docstore.read().map_err(|e| e.to_string())?;
+        let hnsw = self.hnsw.read().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let docstore = self.docstore.read().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         let neighbours = hnsw.search(qv_f32.as_slice(), limit, ef);
         let score_threshold = opt
             .score_threshold
@@ -92,7 +93,7 @@ impl VectorStore for Store {
         Ok(result)
     }
 
-    async fn delete(&self, _ids: &[String], _opt: &FaissOptions) -> Result<(), Box<dyn Error>> {
-        Err(Box::new(VectorStoreError::DeleteNotSupported))
+    async fn delete(&self, _ids: &[String], _opt: &FaissOptions) -> Result<(), VectorStoreError> {
+        Err(VectorStoreError::DeleteNotSupported)
     }
 }

@@ -35,6 +35,8 @@ sqlx = { version = "0.8.0", default-features = false, features = [
     "uuid",
 ], optional = true }
 uuid = { version = "1.8.0", features = ["v4"], optional = true }
+chrono = { version = "0.4", features = ["serde"] }
+rusqlite = { version = "0.32", features = ["bundled"], optional = true }
 pgvector = { version = "0.4.0", features = [
     "postgres",
     "sqlx",
@@ -122,6 +124,7 @@ sqlite-vec = ["sqlx"]
 surrealdb = ["dep:surrealdb"]
 in-memory = []
 uuid = ["dep:uuid"]
+sqlite-persistence = ["rusqlite"]
 chroma = ["dep:chromadb", "uuid"]
 faiss = ["dep:hnsw_rs", "uuid"]
 milvus = ["dep:milvus-sdk-rust", "uuid"]

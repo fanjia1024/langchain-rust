@@ -84,8 +84,10 @@ impl<C: Config + Send + Sync> Tool for Text2SpeechOpenAI<C> {
             .to_string()
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
-        let input = input.as_str().ok_or("Invalid input")?;
+    async fn run(&self, input: Value) -> Result<String, crate::error::ToolError> {
+        let input = input
+            .as_str()
+            .ok_or_else(|| crate::error::ToolError::InvalidInputError("Invalid input".into()))?;
         let client = Client::new();
         let response_format: SpeechResponseFormat = self.response_format;
 
@@ -94,16 +96,27 @@ impl<C: Config + Send + Sync> Tool for Text2SpeechOpenAI<C> {
             .voice(self.voice.clone())
             .response_format(response_format)
             .model(self.model.clone())
-            .build()?;
+            .build()
+            .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()))?;
 
-        let response = client.audio().speech(request).await?;
+        let response = client
+            .audio()
+            .speech(request)
+            .await
+            .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()))?;
 
         if self.storage.is_some() {
             let storage = self.storage.as_ref().unwrap(); //safe to unwrap
             let data = response.bytes;
-            return storage.save(&self.path, &data).await;
+            return storage
+                .save(&self.path, &data)
+                .await
+                .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()));
         } else {
-            response.save(&self.path).await?;
+            response
+                .save(&self.path)
+                .await
+                .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()))?;
         }
 
         Ok(self.path.clone())

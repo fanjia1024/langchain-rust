@@ -4,6 +4,7 @@ use tokio::sync::Mutex;
 use crate::agent::AgentState;
 
 pub use super::context::ToolContext;
+pub use super::file_backend::FileBackend;
 pub use super::store::ToolStore;
 pub use super::stream::StreamWriter;
 
@@ -44,6 +45,8 @@ pub struct ToolRuntime {
     pub store: Arc<dyn ToolStore>,
     /// Optional stream writer for real-time updates
     pub stream_writer: Option<Arc<dyn StreamWriter>>,
+    /// Optional file backend for FS tools (ls, read_file, write_file, edit_file, glob, grep)
+    pub file_backend: Option<Arc<dyn FileBackend>>,
     /// Current tool call ID
     pub tool_call_id: String,
 }
@@ -60,6 +63,7 @@ impl ToolRuntime {
             context,
             store,
             stream_writer: None,
+            file_backend: None,
             tool_call_id,
         }
     }
@@ -67,6 +71,16 @@ impl ToolRuntime {
     pub fn with_stream_writer(mut self, writer: Arc<dyn StreamWriter>) -> Self {
         self.stream_writer = Some(writer);
         self
+    }
+
+    pub fn with_file_backend(mut self, backend: Arc<dyn FileBackend>) -> Self {
+        self.file_backend = Some(backend);
+        self
+    }
+
+    /// File backend for FS tools; when None, tools use workspace from context.
+    pub fn file_backend(&self) -> Option<&Arc<dyn FileBackend>> {
+        self.file_backend.as_ref()
     }
 
     /// Get a reference to the state (requires async lock)

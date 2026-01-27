@@ -11,7 +11,7 @@ use crate::vectorstore::{VecStoreOptions, VectorStore, VectorStoreError};
 /// VectorStore 基础配置
 ///
 /// 包含所有 VectorStore 实现共享的配置项。
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct VectorStoreBaseConfig {
     /// Embedder 用于生成向量
     pub embedder: Arc<dyn Embedder>,
@@ -19,6 +19,16 @@ pub struct VectorStoreBaseConfig {
     pub collection_name: String,
     /// 向量维度（如果已知）
     pub vector_dimensions: Option<usize>,
+}
+
+impl std::fmt::Debug for VectorStoreBaseConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("VectorStoreBaseConfig")
+            .field("embedder", &"<dyn Embedder>")
+            .field("collection_name", &self.collection_name)
+            .field("vector_dimensions", &self.vector_dimensions)
+            .finish()
+    }
 }
 
 impl VectorStoreBaseConfig {
@@ -91,9 +101,7 @@ impl VectorStoreHelpers {
         threshold: Option<f32>,
     ) -> Vec<Document> {
         if let Some(threshold) = threshold {
-            docs.retain(|doc| {
-                doc.score.unwrap_or(0.0) >= threshold as f64
-            });
+            docs.retain(|doc| doc.score >= threshold as f64);
         }
         docs
     }
@@ -102,8 +110,7 @@ impl VectorStoreHelpers {
     pub fn sort_by_score(mut docs: Vec<Document>) -> Vec<Document> {
         docs.sort_by(|a, b| {
             b.score
-                .unwrap_or(0.0)
-                .partial_cmp(&a.score.unwrap_or(0.0))
+                .partial_cmp(&a.score)
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
         docs

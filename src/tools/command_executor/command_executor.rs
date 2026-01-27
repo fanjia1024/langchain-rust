@@ -127,15 +127,18 @@ impl Tool for CommandExecutor {
         }
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
-        let commands: Vec<CommandInput> = serde_json::from_value(input)?;
+    async fn run(&self, input: Value) -> Result<String, crate::error::ToolError> {
+        let commands: Vec<CommandInput> = serde_json::from_value(input)
+            .map_err(|e| crate::error::ToolError::ParsingError(e.to_string()))?;
         let mut result = String::new();
 
         for command in commands {
             let mut command_to_execute = std::process::Command::new(&command.cmd);
             command_to_execute.args(&command.args);
 
-            let output = command_to_execute.output()?;
+            let output = command_to_execute.output().map_err(|e| {
+                crate::error::ToolError::ExecutionError(e.to_string())
+            })?;
 
             result.push_str(&format!(
                 "Command: {}\nOutput: {}",
@@ -144,12 +147,9 @@ impl Tool for CommandExecutor {
             ));
 
             if !output.status.success() {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "Command {} failed with status: {}",
-                        command.cmd, output.status
-                    ),
+                return Err(crate::error::ToolError::ExecutionError(format!(
+                    "Command {} failed with status: {}",
+                    command.cmd, output.status
                 )));
             }
         }

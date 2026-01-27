@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -9,7 +8,7 @@ use serde_json::Value;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document as LangchainDocument,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -67,13 +66,15 @@ impl VectorStore for Store {
         &self,
         docs: &[LangchainDocument],
         opt: &MongoOptions,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let _ = opt;
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err("Number of vectors and documents do not match".into());
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
         let mut ids = Vec::with_capacity(docs.len());
         for (doc, vector) in docs.iter().zip(vectors.iter()) {
@@ -87,7 +88,10 @@ impl VectorStore for Store {
             if let Some(ref ns) = opt.name_space {
                 bson_doc.insert("namespace", ns.as_str());
             }
-            self.collection.insert_one(bson_doc, None).await?;
+            self.collection
+                .insert_one(bson_doc, None)
+                .await
+                .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
             ids.push(id.to_string());
         }
         Ok(ids)
@@ -98,7 +102,7 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &MongoOptions,
-    ) -> Result<Vec<LangchainDocument>, Box<dyn Error>> {
+    ) -> Result<Vec<LangchainDocument>, VectorStoreError> {
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
         let qv = embedder.embed_query(query).await?;
         let qv_bson: Vec<Bson> = qv.iter().map(|x| Bson::Double(*x)).collect();
@@ -140,10 +144,20 @@ impl VectorStore for Store {
             doc! { "$project": project_doc },
         ];
 
-        let mut cursor = self.collection.aggregate(pipeline, None).await?;
+        let mut cursor = self
+            .collection
+            .aggregate(pipeline, None)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         let mut result = Vec::new();
-        while cursor.advance().await? {
-            let d = cursor.deserialize_current()?;
+        while cursor
+            .advance()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
+        {
+            let d = cursor
+                .deserialize_current()
+                .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
             let page_content = d.get_str("page_content").unwrap_or("").to_string();
             let metadata: HashMap<String, Value> = d
                 .get_document("metadata")
@@ -155,13 +169,14 @@ impl VectorStore for Store {
         Ok(result)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &MongoOptions) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &MongoOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
         self.collection
             .delete_many(doc! { "_id": { "$in": ids } }, None)
-            .await?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }

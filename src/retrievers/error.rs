@@ -34,4 +34,13 @@ pub enum RetrieverError {
 
     #[error("Vector store error: {0}")]
     VectorStoreError(#[from] VectorStoreError),
+
+    #[error("Unknown error: {0}")]
+    Unknown(String),
+}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for RetrieverError {
+    fn from(e: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        RetrieverError::Unknown(e.to_string())
+    }
 }

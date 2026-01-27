@@ -6,9 +6,6 @@ use std::{
     pin::Pin,
 };
 
-#[cfg(feature = "excel")]
-use std::io::Cursor;
-
 use async_stream::stream;
 use async_trait::async_trait;
 use futures::Stream;
@@ -74,11 +71,30 @@ impl<R: Read + Send + Sync + 'static> Loader for ExcelLoader<R> {
         let stream = stream! {
             #[cfg(feature = "excel")]
             {
-                use calamine::{open_workbook_auto, Reader, DataType};
-                use std::io::Cursor;
+                use calamine::{open_workbook_auto, Reader};
+                use std::io::Write;
 
-                let mut workbook = open_workbook_auto(Cursor::new(buffer))
-                    .map_err(|e| LoaderError::ExcelError(format!("Failed to open workbook: {}", e)))?;
+                // calamine::open_workbook_auto requires a path; write buffer to a temp file
+                let tmp_path = std::env::temp_dir().join(format!(
+                    "excel_loader_{}.xlsx",
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_nanos()
+                ));
+                if let Err(e) = std::fs::write(&tmp_path, &buffer) {
+                    yield Err(LoaderError::ExcelError(format!("Failed to write temp file: {}", e)));
+                    return;
+                }
+                let mut workbook = match open_workbook_auto(&tmp_path) {
+                    Ok(wb) => wb,
+                    Err(e) => {
+                        let _ = std::fs::remove_file(&tmp_path);
+                        yield Err(LoaderError::ExcelError(format!("Failed to open workbook: {}", e)));
+                        return;
+                    }
+                };
+                let _ = std::fs::remove_file(&tmp_path);
 
                 let sheet_names: Vec<String> = workbook.sheet_names().to_vec();
 
@@ -100,14 +116,14 @@ impl<R: Read + Send + Sync + 'static> Loader for ExcelLoader<R> {
 
                             for cell in row {
                                 let cell_value = match cell {
-                                    DataType::Empty => String::new(),
-                                    DataType::String(s) => s.clone(),
-                                    DataType::Float(f) => f.to_string(),
-                                    DataType::Int(i) => i.to_string(),
-                                    DataType::Bool(b) => b.to_string(),
-                                    DataType::Error(e) => format!("ERROR: {:?}", e),
-                                    DataType::DateTime(dt) => format!("{}", dt),
-                                    DataType::Duration(d) => format!("{}", d),
+                                    calamine::Data::Empty => String::new(),
+                                    calamine::Data::String(s) => s.clone(),
+                                    calamine::Data::Float(f) => f.to_string(),
+                                    calamine::Data::Int(i) => i.to_string(),
+                                    calamine::Data::Bool(b) => b.to_string(),
+                                    calamine::Data::Error(e) => format!("ERROR: {:?}", e),
+                                    calamine::Data::DateTime(dt) => format!("{}", dt),
+                                    _ => String::new(), // Duration or other variants
                                 };
                                 row_content.push(cell_value);
                             }

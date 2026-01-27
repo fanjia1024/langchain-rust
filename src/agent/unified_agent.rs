@@ -82,6 +82,15 @@ impl UnifiedAgent {
         self
     }
 
+    /// Set the file backend for FS tools (ls, read_file, write_file, edit_file, glob, grep).
+    pub fn with_file_backend(
+        mut self,
+        file_backend: Option<std::sync::Arc<dyn crate::tools::FileBackend>>,
+    ) -> Self {
+        self.executor = self.executor.with_file_backend(file_backend);
+        self
+    }
+
     /// Set the structured output format for the agent.
     pub fn with_response_format(
         mut self,

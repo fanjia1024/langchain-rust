@@ -4,6 +4,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use serde_json::Value;
 
+use crate::error::RetrieverError;
 use crate::schemas::{Document, Retriever};
 
 /// BM25 parameters
@@ -159,7 +160,7 @@ impl Retriever for BM25Retriever {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         let query_tokens = Self::tokenize(query);
         let mut doc_scores: HashMap<usize, f64> = HashMap::new();
 

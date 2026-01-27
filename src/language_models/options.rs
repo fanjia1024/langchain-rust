@@ -34,6 +34,35 @@ pub struct CallOptions {
     pub base_url: Option<String>,
 }
 
+impl std::fmt::Debug for CallOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CallOptions")
+            .field("candidate_count", &self.candidate_count)
+            .field("max_tokens", &self.max_tokens)
+            .field("temperature", &self.temperature)
+            .field("stop_words", &self.stop_words)
+            .field("streaming_func", &self.streaming_func.as_ref().map(|_| "..."))
+            .field("top_k", &self.top_k)
+            .field("top_p", &self.top_p)
+            .field("seed", &self.seed)
+            .field("min_length", &self.min_length)
+            .field("max_length", &self.max_length)
+            .field("n", &self.n)
+            .field("repetition_penalty", &self.repetition_penalty)
+            .field("frequency_penalty", &self.frequency_penalty)
+            .field("presence_penalty", &self.presence_penalty)
+            .field("functions", &self.functions)
+            .field("function_call_behavior", &self.function_call_behavior)
+            .field("response_format", &self.response_format)
+            .field("stream_usage", &self.stream_usage)
+            .field("timeout", &self.timeout)
+            .field("max_retries", &self.max_retries)
+            .field("api_key", &self.api_key.as_ref().map(|_| "..."))
+            .field("base_url", &self.base_url)
+            .finish()
+    }
+}
+
 impl Default for CallOptions {
     fn default() -> Self {
         CallOptions::new()

@@ -71,13 +71,14 @@ where
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, crate::error::ToolError> {
         // Validate the input against the schema
         validate_against_schema(&input, &self.schema())
-            .map_err(|e| Box::new(e) as Box<dyn Error>)?;
+            .map_err(|e| crate::error::ToolError::InvalidInputError(e.to_string()))?;
 
         // Serialize the validated input
-        serde_json::to_string(&input).map_err(|e| Box::new(e) as Box<dyn Error>)
+        serde_json::to_string(&input)
+            .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()))
     }
 
     async fn run_with_runtime(

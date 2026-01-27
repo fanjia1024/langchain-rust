@@ -108,9 +108,13 @@ impl Tool for DuckDuckGoSearchResults {
         )
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
-        let input = input.as_str().ok_or("Input should be a string")?;
-        self.search(input).await
+    async fn run(&self, input: Value) -> Result<String, crate::error::ToolError> {
+        let input = input
+            .as_str()
+            .ok_or_else(|| crate::error::ToolError::InvalidInputError("Input should be a string".into()))?;
+        self.search(input)
+            .await
+            .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()))
     }
 
     fn parameters(&self) -> Value {

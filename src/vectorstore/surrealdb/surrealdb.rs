@@ -8,7 +8,7 @@ use surrealdb::{Connection, Surreal};
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 // INSERT INTO documents {
@@ -97,17 +97,16 @@ impl<C: Connection> VectorStore for Store<C> {
         &self,
         docs: &[Document],
         opt: &Self::Options,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
 
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
 
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Number of vectors and documents do not match",
-            )));
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
 
         let mut ids = Vec::with_capacity(docs.len());
@@ -134,10 +133,14 @@ impl<C: Connection> VectorStore for Store<C> {
                         .bind(("text", doc.page_content.to_owned()))
                         .bind(("embedding", vector.to_owned()))
                         .bind(("metadata", metadata.to_owned()))
-                        .await?
-                        .check()?;
+                        .await
+                        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
+                        .check()
+                        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
-                    let id: Option<String> = result.take("id")?;
+                    let id: Option<String> = result
+                        .take("id")
+                        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
                     ids.push(id.unwrap());
                 }
                 None => {
@@ -155,10 +158,14 @@ impl<C: Connection> VectorStore for Store<C> {
                         .bind(("text", doc.page_content.to_owned()))
                         .bind(("embedding", vector.to_owned()))
                         .bind(("metadata", doc.metadata.to_owned()))
-                        .await?
-                        .check()?;
+                        .await
+                        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
+                        .check()
+                        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
-                    let id: Option<String> = result.take("id")?;
+                    let id: Option<String> = result
+                        .take("id")
+                        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
                     ids.push(id.unwrap());
                 }
             }
@@ -172,7 +179,7 @@ impl<C: Connection> VectorStore for Store<C> {
         query: &str,
         limit: usize,
         opt: &Self::Options,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let collection_name = &self.collection_name;
         let collection_table_name = self.get_collection_table_name();
 
@@ -199,10 +206,14 @@ impl<C: Connection> VectorStore for Store<C> {
             .bind(("score_threshold", opt.score_threshold.unwrap_or(0.0)))
             .bind(("k", limit))
             .bind(("embedding", query_vector.to_owned()))
-            .await?
-            .check()?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
+            .check()
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
-        let query_result: Vec<Row> = result.take(0)?;
+        let query_result: Vec<Row> = result
+            .take(0)
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let documents = query_result
             .into_iter()
@@ -216,7 +227,7 @@ impl<C: Connection> VectorStore for Store<C> {
         Ok(documents)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
@@ -225,8 +236,10 @@ impl<C: Connection> VectorStore for Store<C> {
         self.db
             .query(format!("DELETE FROM {table} WHERE id INSIDE $ids"))
             .bind(("ids", ids_vec))
-            .await?
-            .check()?;
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
+            .check()
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }

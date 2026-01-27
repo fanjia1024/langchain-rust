@@ -155,7 +155,7 @@ impl Loader for AwsS3Loader {
                         }
                     }
 
-                    if response.is_truncated() {
+                    if response.is_truncated().unwrap_or(false) {
                         continuation_token = response.next_continuation_token().map(|s| s.to_string());
                     } else {
                         break;

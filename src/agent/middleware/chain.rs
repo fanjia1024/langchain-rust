@@ -14,7 +14,7 @@ use crate::prompt::PromptArgs;
 use crate::agent::context_engineering::{ModelRequest, ModelResponse};
 
 /// Middleware 执行结果
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum MiddlewareResult<T> {
     /// 继续执行，使用修改后的值
     Modified(T),
@@ -203,7 +203,7 @@ impl MiddlewareChainExecutor {
             }
         }
 
-        if current_finish.return_values == finish.return_values {
+        if current_finish.output == finish.output {
             Ok(None)
         } else {
             Ok(Some(current_finish))

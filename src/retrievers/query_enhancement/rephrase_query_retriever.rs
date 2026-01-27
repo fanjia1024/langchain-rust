@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -74,7 +75,10 @@ impl RePhraseQueryRetriever {
 impl Retriever for RePhraseQueryRetriever {
     async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Rephrase the query
-        let rephrased_query = self.rephrase_query(query).await?;
+        let rephrased_query = self
+            .rephrase_query(query)
+            .await
+            .map_err(|e| RetrieverError::DocumentProcessingError(e.to_string()))?;
 
         // Use rephrased query for retrieval
         self.base_retriever

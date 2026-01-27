@@ -7,7 +7,7 @@ use sqlx::{Pool, Row, Sqlite};
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VecStoreOptions, VectorStore},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -93,22 +93,25 @@ impl VectorStore for Store {
         &self,
         docs: &[Document],
         opt: &Self::Options,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    ) -> Result<Vec<String>, VectorStoreError> {
         let texts: Vec<String> = docs.iter().map(|d| d.page_content.clone()).collect();
 
         let embedder = opt.embedder.as_ref().unwrap_or(&self.embedder);
 
         let vectors = embedder.embed_documents(&texts).await?;
         if vectors.len() != docs.len() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Number of vectors and documents do not match",
-            )));
+            return Err(VectorStoreError::InternalError(
+                "Number of vectors and documents do not match".to_string(),
+            ));
         }
 
         let table = &self.table;
 
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let mut ids = Vec::with_capacity(docs.len());
 
@@ -125,13 +128,16 @@ impl VectorStore for Store {
             .bind(json!(&doc.metadata))
             .bind(text_embedding.to_string())
             .execute(&mut *tx)
-            .await?
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?
             .last_insert_rowid();
 
             ids.push(id.to_string());
         }
 
-        tx.commit().await?;
+        tx.commit()
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         Ok(ids)
     }
@@ -141,12 +147,12 @@ impl VectorStore for Store {
         query: &str,
         limit: usize,
         opt: &Self::Options,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, VectorStoreError> {
         let table = &self.table;
 
         let query_vector = json!(self.embedder.embed_query(query).await?);
 
-        let filter = self.get_filters(opt)?;
+        let filter = self.get_filters(opt).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let mut metadata_query = filter
             .iter()
@@ -172,19 +178,20 @@ impl VectorStore for Store {
         .bind(limit as i32)
         .bind(limit as i32)
         .fetch_all(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let docs = rows
             .into_iter()
             .map(|row| {
-                let page_content: String = row.try_get("text")?;
-                let metadata_json: Value = row.try_get("metadata")?;
-                let score: f64 = row.try_get("distance")?;
+                let page_content: String = row.try_get("text").map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let metadata_json: Value = row.try_get("metadata").map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let score: f64 = row.try_get("distance").map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
                 let metadata = if let Value::Object(obj) = metadata_json {
                     obj.into_iter().collect()
                 } else {
-                    HashMap::new() // Or handle this case as needed
+                    HashMap::new()
                 };
 
                 Ok(Document {
@@ -193,12 +200,12 @@ impl VectorStore for Store {
                     score,
                 })
             })
-            .collect::<Result<Vec<Document>, sqlx::Error>>()?;
+            .collect::<Result<Vec<Document>, VectorStoreError>>()?;
 
         Ok(docs)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &SqliteOptions) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, ids: &[String], _opt: &SqliteOptions) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }
@@ -206,7 +213,7 @@ impl VectorStore for Store {
             .iter()
             .map(|s| s.parse::<i64>())
             .collect::<Result<_, _>>()
-            .map_err(|e: std::num::ParseIntError| -> Box<dyn Error> { e.into() })?;
+            .map_err(|e: std::num::ParseIntError| VectorStoreError::InvalidParameter(e.to_string()))?;
         let placeholders: Vec<String> = (0..rowids.len()).map(|_| "?".to_string()).collect();
         let sql = format!(
             "DELETE FROM {} WHERE rowid IN ({})",
@@ -217,7 +224,10 @@ impl VectorStore for Store {
         for rid in &rowids {
             query = query.bind(rid);
         }
-        query.execute(&self.pool).await?;
+        query
+            .execute(&self.pool)
+            .await
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
         Ok(())
     }
 }

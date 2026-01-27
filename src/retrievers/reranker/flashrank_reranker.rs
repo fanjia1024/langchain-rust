@@ -101,7 +101,7 @@ impl Retriever for FlashRankReranker {
     async fn get_relevant_documents(
         &self,
         query: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, crate::error::RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
         

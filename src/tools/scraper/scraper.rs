@@ -25,8 +25,10 @@ impl Tool for WebScrapper {
 		Input should be a working url.",
         )
     }
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
-        let input = input.as_str().ok_or("Invalid input")?;
+    async fn run(&self, input: Value) -> Result<String, crate::error::ToolError> {
+        let input = input
+            .as_str()
+            .ok_or_else(|| crate::error::ToolError::InvalidInputError("Invalid input".into()))?;
         match scrape_url(input).await {
             Ok(content) => Ok(content),
             Err(e) => Ok(format!("Error scraping {}: {}\n", input, e)),

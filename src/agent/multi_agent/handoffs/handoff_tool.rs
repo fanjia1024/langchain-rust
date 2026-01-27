@@ -68,10 +68,12 @@ impl Tool for HandoffTool {
         })
     }
 
-    async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, _input: Value) -> Result<String, crate::error::ToolError> {
         // This method is not used when requires_runtime() returns true
         // But we need to implement it to satisfy the trait
-        Err("HandoffTool requires runtime. Use run_with_runtime instead.".into())
+        Err(crate::error::ToolError::ConfigurationError(
+            "HandoffTool requires runtime. Use run_with_runtime instead.".to_string(),
+        ))
     }
 
     async fn run_with_runtime(

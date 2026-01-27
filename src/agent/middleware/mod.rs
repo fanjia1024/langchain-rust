@@ -303,6 +303,7 @@ pub mod rate_limit;
 pub mod retry;
 pub mod safety_guardrail;
 pub mod summarization;
+pub mod tool_result_eviction;
 
 pub use content_filter::ContentFilterMiddleware;
 pub use guardrail_utils::*;
@@ -314,6 +315,7 @@ pub use rate_limit::RateLimitMiddleware;
 pub use retry::RetryMiddleware;
 pub use safety_guardrail::SafetyGuardrailMiddleware;
 pub use summarization::SummarizationMiddleware;
+pub use tool_result_eviction::ToolResultEvictionMiddleware;
 
 // Re-export middleware chain executor
 pub mod chain;

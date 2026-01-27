@@ -130,7 +130,7 @@ mod tests {
         fn description(&self) -> String {
             "Usefull to make calculations".to_string()
         }
-        async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+        async fn run(&self, _input: Value) -> Result<String, crate::error::ToolError> {
             Ok("25".to_string())
         }
     }
