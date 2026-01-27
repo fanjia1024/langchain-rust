@@ -8,7 +8,6 @@
 ⚡ 使用 Rust 通过组合性构建 LLM 应用程序！⚡
 
 [![Discord](https://dcbadge.vercel.app/api/server/JJFcTFbanu?style=for-the-badge)](https://discord.gg/JJFcTFbanu)
-[![Docs: Tutorial](https://img.shields.io/badge/docs-tutorial-success?style=for-the-badge&logo=appveyor)](https://langchain-ai-rs.sellie.tech/get-started/quickstart)
 
 ## 🤔 这是什么？
 
@@ -651,7 +650,6 @@ export AWS_REGION="us-east-1"
 
 ## 📖 文档
 
-- [官方文档](https://langchain-ai-rs.sellie.tech/get-started/quickstart)
 - [示例目录](examples/)
 - [API 文档](https://docs.rs/langchain-ai-rs)
 
@@ -671,6 +669,5 @@ export AWS_REGION="us-east-1"
 ## 🔗 链接
 
 - [Crates.io](https://crates.io/crates/langchain-ai-rs)
-- [文档](https://langchain-ai-rs.sellie.tech)
 - [Discord](https://discord.gg/JJFcTFbanu)
 - [GitHub 仓库](https://github.com/fanjia1024/langchain-rust)

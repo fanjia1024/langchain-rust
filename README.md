@@ -8,7 +8,6 @@
 ⚡ Building applications with LLMs through composability, with Rust! ⚡
 
 [![Discord](https://dcbadge.vercel.app/api/server/JJFcTFbanu?style=for-the-badge)](https://discord.gg/JJFcTFbanu)
-[![Docs: Tutorial](https://img.shields.io/badge/docs-tutorial-success?style=for-the-badge&logo=appveyor)](https://langchain-ai-rs.sellie.tech/get-started/quickstart)
 
 ## 🤔 What is this?
 
@@ -651,7 +650,6 @@ export AWS_REGION="us-east-1"
 
 ## 📖 Documentation
 
-- [Official Documentation](https://langchain-ai-rs.sellie.tech/get-started/quickstart)
 - [Examples Directory](examples/)
 - [API Documentation](https://docs.rs/langchain-ai-rs)
 
@@ -671,6 +669,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🔗 Links
 
 - [Crates.io](https://crates.io/crates/langchain-ai-rs)
-- [Documentation](https://langchain-ai-rs.sellie.tech)
 - [Discord](https://discord.gg/JJFcTFbanu)
 - [GitHub Repository](https://github.com/fanjia1024/langchain-rust)
