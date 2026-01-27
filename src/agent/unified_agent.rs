@@ -15,8 +15,25 @@ use crate::{
     tools::{ToolContext, ToolStore},
 };
 
-use super::{agent::Agent, executor::AgentExecutor, state::AgentState, AgentError};
+use super::{
+    agent::Agent,
+    checkpoint::AgentCheckpointer,
+    executor::AgentExecutor,
+    state::AgentState,
+    AgentError, AgentInvokeResult,
+};
 use crate::agent::runtime::{Runtime, TypedContext};
+use crate::langgraph::RunnableConfig;
+use serde_json::Value as JsonValue;
+
+/// Input for [UnifiedAgent::invoke_with_config]: either normal state (prompt args) or resume with decisions.
+#[derive(Clone, Debug)]
+pub enum AgentInput {
+    /// Normal invocation (prompt args or message-based args).
+    State(PromptArgs),
+    /// Resume with human decisions after an interrupt (value with "decisions" key; use same thread_id).
+    Resume(JsonValue),
+}
 
 /// A wrapper that makes Box<dyn Agent> work with AgentExecutor
 struct AgentBox(Box<dyn Agent>);
@@ -113,6 +130,44 @@ impl UnifiedAgent {
     pub fn with_state(mut self, state: Arc<Mutex<AgentState>>) -> Self {
         self.executor = self.executor.with_state(state);
         self
+    }
+
+    /// Set the checkpointer for human-in-the-loop (save on interrupt, load on resume).
+    pub fn with_checkpointer(
+        mut self,
+        checkpointer: Option<Arc<dyn AgentCheckpointer>>,
+    ) -> Self {
+        self.executor = self.executor.with_checkpointer(checkpointer);
+        self
+    }
+
+    /// Invoke with config (thread_id) for HILP. Returns [AgentInvokeResult] (Complete or Interrupt).
+    /// Use [AgentInput::State] for normal input or [AgentInput::Resume] with decisions after an interrupt.
+    pub async fn invoke_with_config(
+        &self,
+        input: AgentInput,
+        config: &RunnableConfig,
+    ) -> Result<AgentInvokeResult, ChainError> {
+        match input {
+            AgentInput::State(prompt_args) => {
+                let args = if prompt_args.contains_key("messages") {
+                    convert_messages_to_prompt_args(prompt_args)?
+                } else {
+                    prompt_args
+                };
+                match self.executor.call_with_config(args, Some(config)).await {
+                    Ok(gen) => Ok(AgentInvokeResult::Complete(gen.generation)),
+                    Err(ChainError::Interrupt(payload)) => Ok(AgentInvokeResult::Interrupt {
+                        interrupt_value: payload,
+                    }),
+                    Err(e) => Err(e),
+                }
+            }
+            AgentInput::Resume(decisions_value) => {
+                let gen = self.executor.call_resume(config, decisions_value).await?;
+                Ok(AgentInvokeResult::Complete(gen.generation))
+            }
+        }
     }
 
     /// Invoke the agent with messages.

@@ -15,11 +15,15 @@
 //! [FileBackend]. When none is set, paths are resolved from the workspace root (config or context).
 //! See [Backends](https://docs.langchain.com/oss/python/deepagents/backends) and the [backends]
 //! module for [WorkspaceBackend], [StoreBackend], and [CompositeBackend] (prefix-based routing).
+//!
+//! **Long-term memory**: Use [DeepAgentConfig::with_long_term_memory] so that paths under a prefix
+//! (e.g. `/memories/`) are stored in the [ToolStore] and persist across threads; see [Long-term memory](https://docs.langchain.com/oss/python/deepagents/long-term-memory).
 
 mod config;
 pub use config::{DeepAgentConfig, SubagentSpec};
 
 pub mod backends;
+pub mod skills;
 pub use backends::{CompositeBackend, FileBackend, FileInfo, StoreBackend, WorkspaceBackend};
 
 pub mod tools;
@@ -30,6 +34,7 @@ pub use tools::{
 pub use tools::fs::FileSystemToolError;
 
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::agent::{
@@ -37,6 +42,7 @@ use crate::agent::{
     SubagentTool, UnifiedAgent,
 };
 use crate::agent::middleware::{HumanInTheLoopMiddleware, ToolResultEvictionMiddleware};
+use crate::agent::InterruptConfig;
 use crate::language_models::llm::LLM;
 use crate::tools::{InMemoryStore, SimpleContext, Tool, ToolContext, ToolStore};
 
@@ -70,6 +76,7 @@ pub fn build_subagent_spec(
         agent: Arc::new(agent),
         name: name.into(),
         description: description.into(),
+        interrupt_on: None,
     })
 }
 
@@ -130,18 +137,31 @@ fn build_context(config: &DeepAgentConfig) -> Arc<dyn ToolContext> {
     Arc::new(ctx)
 }
 
-/// Build middleware list: optional tool result eviction, HumanInTheLoop for interrupt_before_tools, then config.middleware.
+/// Build middleware list: optional skills (progressive disclosure), tool result eviction, HumanInTheLoop from interrupt_on and interrupt_before_tools, then config.middleware.
 fn build_middleware(config: &DeepAgentConfig) -> Option<Vec<Arc<dyn Middleware>>> {
     let mut list: Vec<Arc<dyn Middleware>> = Vec::new();
+    if !config.skill_dirs.is_empty() {
+        if let Ok(Some(skills_mw)) = crate::agent::middleware::build_skills_middleware(&config.skill_dirs) {
+            list.push(skills_mw);
+        } else {
+            log::warn!("Failed to load skill index from skill_dirs");
+        }
+    }
     if let Some(limit) = config.evict_tool_result_over_tokens {
         list.push(Arc::new(
             ToolResultEvictionMiddleware::new().with_token_limit(Some(limit)),
         ));
     }
-    if !config.interrupt_before_tools.is_empty() {
+    let mut interrupt_map = config.interrupt_on.clone();
+    for name in &config.interrupt_before_tools {
+        interrupt_map
+            .entry(name.clone())
+            .or_insert_with(InterruptConfig::enabled);
+    }
+    if !interrupt_map.is_empty() {
         let mut hitl = HumanInTheLoopMiddleware::new().with_approval_required_for_tool_calls(false);
-        for name in &config.interrupt_before_tools {
-            hitl = hitl.with_interrupt_on(name.clone(), true);
+        for (name, cfg) in interrupt_map {
+            hitl = hitl.with_interrupt_config(name, cfg);
         }
         list.push(Arc::new(hitl));
     }
@@ -153,6 +173,31 @@ fn build_middleware(config: &DeepAgentConfig) -> Option<Vec<Arc<dyn Middleware>>
     } else {
         Some(list)
     }
+}
+
+/// Returns the file backend to use: when [DeepAgentConfig::long_term_memory_prefix] is set, builds a
+/// [CompositeBackend] that routes that prefix to [StoreBackend](store); otherwise returns [DeepAgentConfig::file_backend].
+fn effective_file_backend(
+    config: &DeepAgentConfig,
+    store: &Arc<dyn ToolStore>,
+) -> Option<Arc<dyn FileBackend>> {
+    let prefix = match &config.long_term_memory_prefix {
+        Some(p) => p.clone(),
+        None => return config.file_backend.clone(),
+    };
+    let default: Arc<dyn FileBackend> = config
+        .file_backend
+        .clone()
+        .or_else(|| {
+            config
+                .workspace_root
+                .clone()
+                .map(|r: PathBuf| Arc::new(WorkspaceBackend::new(r)) as Arc<dyn FileBackend>)
+        })
+        .unwrap_or_else(|| Arc::new(WorkspaceBackend::new(std::env::temp_dir())));
+    let composite = CompositeBackend::new(default)
+        .with_route(prefix, Arc::new(StoreBackend::new(Arc::clone(store))));
+    Some(Arc::new(composite))
 }
 
 /// Build all tools (user + built-in from config), final system prompt, context, store, middleware.
@@ -175,32 +220,55 @@ fn build_deep_agent_parts(
     let base_prompt = system_prompt
         .map(|s| s.to_string())
         .unwrap_or_else(|| DEFAULT_DEEP_AGENT_SYSTEM_PROMPT.to_string());
-    let full_system_prompt = format!("{}{}{}", base_prompt, skills_section, memory_section);
+    let mut full_system_prompt = base_prompt;
+    if config.enable_planning {
+        if let Some(ref s) = config.planning_system_prompt {
+            full_system_prompt.push_str("\n\n");
+            full_system_prompt.push_str(s);
+        }
+    }
+    if config.enable_filesystem {
+        if let Some(ref s) = config.filesystem_system_prompt {
+            full_system_prompt.push_str("\n\n");
+            full_system_prompt.push_str(s);
+        }
+    }
+    full_system_prompt.push_str(&skills_section);
+    full_system_prompt.push_str(&memory_section);
+
+    fn maybe_wrap_tool(
+        tool: Arc<dyn Tool>,
+        custom_descriptions: &std::collections::HashMap<String, String>,
+    ) -> Arc<dyn Tool> {
+        let name = tool.name();
+        if let Some(desc) = custom_descriptions.get(&name) {
+            Arc::new(tools::ToolWithCustomDescription::with_description(tool, desc.clone()))
+        } else {
+            tool
+        }
+    }
 
     let mut all_tools: Vec<Arc<dyn Tool>> = tools.to_vec();
 
     if config.enable_planning {
-        all_tools.push(Arc::new(tools::WriteTodosTool::new()));
+        let t = Arc::new(tools::WriteTodosTool::new());
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
     }
 
     if config.enable_filesystem {
         let wr = config.workspace_root.clone();
-        all_tools.push(Arc::new(
-            tools::LsTool::new().maybe_workspace_root(wr.clone()),
-        ));
-        all_tools.push(Arc::new(
-            tools::ReadFileTool::new().maybe_workspace_root(wr.clone()),
-        ));
-        all_tools.push(Arc::new(
-            tools::WriteFileTool::new().maybe_workspace_root(wr.clone()),
-        ));
-        all_tools.push(Arc::new(
-            tools::EditFileTool::new().maybe_workspace_root(wr.clone()),
-        ));
-        all_tools.push(Arc::new(
-            tools::GlobTool::new().maybe_workspace_root(wr.clone()),
-        ));
-        all_tools.push(Arc::new(tools::GrepTool::new().maybe_workspace_root(wr)));
+        let t = Arc::new(tools::LsTool::new().maybe_workspace_root(wr.clone()));
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
+        let t = Arc::new(tools::ReadFileTool::new().maybe_workspace_root(wr.clone()));
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
+        let t = Arc::new(tools::WriteFileTool::new().maybe_workspace_root(wr.clone()));
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
+        let t = Arc::new(tools::EditFileTool::new().maybe_workspace_root(wr.clone()));
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
+        let t = Arc::new(tools::GlobTool::new().maybe_workspace_root(wr.clone()));
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
+        let t = Arc::new(tools::GrepTool::new().maybe_workspace_root(wr));
+        all_tools.push(maybe_wrap_tool(t, &config.custom_tool_descriptions));
     }
 
     // Task tool is not added here; callers (create_deep_agent / create_deep_agent_from_llm)
@@ -238,6 +306,7 @@ pub fn create_deep_agent(
 ) -> Result<UnifiedAgent, AgentError> {
     let (base_tools, full_prompt, context, store, middleware) =
         build_deep_agent_parts(tools, system_prompt, &config)?;
+    let file_backend = effective_file_backend(&config, &store);
 
     let all_tools: Vec<Arc<dyn Tool>> = if config.enable_task_tool {
         let general_purpose_agent = create_agent_with_runtime(
@@ -248,7 +317,7 @@ pub fn create_deep_agent(
             Some(store.clone()),
             None,
             middleware.clone(),
-            config.file_backend.clone(),
+            file_backend.clone(),
         )?;
         let mut subagent_tools: Vec<SubagentTool> = vec![SubagentTool::new(
             Arc::new(general_purpose_agent),
@@ -269,7 +338,7 @@ pub fn create_deep_agent(
         base_tools
     };
 
-    create_agent_with_runtime(
+    let mut agent = create_agent_with_runtime(
         model,
         &all_tools,
         Some(&full_prompt),
@@ -277,8 +346,12 @@ pub fn create_deep_agent(
         Some(store),
         config.response_format,
         middleware,
-        config.file_backend.clone(),
-    )
+        file_backend,
+    )?;
+    if let Some(ref cp) = config.checkpointer {
+        agent = agent.with_checkpointer(Some(Arc::clone(cp)));
+    }
+    Ok(agent)
 }
 
 /// Create a Deep Agent from an existing LLM instance (custom model configuration).
@@ -297,6 +370,7 @@ pub fn create_deep_agent_from_llm<L: Into<Box<dyn LLM>>>(
 ) -> Result<UnifiedAgent, AgentError> {
     let (base_tools, full_prompt, context, store, middleware) =
         build_deep_agent_parts(tools, system_prompt, &config)?;
+    let file_backend = effective_file_backend(&config, &store);
 
     let all_tools: Vec<Arc<dyn Tool>> = if config.enable_task_tool {
         let mut subagent_tools: Vec<SubagentTool> = Vec::new();
@@ -309,7 +383,7 @@ pub fn create_deep_agent_from_llm<L: Into<Box<dyn LLM>>>(
                 Some(store.clone()),
                 None,
                 middleware.clone(),
-                config.file_backend.clone(),
+                file_backend.clone(),
             )?;
             subagent_tools.push(SubagentTool::new(
                 Arc::new(general_purpose_agent),
@@ -335,7 +409,7 @@ pub fn create_deep_agent_from_llm<L: Into<Box<dyn LLM>>>(
         base_tools
     };
 
-    create_agent_with_runtime_from_llm(
+    let mut agent = create_agent_with_runtime_from_llm(
         llm,
         &all_tools,
         Some(&full_prompt),
@@ -343,6 +417,10 @@ pub fn create_deep_agent_from_llm<L: Into<Box<dyn LLM>>>(
         Some(store),
         config.response_format,
         middleware,
-        config.file_backend.clone(),
-    )
+        file_backend,
+    )?;
+    if let Some(ref cp) = config.checkpointer {
+        agent = agent.with_checkpointer(Some(Arc::clone(cp)));
+    }
+    Ok(agent)
 }

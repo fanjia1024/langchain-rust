@@ -9,10 +9,11 @@
 //! [create_deep_agent]); add custom subagents with [DeepAgentConfig::with_subagent]. The main
 //! agent uses each subagent's description to choose when to delegate. See [Subagents](https://docs.langchain.com/oss/python/deepagents/subagents).
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::agent::{Middleware, UnifiedAgent};
+use crate::agent::{AgentCheckpointer, InterruptConfig, Middleware, UnifiedAgent};
 use crate::schemas::StructuredOutputStrategy;
 use crate::tools::{FileBackend, ToolContext, ToolStore};
 
@@ -20,7 +21,10 @@ use crate::tools::{FileBackend, ToolContext, ToolStore};
 ///
 /// Enables or disables planning, file system tools, and task (subagent) tools.
 /// Optionally sets workspace root, store, context, middleware, response format,
-/// and skills/memory for prompt injection.
+/// and skills/memory for prompt injection. Aligns with the official
+/// [Deep Agents Middleware](https://docs.langchain.com/oss/python/deepagents/middleware):
+/// planning + optional system prompt ≈ TodoListMiddleware; filesystem + optional prompt/descriptions ≈ FilesystemMiddleware;
+/// task tool + subagents + general-purpose ≈ SubAgentMiddleware.
 ///
 /// Note: `Clone` is not implemented because `response_format` uses `Box<dyn StructuredOutputStrategy>`.
 pub struct DeepAgentConfig {
@@ -48,12 +52,18 @@ pub struct DeepAgentConfig {
     pub skill_paths: Vec<PathBuf>,
     /// Inline skill (name, content) pairs; appended to system prompt under "## Skills".
     pub skill_contents: Vec<(String, String)>,
+    /// Skill directories for progressive disclosure: each dir must contain SKILL.md with frontmatter (name, description).
+    /// Only frontmatter is read at startup; full content is loaded and injected when the user message matches.
+    pub skill_dirs: Vec<PathBuf>,
     /// Paths to memory files (e.g. AGENTS.md); contents appended under "## Memory".
     pub memory_paths: Vec<PathBuf>,
     /// Inline memory (name, content) pairs; appended under "## Memory".
     pub memory_contents: Vec<(String, String)>,
     /// Tool names before which to require human-in-the-loop approval (e.g. "write_file", "edit_file").
+    /// When [Self::interrupt_on] is also set, both are merged: interrupt_before_tools act as enabled with default decisions.
     pub interrupt_before_tools: Vec<String>,
+    /// Per-tool interrupt config (enable + allowed_decisions). Takes precedence; [Self::interrupt_before_tools] fills in tools not listed here.
+    pub interrupt_on: HashMap<String, InterruptConfig>,
     /// When set, evict tool results larger than this many (estimated) tokens to the store; None = disabled.
     pub evict_tool_result_over_tokens: Option<usize>,
     /// When using [crate::agent::deep_agent::create_deep_agent_from_llm] with `enable_task_tool`,
@@ -63,6 +73,16 @@ pub struct DeepAgentConfig {
     pub default_subagent_model: Option<String>,
     /// Optional file backend for FS tools; when None, tools use workspace_root from config/context.
     pub file_backend: Option<Arc<dyn FileBackend>>,
+    /// Optional checkpointer for human-in-the-loop (required for interrupt/resume; use same thread_id).
+    pub checkpointer: Option<Arc<dyn AgentCheckpointer>>,
+    /// Optional extra system prompt when planning is enabled (TodoListMiddleware-style).
+    pub planning_system_prompt: Option<String>,
+    /// Optional extra system prompt when filesystem is enabled (FilesystemMiddleware-style).
+    pub filesystem_system_prompt: Option<String>,
+    /// Override tool description by tool name (e.g. "ls", "read_file", "write_todos"). Applied to built-in tools.
+    pub custom_tool_descriptions: HashMap<String, String>,
+    /// When set (e.g. "/memories/"), paths under this prefix are routed to the store (long-term memory); other paths use the default backend. Requires a store (defaults to InMemoryStore).
+    pub long_term_memory_prefix: Option<String>,
 }
 
 impl std::fmt::Debug for DeepAgentConfig {
@@ -79,12 +99,19 @@ impl std::fmt::Debug for DeepAgentConfig {
             .field("response_format", &self.response_format.as_ref().map(|_| "..."))
             .field("skill_paths", &self.skill_paths)
             .field("skill_contents", &self.skill_contents.len())
+            .field("skill_dirs", &self.skill_dirs)
             .field("memory_paths", &self.memory_paths)
             .field("memory_contents", &self.memory_contents.len())
             .field("interrupt_before_tools", &self.interrupt_before_tools)
+            .field("interrupt_on", &self.interrupt_on.len())
             .field("evict_tool_result_over_tokens", &self.evict_tool_result_over_tokens)
             .field("default_subagent_model", &self.default_subagent_model)
             .field("file_backend", &self.file_backend.as_ref().map(|_| "..."))
+            .field("checkpointer", &self.checkpointer.as_ref().map(|_| "..."))
+            .field("planning_system_prompt", &self.planning_system_prompt.as_ref().map(|_| "..."))
+            .field("filesystem_system_prompt", &self.filesystem_system_prompt.as_ref().map(|_| "..."))
+            .field("custom_tool_descriptions", &self.custom_tool_descriptions.len())
+            .field("long_term_memory_prefix", &self.long_term_memory_prefix)
             .finish()
     }
 }
@@ -98,6 +125,8 @@ pub struct SubagentSpec {
     pub name: String,
     /// Description for the LLM to choose when to use this subagent.
     pub description: String,
+    /// Optional per-tool interrupt config for this subagent (overrides main agent interrupt_on when building this subagent).
+    pub interrupt_on: Option<HashMap<String, InterruptConfig>>,
 }
 
 impl std::fmt::Debug for SubagentSpec {
@@ -123,12 +152,19 @@ impl Default for DeepAgentConfig {
             response_format: None,
             skill_paths: Vec::new(),
             skill_contents: Vec::new(),
+            skill_dirs: Vec::new(),
             memory_paths: Vec::new(),
             memory_contents: Vec::new(),
             interrupt_before_tools: Vec::new(),
+            interrupt_on: HashMap::new(),
             evict_tool_result_over_tokens: None,
             default_subagent_model: None,
             file_backend: None,
+            checkpointer: None,
+            planning_system_prompt: None,
+            filesystem_system_prompt: None,
+            custom_tool_descriptions: HashMap::new(),
+            long_term_memory_prefix: None,
         }
     }
 }
@@ -180,6 +216,25 @@ impl DeepAgentConfig {
             agent,
             name: name.into(),
             description: description.into(),
+            interrupt_on: None,
+        });
+        self.enable_task_tool = true;
+        self
+    }
+
+    /// Add a subagent with optional per-tool interrupt config (overrides main agent for this subagent).
+    pub fn with_subagent_and_interrupt_on(
+        mut self,
+        agent: Arc<UnifiedAgent>,
+        name: impl Into<String>,
+        description: impl Into<String>,
+        interrupt_on: Option<HashMap<String, InterruptConfig>>,
+    ) -> Self {
+        self.subagents.push(SubagentSpec {
+            agent,
+            name: name.into(),
+            description: description.into(),
+            interrupt_on,
         });
         self.enable_task_tool = true;
         self
@@ -230,6 +285,19 @@ impl DeepAgentConfig {
         self
     }
 
+    /// Add a skill directory (must contain SKILL.md with frontmatter). Enables progressive disclosure:
+    /// only matched skills are loaded per turn. Later dirs override earlier for same skill name.
+    pub fn with_skill_dir(mut self, dir: PathBuf) -> Self {
+        self.skill_dirs.push(dir);
+        self
+    }
+
+    /// Add multiple skill directories.
+    pub fn with_skill_dirs(mut self, dirs: Vec<PathBuf>) -> Self {
+        self.skill_dirs.extend(dirs);
+        self
+    }
+
     /// Add a memory file path (e.g. AGENTS.md); content appended under "## Memory".
     pub fn with_memory_path(mut self, path: PathBuf) -> Self {
         self.memory_paths.push(path);
@@ -258,6 +326,21 @@ impl DeepAgentConfig {
         self
     }
 
+    /// Set per-tool interrupt config (tool name -> InterruptConfig). Replaces existing interrupt_on; use with [Self::with_interrupt_before_tools] to also set legacy list (merged in build_middleware).
+    pub fn with_interrupt_on(
+        mut self,
+        interrupt_on: HashMap<String, InterruptConfig>,
+    ) -> Self {
+        self.interrupt_on = interrupt_on;
+        self
+    }
+
+    /// Add or set one tool's interrupt config.
+    pub fn with_interrupt_on_tool(mut self, tool_name: impl Into<String>, config: InterruptConfig) -> Self {
+        self.interrupt_on.insert(tool_name.into(), config);
+        self
+    }
+
     /// Evict tool results larger than this many (estimated) tokens to the store; None = disabled.
     pub fn with_evict_tool_result_over_tokens(mut self, limit: Option<usize>) -> Self {
         self.evict_tool_result_over_tokens = limit;
@@ -273,6 +356,53 @@ impl DeepAgentConfig {
     /// Set the file backend for FS tools (ls, read_file, write_file, edit_file, glob, grep).
     pub fn with_file_backend(mut self, backend: Option<Arc<dyn FileBackend>>) -> Self {
         self.file_backend = backend;
+        self
+    }
+
+    /// Set checkpointer for human-in-the-loop (save on interrupt, load on resume; required for HILP).
+    pub fn with_checkpointer(
+        mut self,
+        checkpointer: Option<Arc<dyn AgentCheckpointer>>,
+    ) -> Self {
+        self.checkpointer = checkpointer;
+        self
+    }
+
+    /// Optional extra system prompt when planning is enabled (aligned with TodoListMiddleware(system_prompt=...)).
+    pub fn with_planning_system_prompt(mut self, prompt: Option<String>) -> Self {
+        self.planning_system_prompt = prompt;
+        self
+    }
+
+    /// Optional extra system prompt when filesystem is enabled (aligned with FilesystemMiddleware(system_prompt=...)).
+    pub fn with_filesystem_system_prompt(mut self, prompt: Option<String>) -> Self {
+        self.filesystem_system_prompt = prompt;
+        self
+    }
+
+    /// Override description for one built-in tool by name (e.g. "ls", "read_file", "write_todos").
+    pub fn with_custom_tool_description(
+        mut self,
+        tool_name: impl Into<String>,
+        description: impl Into<String>,
+    ) -> Self {
+        self.custom_tool_descriptions
+            .insert(tool_name.into(), description.into());
+        self
+    }
+
+    /// Set custom tool descriptions for built-in tools (replaces existing overrides).
+    pub fn with_custom_tool_descriptions(
+        mut self,
+        descriptions: HashMap<String, String>,
+    ) -> Self {
+        self.custom_tool_descriptions = descriptions;
+        self
+    }
+
+    /// Enable long-term memory: paths under this prefix (e.g. `/memories/`) are stored in the store and persist across threads; other paths use the default backend. Uses config.store (defaults to InMemoryStore if not set). See [Long-term memory](https://docs.langchain.com/oss/python/deepagents/long-term-memory).
+    pub fn with_long_term_memory(mut self, prefix: impl Into<String>) -> Self {
+        self.long_term_memory_prefix = Some(prefix.into());
         self
     }
 }

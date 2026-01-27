@@ -1,9 +1,12 @@
-//! Deep Agent customization: context, middleware, skills, memory, and optional custom LLM.
+//! Deep Agent customization: context, middleware, skills, memory, middleware-style prompts, and optional custom LLM.
 //!
-//! Aligned with [Customize Deep Agents](https://docs.langchain.com/oss/python/deepagents/customization).
+//! Aligned with [Customize Deep Agents](https://docs.langchain.com/oss/python/deepagents/customization) and
+//! [Deep Agents Middleware](https://docs.langchain.com/oss/python/deepagents/middleware).
 //! Demonstrates:
 //! - **Context**: custom `ToolContext` (e.g. session_id, workspace_root)
 //! - **Middleware**: e.g. LoggingMiddleware
+//! - **Planning/Filesystem prompts**: `with_planning_system_prompt`, `with_filesystem_system_prompt` (TodoListMiddleware / FilesystemMiddleware-style)
+//! - **Custom tool descriptions**: `with_custom_tool_description` for built-in tools
 //! - **Skills**: inline skill content appended to system prompt under "## Skills"
 //! - **Memory**: inline memory content under "## Memory"
 //! - **create_deep_agent_from_llm**: use a custom LLM instance instead of model string
@@ -20,7 +23,7 @@ use langchain_rust::{
         create_deep_agent,
         create_deep_agent_from_llm,
         detect_and_create_llm,
-        middleware::LoggingMiddleware,
+        LoggingMiddleware,
         DeepAgentConfig,
     },
     chain::Chain,
@@ -51,6 +54,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_filesystem(false)
         .with_context(ctx)
         .with_middleware(vec![Arc::new(LoggingMiddleware::new())])
+        .with_planning_system_prompt(Some("Use the write_todos tool to break work into steps before answering.".to_string()))
+        .with_custom_tool_description("write_todos", "Update the to-do list for this session. Call when the user mentions tasks or a plan.")
         .with_skill_content("summary_rules", skill_content)
         .with_memory_content("conventions", memory_content);
 

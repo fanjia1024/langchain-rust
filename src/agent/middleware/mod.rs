@@ -80,6 +80,15 @@ pub enum MiddlewareError {
 
     #[error("Chain error: {0}")]
     ChainError(#[from] ChainError),
+
+    /// Human-in-the-loop: pause and return interrupt payload (action_requests, review_configs).
+    /// Executor should save state and return result with __interrupt__.
+    #[error("Interrupt (human-in-the-loop)")]
+    Interrupt(serde_json::Value),
+
+    /// Human rejected this tool call; executor should skip execution and inject a fixed observation.
+    #[error("Tool call rejected by user")]
+    RejectTool,
 }
 
 /// Trait for middleware that can intercept and modify agent execution.
@@ -302,6 +311,7 @@ pub mod pii_detector;
 pub mod rate_limit;
 pub mod retry;
 pub mod safety_guardrail;
+pub mod skill_injection;
 pub mod summarization;
 pub mod tool_result_eviction;
 
@@ -314,6 +324,7 @@ pub use pii_detector::{detect_all_pii, PIIDetector, PIIMatch, PIIType};
 pub use rate_limit::RateLimitMiddleware;
 pub use retry::RetryMiddleware;
 pub use safety_guardrail::SafetyGuardrailMiddleware;
+pub use skill_injection::{build_skills_middleware, SkillsMiddleware};
 pub use summarization::SummarizationMiddleware;
 pub use tool_result_eviction::ToolResultEvictionMiddleware;
 

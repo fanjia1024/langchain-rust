@@ -1,6 +1,12 @@
 mod agent;
 pub use agent::*;
 
+mod hitl;
+pub use hitl::*;
+
+mod checkpoint;
+pub use checkpoint::*;
+
 mod message_repair;
 
 mod executor;

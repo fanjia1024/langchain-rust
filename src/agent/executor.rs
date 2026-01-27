@@ -6,13 +6,18 @@ use tokio::sync::Mutex;
 
 use super::{
     agent::Agent,
+    checkpoint::{AgentCheckpointState, AgentCheckpointer},
     context_engineering::{ModelRequest, ModelResponse},
     message_repair,
     middleware::Middleware,
     middleware::MiddlewareContext,
+    middleware::MiddlewareError,
     runtime::{Runtime, RuntimeRequest},
     state::AgentState,
     AgentError,
+};
+use super::middleware::human_in_loop::{
+    CURRENT_BATCH_ACTIONS_KEY, RESUME_DECISION_INDEX_KEY, RESUME_DECISIONS_KEY,
 };
 use crate::schemas::{LogTools, Message, MessageType};
 use crate::{
@@ -87,6 +92,8 @@ where
     response_format: Option<Box<dyn StructuredOutputStrategy>>,
     middleware: Vec<Arc<dyn Middleware>>,
     file_backend: Option<Arc<dyn FileBackend>>,
+    /// Checkpointer for human-in-the-loop: save state on interrupt, load on resume.
+    checkpointer: Option<Arc<dyn AgentCheckpointer>>,
 }
 
 impl<A> AgentExecutor<A>
@@ -105,7 +112,14 @@ where
             response_format: None,
             middleware: Vec::new(),
             file_backend: None,
+            checkpointer: None,
         }
+    }
+
+    /// Set checkpointer for human-in-the-loop (save on interrupt, load on resume).
+    pub fn with_checkpointer(mut self, checkpointer: Option<Arc<dyn AgentCheckpointer>>) -> Self {
+        self.checkpointer = checkpointer;
+        self
     }
 
     pub fn with_file_backend(mut self, file_backend: Option<Arc<dyn FileBackend>>) -> Self {
@@ -205,7 +219,31 @@ where
     A: Agent + Send + Sync,
 {
     async fn call(&self, input_variables: PromptArgs) -> Result<GenerateResult, ChainError> {
-        // Check if input is message-based format and convert if needed
+        self.run_loop(
+            input_variables,
+            None,
+            None,
+        )
+        .await
+    }
+
+    async fn invoke(&self, input_variables: PromptArgs) -> Result<String, ChainError> {
+        let result = self.call(input_variables).await?;
+        Ok(result.generation)
+    }
+}
+
+impl<A> AgentExecutor<A>
+where
+    A: Agent + Send + Sync,
+{
+    /// Run the agent loop with optional config (for HILP checkpoint) and optional resume state.
+    pub async fn run_loop(
+        &self,
+        input_variables: PromptArgs,
+        config: Option<&crate::langgraph::RunnableConfig>,
+        resume: Option<(AgentCheckpointState, serde_json::Value)>,
+    ) -> Result<GenerateResult, ChainError> {
         let mut input_variables = if input_variables.contains_key("messages") {
             convert_messages_to_prompt_args(input_variables)?
         } else {
@@ -213,35 +251,189 @@ where
         };
         let name_to_tools = self.get_name_to_tools();
         let mut steps: Vec<(AgentAction, String)> = Vec::new();
+        let mut plan_input = input_variables.clone();
+        let mut resume_batch: Option<(Vec<AgentAction>, serde_json::Value)> = None;
+        let had_resume = resume.is_some();
+        if let Some((state, ref decisions)) = resume {
+            steps = state.steps;
+            plan_input = state.input_variables;
+            resume_batch = Some((state.pending_actions, decisions.clone()));
+        }
+        let mut first_normal_after_resume = had_resume;
         let mut middleware_context = MiddlewareContext::new();
+        if resume_batch.is_none() {
+            middleware_context.set_custom_data(RESUME_DECISION_INDEX_KEY.to_string(), serde_json::json!(0));
+        }
+        if let Some((_, ref decisions)) = resume_batch {
+            if let Some(decisions_arr) = decisions.get("decisions") {
+                middleware_context.set_custom_data(RESUME_DECISIONS_KEY.to_string(), decisions_arr.clone());
+                middleware_context.set_custom_data(RESUME_DECISION_INDEX_KEY.to_string(), serde_json::json!(0));
+            }
+        }
         log::debug!("steps: {:?}", steps);
-        if let Some(memory) = &self.memory {
-            let memory = memory.lock().await;
-            let mut history = memory.messages();
-            history = message_repair::repair_dangling_tool_calls(history);
-            input_variables.insert("chat_history".to_string(), json!(history));
-        } else {
-            let mut history = SimpleMemory::new().messages();
-            history = message_repair::repair_dangling_tool_calls(history);
-            input_variables.insert("chat_history".to_string(), json!(history));
+        if !had_resume {
+            if let Some(memory) = &self.memory {
+                let memory = memory.lock().await;
+                let mut history = memory.messages();
+                history = message_repair::repair_dangling_tool_calls(history);
+                plan_input.insert("chat_history".to_string(), json!(history));
+            } else {
+                let mut history = SimpleMemory::new().messages();
+                history = message_repair::repair_dangling_tool_calls(history);
+                plan_input.insert("chat_history".to_string(), json!(history));
+            }
         }
 
-        // Create runtime for middleware
         let runtime = Arc::new(Runtime::new(
             Arc::clone(&self.context),
             Arc::clone(&self.store),
         ));
 
         loop {
+            // Process resumed batch (pending actions with decisions)
+            if let Some((pending_actions, _)) = resume_batch.take() {
+                let pending_for_checkpoint = pending_actions.clone();
+                middleware_context.set_custom_data(
+                    CURRENT_BATCH_ACTIONS_KEY.to_string(),
+                    serde_json::to_value(&pending_actions).unwrap_or_default(),
+                );
+                for mut action in pending_actions {
+                    let mut reject_this_tool = false;
+                    for mw in &self.middleware {
+                        let res = mw
+                            .before_tool_call_with_runtime(&action, Some(&*runtime), &mut middleware_context)
+                            .await;
+                        match &res {
+                            Err(MiddlewareError::Interrupt(p)) => {
+                                if let (Some(cp), Some(tid)) = (
+                                    self.checkpointer.as_ref(),
+                                    config.and_then(|c| c.get_thread_id()),
+                                ) {
+                                    cp.put(
+                                        &tid,
+                                        &AgentCheckpointState {
+                                            steps: steps.clone(),
+                                            input_variables: plan_input.clone(),
+                                            pending_actions: pending_for_checkpoint.clone(),
+                                        },
+                                    );
+                                }
+                                return Err(ChainError::Interrupt(p.clone()));
+                            }
+                            Err(MiddlewareError::RejectTool) => {
+                                reject_this_tool = true;
+                                break;
+                            }
+                            Err(e) => return Err(ChainError::AgentError(e.to_string())),
+                            Ok(Some(m)) => action = m.clone(),
+                            Ok(None) => {}
+                        }
+                        if matches!(res, Ok(Some(_))) {
+                            continue;
+                        }
+                        {
+                            let res2 = mw.before_tool_call(&action, &mut middleware_context).await;
+                            match res2 {
+                                Err(MiddlewareError::Interrupt(p)) => {
+                                    if let (Some(cp), Some(tid)) = (
+                                        self.checkpointer.as_ref(),
+                                        config.and_then(|c| c.get_thread_id()),
+                                    ) {
+                                        cp.put(
+                                            &tid,
+                                            &AgentCheckpointState {
+                                                steps: steps.clone(),
+                                                input_variables: plan_input.clone(),
+                                                pending_actions: pending_for_checkpoint.clone(),
+                                            },
+                                        );
+                                    }
+                                    return Err(ChainError::Interrupt(p));
+                                }
+                                Err(MiddlewareError::RejectTool) => {
+                                    reject_this_tool = true;
+                                    break;
+                                }
+                                Err(e) => return Err(ChainError::AgentError(e.to_string())),
+                                Ok(Some(m)) => action = m,
+                                Ok(None) => {}
+                            }
+                        }
+                    }
+                    if reject_this_tool {
+                        steps.push((action, "Tool call rejected by user.".to_string()));
+                        continue;
+                    }
+                    middleware_context.increment_tool_call_count();
+                    let tool = name_to_tools
+                        .get(&action.tool.trim().replace(" ", "_"))
+                        .ok_or_else(|| AgentError::ToolError(format!("Tool {} not found", action.tool)))
+                        .map_err(|e| ChainError::AgentError(e.to_string()))?;
+                    let tool_call_id = format!("call_{}", steps.len());
+                    let mut tool_runtime = ToolRuntime::new(
+                        Arc::clone(&self.state),
+                        Arc::clone(&self.context),
+                        Arc::clone(&self.store),
+                        tool_call_id,
+                    );
+                    if let Some(ref fb) = self.file_backend {
+                        tool_runtime = tool_runtime.with_file_backend(Arc::clone(fb));
+                    }
+                    let observation_result: Result<String, String> = if tool.requires_runtime() {
+                        let input = tool.parse_input(&action.tool_input).await;
+                        tool.run_with_runtime(input, &tool_runtime)
+                            .await
+                            .map(|result| result.into_string())
+                            .map_err(|e| e.to_string())
+                    } else {
+                        tool.call(&action.tool_input)
+                            .await
+                            .map_err(|e| e.to_string())
+                    };
+                    let mut observation = match observation_result {
+                        Ok(result) => result,
+                        Err(error_msg) => {
+                            if self.break_if_error {
+                                return Err(ChainError::AgentError(
+                                    AgentError::ToolError(error_msg).to_string(),
+                                ));
+                            }
+                            format!("The tool return the following error: {}", error_msg)
+                        }
+                    };
+                    for mw in &self.middleware {
+                        let modified = mw
+                            .after_tool_call_with_runtime(&action, &observation, Some(&*runtime), &mut middleware_context)
+                            .await
+                            .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?;
+                        if let Some(mo) = modified {
+                            observation = mo;
+                        } else if let Some(mo) = mw
+                            .after_tool_call(&action, &observation, &mut middleware_context)
+                            .await
+                            .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
+                        {
+                            observation = mo;
+                        }
+                    }
+                    steps.push((action, observation));
+                }
+                continue;
+            }
+
+            if !first_normal_after_resume {
+                plan_input = input_variables.clone();
+            }
+            first_normal_after_resume = false;
+
             middleware_context.increment_iteration();
 
             // Create runtime request
             let runtime_request =
-                RuntimeRequest::new(input_variables.clone(), Arc::clone(&self.state))
+                RuntimeRequest::new(plan_input.clone(), Arc::clone(&self.state))
                     .with_runtime(Arc::clone(&runtime));
 
             // Apply before_agent_plan hooks (try runtime-aware version first)
-            let mut plan_input = input_variables.clone();
             for mw in &self.middleware {
                 // Try runtime-aware hook first
                 let modified = mw
@@ -360,35 +552,81 @@ where
             }
             match agent_event {
                 AgentEvent::Action(actions) => {
+                    let actions_for_checkpoint = actions.clone();
+                    middleware_context.set_custom_data(
+                        CURRENT_BATCH_ACTIONS_KEY.to_string(),
+                        serde_json::to_value(&actions).unwrap_or_default(),
+                    );
                     for mut action in actions {
-                        // Apply before_tool_call hooks (try runtime-aware version first)
+                        let mut reject_this_tool = false;
                         for mw in &self.middleware {
-                            // Try runtime-aware hook first
-                            let modified = mw
+                            let res = mw
                                 .before_tool_call_with_runtime(
                                     &action,
                                     Some(&*runtime),
                                     &mut middleware_context,
                                 )
-                                .await
-                                .map_err(|e| {
-                                    ChainError::AgentError(format!("Middleware error: {}", e))
-                                })?;
-
-                            if let Some(modified_action) = modified {
-                                action = modified_action;
-                            } else {
-                                // Fallback to non-runtime hook
-                                if let Some(modified_action) = mw
-                                    .before_tool_call(&action, &mut middleware_context)
-                                    .await
-                                    .map_err(|e| {
-                                        ChainError::AgentError(format!("Middleware error: {}", e))
-                                    })?
-                                {
-                                    action = modified_action;
+                                .await;
+                            match &res {
+                                Err(MiddlewareError::Interrupt(p)) => {
+                                    if let (Some(cp), Some(tid)) = (
+                                        self.checkpointer.as_ref(),
+                                        config.and_then(|c| c.get_thread_id()),
+                                    ) {
+                                        cp.put(
+                                            &tid,
+                                            &AgentCheckpointState {
+                                                steps: steps.clone(),
+                                                input_variables: plan_input.clone(),
+                                                pending_actions: actions_for_checkpoint.clone(),
+                                            },
+                                        );
+                                    }
+                                    return Err(ChainError::Interrupt(p.clone()));
                                 }
+                                Err(MiddlewareError::RejectTool) => {
+                                    reject_this_tool = true;
+                                    break;
+                                }
+                                Err(e) => return Err(ChainError::AgentError(e.to_string())),
+                                Ok(Some(m)) => action = m.clone(),
+                                Ok(None) => {}
                             }
+                            if matches!(res, Ok(Some(_))) {
+                                continue;
+                            }
+                            let res2 = mw
+                                .before_tool_call(&action, &mut middleware_context)
+                                .await;
+                            match res2 {
+                                Err(MiddlewareError::Interrupt(p)) => {
+                                    if let (Some(cp), Some(tid)) = (
+                                        self.checkpointer.as_ref(),
+                                        config.and_then(|c| c.get_thread_id()),
+                                    ) {
+                                        cp.put(
+                                            &tid,
+                                            &AgentCheckpointState {
+                                                steps: steps.clone(),
+                                                input_variables: plan_input.clone(),
+                                                pending_actions: actions_for_checkpoint.clone(),
+                                            },
+                                        );
+                                    }
+                                    return Err(ChainError::Interrupt(p));
+                                }
+                                Err(MiddlewareError::RejectTool) => {
+                                    reject_this_tool = true;
+                                    break;
+                                }
+                                Err(e) => return Err(ChainError::AgentError(e.to_string())),
+                                Ok(Some(m)) => action = m,
+                                Ok(None) => {}
+                            }
+                        }
+                        if reject_this_tool {
+                            steps.push((action, "Tool call rejected by user.".to_string()));
+                            continue;
                         }
 
                         log::debug!("Action: {:?}", action.tool_input);
@@ -563,9 +801,35 @@ where
         }
     }
 
-    async fn invoke(&self, input_variables: PromptArgs) -> Result<String, ChainError> {
-        let result = self.call(input_variables).await?;
-        Ok(result.generation)
+    /// Run the agent with optional config (thread_id for HILP checkpointer). Returns interrupt payload on HILP interrupt.
+    pub async fn call_with_config(
+        &self,
+        input_variables: PromptArgs,
+        config: Option<&crate::langgraph::RunnableConfig>,
+    ) -> Result<GenerateResult, ChainError> {
+        self.run_loop(input_variables, config, None).await
+    }
+
+    /// Resume from a checkpoint with human decisions. Requires checkpointer and same thread_id.
+    pub async fn call_resume(
+        &self,
+        config: &crate::langgraph::RunnableConfig,
+        resume_decisions: serde_json::Value,
+    ) -> Result<GenerateResult, ChainError> {
+        let thread_id = config
+            .get_thread_id()
+            .ok_or_else(|| ChainError::OtherError("thread_id required for resume".to_string()))?;
+        let state = self
+            .checkpointer
+            .as_ref()
+            .and_then(|cp| cp.get(&thread_id))
+            .ok_or_else(|| ChainError::OtherError("No checkpoint found for thread (use same thread_id as interrupt)".to_string()))?;
+        self.run_loop(
+            state.input_variables.clone(),
+            Some(config),
+            Some((state, resume_decisions)),
+        )
+        .await
     }
 }
 

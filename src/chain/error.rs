@@ -39,4 +39,8 @@ pub enum ChainError {
 
     #[error("Agent error: {0}")]
     AgentError(String),
+
+    /// Human-in-the-loop: execution paused for approval; payload has action_requests and review_configs.
+    #[error("Interrupt (human-in-the-loop)")]
+    Interrupt(serde_json::Value),
 }
