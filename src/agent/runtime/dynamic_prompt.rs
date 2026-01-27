@@ -5,11 +5,10 @@ use async_trait::async_trait;
 use crate::{
     agent::{
         middleware::{Middleware, MiddlewareContext, MiddlewareError},
-        runtime::{Runtime, RuntimeRequest},
+        runtime::RuntimeRequest,
     },
-    language_models::GenerateResult,
     prompt::PromptArgs,
-    schemas::agent::{AgentAction, AgentEvent, AgentFinish},
+    schemas::agent::AgentAction,
     tools::ToolContext,
 };
 
@@ -79,7 +78,7 @@ impl Middleware for DynamicPromptMiddleware {
 
             // Try to update system message or add it
             // This depends on how the prompt is structured in the input
-            if let Some(chat_history) = modified_input.get_mut("chat_history") {
+            if let Some(_chat_history) = modified_input.get_mut("chat_history") {
                 // If chat_history exists, try to find and update system message
                 // For now, we'll add it as a custom field
                 modified_input.insert(

@@ -14,7 +14,7 @@ pub trait ToolContext: Send + Sync {
     }
 
     /// Get a custom context value by key
-    fn get(&self, key: &str) -> Option<&str> {
+    fn get(&self, _key: &str) -> Option<&str> {
         None
     }
 }

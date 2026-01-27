@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    agent::multi_agent::router::{DefaultRouter, Router, RoutingStrategy},
+    agent::multi_agent::router::{DefaultRouter, Router},
     agent::{AgentError, UnifiedAgent},
     chain::ChainError,
     schemas::messages::Message,

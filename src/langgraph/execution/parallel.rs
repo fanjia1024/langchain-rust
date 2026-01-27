@@ -6,7 +6,7 @@ use crate::langgraph::{
     state::{State, StateUpdate},
     persistence::{
         config::RunnableConfig,
-        store::Store,
+        store::StoreBox,
     },
 };
 
@@ -23,7 +23,7 @@ pub async fn execute_nodes_parallel<S: State>(
     node_names: &[String],
     state: &S,
     config: Option<&RunnableConfig>,
-    store: Option<&dyn Store>,
+    store: Option<StoreBox>,
 ) -> Result<Vec<(String, StateUpdate)>, LangGraphError> {
     // Create futures for all nodes
     let futures: Vec<_> = node_names
@@ -32,6 +32,7 @@ pub async fn execute_nodes_parallel<S: State>(
             let node_opt = nodes.get(node_name).cloned();
             let node_name = node_name.clone();
             let state = state.clone();
+            let store = store.clone();
 
             async move {
                 let node = node_opt

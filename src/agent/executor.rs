@@ -244,7 +244,7 @@ where
         config: Option<&crate::langgraph::RunnableConfig>,
         resume: Option<(AgentCheckpointState, serde_json::Value)>,
     ) -> Result<GenerateResult, ChainError> {
-        let mut input_variables = if input_variables.contains_key("messages") {
+        let input_variables = if input_variables.contains_key("messages") {
             convert_messages_to_prompt_args(input_variables)?
         } else {
             input_variables.clone()
@@ -522,7 +522,7 @@ where
             }
 
             // Apply after_agent_plan hooks (try runtime-aware version first)
-            let mut runtime_request =
+            let runtime_request =
                 RuntimeRequest::new(plan_input.clone(), Arc::clone(&self.state))
                     .with_runtime(Arc::clone(&runtime));
 

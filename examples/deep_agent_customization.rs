@@ -20,11 +20,8 @@ use std::sync::Arc;
 
 use langchain_rust::{
     agent::{
-        create_deep_agent,
-        create_deep_agent_from_llm,
-        detect_and_create_llm,
+        create_deep_agent, create_deep_agent_from_llm, detect_and_create_llm, DeepAgentConfig,
         LoggingMiddleware,
-        DeepAgentConfig,
     },
     chain::Chain,
     prompt_args,
@@ -40,11 +37,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = Arc::new(
         SimpleContext::new()
             .with_session_id("custom-session-123".to_string())
-            .with_custom("workspace_root".to_string(), std::env::temp_dir().display().to_string()),
+            .with_custom(
+                "workspace_root".to_string(),
+                std::env::temp_dir().display().to_string(),
+            ),
     );
 
     // Inline skill: instructions the agent can use
-    let skill_content = r#"When the user asks for a summary, always respond in three bullet points."#;
+    let skill_content =
+        r#"When the user asks for a summary, always respond in three bullet points."#;
 
     // Inline memory: persistent context (e.g. from AGENTS.md)
     let memory_content = "Project convention: prefer short, actionable responses.";
@@ -54,8 +55,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_filesystem(false)
         .with_context(ctx)
         .with_middleware(vec![Arc::new(LoggingMiddleware::new())])
-        .with_planning_system_prompt(Some("Use the write_todos tool to break work into steps before answering.".to_string()))
-        .with_custom_tool_description("write_todos", "Update the to-do list for this session. Call when the user mentions tasks or a plan.")
+        .with_planning_system_prompt(Some(
+            "Use the write_todos tool to break work into steps before answering.".to_string(),
+        ))
+        .with_custom_tool_description(
+            "write_todos",
+            "Update the to-do list for this session. Call when the user mentions tasks or a plan.",
+        )
         .with_skill_content("summary_rules", skill_content)
         .with_memory_content("conventions", memory_content);
 

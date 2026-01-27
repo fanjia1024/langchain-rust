@@ -3,11 +3,8 @@
 
 #[cfg(feature = "faiss")]
 use langchain_rust::{
-    embedding::openai::openai_embedder::OpenAiEmbedder,
-    schemas::Document,
-    vectorstore::faiss::{Store, StoreBuilder},
-    vectorstore::VecStoreOptions,
-    vectorstore::VectorStore,
+    embedding::openai::openai_embedder::OpenAiEmbedder, schemas::Document,
+    vectorstore::faiss::StoreBuilder, vectorstore::VecStoreOptions, vectorstore::VectorStore,
 };
 
 #[cfg(feature = "faiss")]

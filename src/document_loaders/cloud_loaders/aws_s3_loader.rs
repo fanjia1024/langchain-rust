@@ -1,12 +1,11 @@
 use std::{
     collections::HashMap,
     pin::Pin,
-    path::PathBuf,
 };
 
 use async_stream::stream;
 use async_trait::async_trait;
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use serde_json::Value;
 
 use crate::{

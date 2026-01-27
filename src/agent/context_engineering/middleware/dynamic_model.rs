@@ -5,11 +5,10 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
-        context_engineering::{ModelRequest, ModelResponse},
+        context_engineering::ModelRequest,
         middleware::{Middleware, MiddlewareContext, MiddlewareError},
     },
     language_models::llm::LLM,
-    schemas::Message,
 };
 
 /// Middleware that dynamically selects the model based on context.
@@ -72,7 +71,7 @@ impl DynamicModelMiddleware {
                 if let Some(runtime) = request.runtime() {
                     // Try to get user preference from store
                     // This is a simplified version - in practice, you'd read from store
-                    if let Some(user_id) = runtime.context().user_id() {
+                    if let Some(_user_id) = runtime.context().user_id() {
                         // In a real implementation, you'd read from store:
                         // let prefs = runtime.store().get(("preferences",), user_id).await?;
                         // let preferred_model = prefs.value.get("preferred_model")?;

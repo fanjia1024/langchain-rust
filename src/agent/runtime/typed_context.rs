@@ -41,7 +41,7 @@ pub trait TypedContextFields: TypedContext {
     }
 
     /// Get a custom context value by key
-    fn get(&self, key: &str) -> Option<&str> {
+    fn get(&self, _key: &str) -> Option<&str> {
         None
     }
 }

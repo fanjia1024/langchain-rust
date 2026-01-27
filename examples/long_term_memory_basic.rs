@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use langchain_rust::{
     agent::create_agent,
-    schemas::messages::Message,
+    error::ToolError,
     tools::{
         EnhancedInMemoryStore, EnhancedToolStore, StoreValue, ToolResult, ToolRuntime, ToolStore,
     },
@@ -38,8 +38,10 @@ impl langchain_rust::tools::Tool for GetUserInfoTool {
         })
     }
 
-    async fn run(&self, _input: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
-        Err("This tool requires runtime. Use run_with_runtime instead.".into())
+    async fn run(&self, _input: serde_json::Value) -> Result<String, ToolError> {
+        Err(ToolError::ExecutionError(
+            "This tool requires runtime. Use run_with_runtime instead.".to_string(),
+        ))
     }
 
     async fn run_with_runtime(
@@ -50,7 +52,7 @@ impl langchain_rust::tools::Tool for GetUserInfoTool {
         let user_id = input
             .get("user_id")
             .and_then(|v| v.as_str())
-            .ok_or("user_id is required")?;
+            .ok_or_else(|| ToolError::MissingInput("user_id is required".to_string()))?;
 
         // Get user_id from context
         let context_user_id = runtime.context().user_id().unwrap_or(user_id);
@@ -104,8 +106,10 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         })
     }
 
-    async fn run(&self, _input: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
-        Err("This tool requires runtime. Use run_with_runtime instead.".into())
+    async fn run(&self, _input: serde_json::Value) -> Result<String, ToolError> {
+        Err(ToolError::ExecutionError(
+            "This tool requires runtime. Use run_with_runtime instead.".to_string(),
+        ))
     }
 
     async fn run_with_runtime(
@@ -116,7 +120,7 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         let user_id = runtime
             .context()
             .user_id()
-            .ok_or("user_id is required in context")?;
+            .ok_or_else(|| ToolError::MissingInput("user_id is required in context".to_string()))?;
 
         // Create store value with metadata
         let mut metadata = std::collections::HashMap::new();
@@ -181,7 +185,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         vec![Arc::new(GetUserInfoTool), Arc::new(SaveUserInfoTool)];
 
     // Create agent with store
-    let agent = create_agent(
+    let _agent = create_agent(
         "gpt-4o-mini",
         &tools,
         Some("You are a helpful assistant that can remember user information."),

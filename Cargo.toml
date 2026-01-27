@@ -4,7 +4,7 @@ name = "langchain-rust"
 version = "4.6.0"
 edition = "2021"
 publish = true
-repository = "https://github.com/Abraxas-365/langchain-rust"
+repository = "https://github.com/Abraxas-365B/langchain-rust"
 license = "MIT"
 description = "LangChain for Rust, the easiest way to write LLM-based programs in Rust"
 keywords = ["chain", "chatgpt", "llm", "langchain"]
@@ -163,6 +163,7 @@ svm = []
 cohere = []
 flashrank = []
 contextual-ai = []
+llmlingua = []
 # Text splitter features
 # Note: CodeSplitter is available when tree-sitter feature is enabled
 # It uses text-splitter's code feature internally if available

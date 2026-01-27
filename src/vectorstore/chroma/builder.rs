@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use chromadb::client::{ChromaClient, ChromaClientOptions};
-use chromadb::collection::ChromaCollection;
 
 use crate::embedding::embedder_trait::Embedder;
 

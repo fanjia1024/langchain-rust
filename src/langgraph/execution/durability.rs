@@ -1,9 +1,8 @@
-use std::sync::Arc;
 
 use crate::langgraph::{
     error::LangGraphError,
     persistence::{
-        checkpointer::{Checkpointer, CheckpointerBox},
+        checkpointer::CheckpointerBox,
         snapshot::StateSnapshot,
     },
     state::State,

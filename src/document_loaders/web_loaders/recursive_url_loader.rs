@@ -10,7 +10,7 @@ use futures::Stream;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use serde_json::Value;
-use url::{Url, ParseError};
+use url::Url;
 
 use crate::{
     document_loaders::{process_doc_stream, Loader, LoaderError},
@@ -161,7 +161,7 @@ impl Loader for RecursiveUrlLoader {
     > {
         let root_url = self.root_url.clone();
         let config = self.config.clone();
-        let client = self.client.clone();
+        let _client = self.client.clone();
 
         let stream = stream! {
             let mut visited = HashSet::new();

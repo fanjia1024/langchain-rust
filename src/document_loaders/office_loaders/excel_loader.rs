@@ -72,7 +72,7 @@ impl<R: Read + Send + Sync + 'static> Loader for ExcelLoader<R> {
             #[cfg(feature = "excel")]
             {
                 use calamine::{open_workbook_auto, Reader};
-                use std::io::Write;
+                
 
                 // calamine::open_workbook_auto requires a path; write buffer to a temp file
                 let tmp_path = std::env::temp_dir().join(format!(

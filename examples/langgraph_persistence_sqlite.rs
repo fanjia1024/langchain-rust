@@ -1,7 +1,6 @@
 #[cfg(feature = "sqlite-persistence")]
 use langchain_rust::langgraph::{
-    function_node, persistence::SqliteSaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
+    function_node, MessagesState, RunnableConfig, SqliteSaver, StateGraph, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 use std::fs;
@@ -19,7 +18,7 @@ use std::fs;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a temporary database file
     let db_path = "langgraph_checkpoints.db";
-    
+
     // Remove existing database if it exists
     if fs::metadata(db_path).is_ok() {
         fs::remove_file(db_path)?;
@@ -51,16 +50,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Invoke with config
     let config = RunnableConfig::with_thread_id("thread-sqlite-1");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("hi!")]);
-    let final_state = compiled.invoke_with_config(Some(initial_state), &config).await?;
+    let final_state = compiled
+        .invoke_with_config(Some(initial_state), &config)
+        .await?;
 
     println!("Final messages:");
     for message in &final_state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     // Get state history from database
     let history = compiled.get_state_history(&config).await?;
-    println!("\nState history from database ({} checkpoints):", history.len());
+    println!(
+        "\nState history from database ({} checkpoints):",
+        history.len()
+    );
     for (i, snapshot) in history.iter().enumerate() {
         println!(
             "  {}: checkpoint_id={:?}, created_at={}",
@@ -80,5 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(not(feature = "sqlite-persistence"))]
 fn main() {
     eprintln!("This example requires the 'sqlite-persistence' feature");
-    eprintln!("Run with: cargo run --example langgraph_persistence_sqlite --features sqlite-persistence");
+    eprintln!(
+        "Run with: cargo run --example langgraph_persistence_sqlite --features sqlite-persistence"
+    );
 }

@@ -39,7 +39,7 @@ impl VectorStore for Store {
             ));
         }
         let mut ids = Vec::with_capacity(docs.len());
-        let mut hnsw = self.hnsw.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let hnsw = self.hnsw.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         let mut docstore = self.docstore.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         let mut id_vec = self.ids.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         for (doc, vector) in docs.iter().zip(vectors.iter()) {

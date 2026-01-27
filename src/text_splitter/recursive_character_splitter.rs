@@ -217,7 +217,7 @@ impl RecursiveCharacterTextSplitter {
     }
 
     /// Apply overlap between chunks
-    fn apply_overlap(&self, mut chunks: Vec<String>) -> Vec<String> {
+    fn apply_overlap(&self, chunks: Vec<String>) -> Vec<String> {
         if self.options.chunk_overlap == 0 || chunks.len() <= 1 {
             return chunks;
         }

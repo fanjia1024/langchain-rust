@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{create_agent, HandoffAgentBuilder, HandoffTool},
+    agent::{create_agent, HandoffAgentBuilder},
     schemas::messages::Message,
-    tools::Tool,
 };
 
 #[tokio::main]

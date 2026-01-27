@@ -219,7 +219,7 @@ impl LLM for MistralAI {
                     match result {
                         Ok(bytes) => {
                             // Parse SSE chunk format
-                            let bytes_str = from_utf8(&bytes)
+                            let _bytes_str = from_utf8(&bytes)
                                 .map_err(|e| LLMError::OtherError(e.to_string()))?;
                             let chunks = MistralAI::parse_sse_chunk(&bytes)?;
 

@@ -5,10 +5,7 @@ use std::sync::Arc;
 
 #[cfg(feature = "postgres")]
 use langchain_rust::{
-    add_documents,
-    agent::create_agent,
     embedding::openai::openai_embedder::OpenAiEmbedder,
-    llm::openai::{OpenAI, OpenAIModel},
     rag::{AgenticRAGBuilder, RetrieverInfo},
     schemas::{Document, Message},
     vectorstore::{pgvector::StoreBuilder, Retriever},

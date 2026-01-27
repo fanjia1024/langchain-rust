@@ -4,10 +4,8 @@ use std::sync::Arc;
 use crate::{
     agent::multi_agent::skills::Skill,
     agent::{AgentError, UnifiedAgent},
-    chain::{chain_trait::Chain, ChainError},
-    prompt::PromptArgs,
+    chain::ChainError,
     schemas::messages::Message,
-    tools::Tool,
 };
 
 /// An agent wrapper that supports dynamic skill loading.

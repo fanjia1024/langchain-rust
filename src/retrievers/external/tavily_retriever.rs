@@ -75,7 +75,7 @@ impl TavilySearchAPIRetriever {
     async fn search(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         let url = "https://api.tavily.com/search";
 
-        let mut request_body = json!({
+        let request_body = json!({
             "api_key": self.config.api_key,
             "query": query,
             "max_results": self.config.max_results,

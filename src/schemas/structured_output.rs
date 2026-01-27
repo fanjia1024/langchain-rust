@@ -1,7 +1,6 @@
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::error::Error;
 use std::marker::PhantomData;
 
 /// Trait for types that can be used as structured output schemas.
@@ -271,7 +270,7 @@ pub fn validate_against_schema(value: &Value, schema: &Value) -> Result<(), Stru
     // Basic validation - check if value matches schema structure
     // For more strict validation, use jsonschema crate
     if let (Some(value_obj), Some(schema_obj)) = (value.as_object(), schema.as_object()) {
-        if let Some(properties) = schema_obj.get("properties").and_then(|v| v.as_object()) {
+        if let Some(_properties) = schema_obj.get("properties").and_then(|v| v.as_object()) {
             if let Some(required) = schema_obj.get("required").and_then(|v| v.as_array()) {
                 for req_field in required {
                     if let Some(field_name) = req_field.as_str() {

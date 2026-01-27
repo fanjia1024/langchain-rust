@@ -19,7 +19,8 @@ use langchain_rust::{
     schemas::messages::Message,
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     // Path to skills directory (each subdir can contain SKILL.md with frontmatter)

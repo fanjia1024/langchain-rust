@@ -17,7 +17,7 @@ pub trait ToolStore: Send + Sync {
     async fn delete(&self, namespace: &[&str], key: &str);
 
     /// List all keys in a namespace
-    async fn list(&self, namespace: &[&str]) -> Vec<String> {
+    async fn list(&self, _namespace: &[&str]) -> Vec<String> {
         vec![] // Default implementation returns empty
     }
 }

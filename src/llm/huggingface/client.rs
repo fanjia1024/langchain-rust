@@ -1,5 +1,5 @@
 use crate::{
-    language_models::{llm::LLM, options::CallOptions, GenerateResult, LLMError, TokenUsage},
+    language_models::{llm::LLM, options::CallOptions, GenerateResult, LLMError},
     llm::HuggingFaceError,
     schemas::{Message, StreamData},
 };
@@ -136,7 +136,7 @@ impl HuggingFace {
             .collect::<Vec<_>>()
             .join("\n");
 
-        let mut parameters = GenerationParameters {
+        let parameters = GenerationParameters {
             max_new_tokens: self.options.max_tokens,
             temperature: self.options.temperature,
             top_p: self.options.top_p,

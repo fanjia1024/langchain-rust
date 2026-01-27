@@ -1,9 +1,8 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use futures_util::StreamExt;
 use langchain_rust::{
     chain::{Chain, ConversationalRetrieverChainBuilder},
+    error::RetrieverError,
     fmt_message, fmt_template,
     llm::{OpenAI, OpenAIModel},
     memory::SimpleMemory,
@@ -20,7 +19,7 @@ impl Retriever for RetrieverMock {
     async fn get_relevant_documents(
         &self,
         _question: &str,
-    ) -> Result<Vec<Document>, Box<dyn Error>> {
+    ) -> Result<Vec<Document>, RetrieverError> {
         Ok(vec![
             Document::new(format!(
                 "\nQuestion: {}\nAnswer: {}\n",

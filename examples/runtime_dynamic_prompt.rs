@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Alternative: custom prompt generator
-    let custom_prompt = DynamicPromptMiddleware::new(|ctx: &dyn ToolContext| {
+    let _custom_prompt = DynamicPromptMiddleware::new(|ctx: &dyn ToolContext| {
         let user_id = ctx.user_id().unwrap_or("Guest");
         format!(
             "You are a personalized assistant for user {}. Be friendly and helpful.",

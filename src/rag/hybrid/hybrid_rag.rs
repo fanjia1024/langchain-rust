@@ -3,9 +3,9 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::{
-    chain::{Chain, ChainError, ConversationalRetrieverChainBuilder},
+    chain::{Chain, ConversationalRetrieverChainBuilder},
     error::RetrieverError,
-    language_models::{llm::LLM, GenerateResult},
+    language_models::llm::LLM,
     memory::SimpleMemory,
     prompt::PromptArgs,
     schemas::{BaseMemory, Document, Retriever},
@@ -22,9 +22,9 @@ impl Retriever for RetrieverWrapper {
 }
 
 use super::{
-    answer_validator::{AnswerValidationResult, AnswerValidator},
-    query_enhancer::{EnhancedQuery, QueryEnhancer},
-    retrieval_validator::{RetrievalValidationResult, RetrievalValidator},
+    answer_validator::AnswerValidator,
+    query_enhancer::QueryEnhancer,
+    retrieval_validator::RetrievalValidator,
 };
 use crate::rag::RAGError;
 
@@ -124,7 +124,7 @@ impl HybridRAG {
     /// Execute the Hybrid RAG pipeline
     pub async fn invoke(&self, query: &str) -> Result<String, RAGError> {
         let mut current_query = query.to_string();
-        let mut documents: Vec<Document> = Vec::new();
+        let mut documents;
 
         // Step 1: Query Enhancement (optional)
         if self.config.enable_query_enhancement {
@@ -172,7 +172,7 @@ impl HybridRAG {
 
         // Step 4: Generation
         let mut generation_attempts = 0;
-        let mut answer = String::new();
+        let mut answer;
 
         loop {
             // Build a simple chain for generation

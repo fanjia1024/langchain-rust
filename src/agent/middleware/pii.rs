@@ -1,11 +1,10 @@
 use async_trait::async_trait;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
 
-use super::pii_detector::{PIIDetector, PIIMatch, PIIType};
+use super::pii_detector::{PIIDetector, PIIType};
 use super::{Middleware, MiddlewareContext, MiddlewareError};
 use crate::prompt::PromptArgs;
-use crate::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
+use crate::schemas::agent::{AgentAction, AgentEvent};
 
 /// Strategy for handling detected PII.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

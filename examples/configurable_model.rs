@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     // Wrap it in a ConfigurableModel
-    let configurable = ConfigurableModel::new(base_model)
+    let _configurable = ConfigurableModel::new(base_model)
         .with_configurable_fields(vec![
             "model".to_string(),
             "temperature".to_string(),

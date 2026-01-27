@@ -1,7 +1,6 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
-    interrupts::{interrupt, Command},
+    function_node, interrupt, Command, InMemorySaver, LangGraphError, MessagesState,
+    RunnableConfig, StateGraph, StateOrCommand, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 use std::collections::HashMap;
@@ -12,18 +11,18 @@ use std::collections::HashMap;
 /// execution pauses to ask for approval before proceeding.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use langchain_rust::langgraph::error::LangGraphError;
-
     // Approval node - pauses for human approval
-    let approval_node = function_node("approval", |state: &MessagesState| async move {
+    let approval_node = function_node("approval", |_state: &MessagesState| async move {
         // Extract action details from state (in a real scenario)
         let action_details = "Transfer $500 to account 12345";
-        
+
         // Pause and ask for approval
         let approved = interrupt(serde_json::json!({
             "question": "Do you want to proceed with this action?",
             "details": action_details
-        })).await.map_err(|e| LangGraphError::InterruptError(e))?;
+        }))
+        .await
+        .map_err(LangGraphError::InterruptError)?;
 
         // Route based on the response
         let status = if approved.as_bool().unwrap_or(false) {
@@ -35,9 +34,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut update = HashMap::new();
         update.insert(
             "messages".to_string(),
-            serde_json::to_value(vec![Message::new_ai_message(
-                format!("Action status: {}", status)
-            )])?,
+            serde_json::to_value(vec![Message::new_ai_message(format!(
+                "Action status: {}",
+                status
+            ))])?,
         );
         Ok(update)
     });
@@ -56,8 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
 
     // Initial run - hits the interrupt
-    let initial = compiled.invoke_with_config_interrupt(initial_state, &config).await?;
-    
+    let initial = compiled
+        .invoke_with_config_interrupt(StateOrCommand::State(initial_state), &config)
+        .await?;
+
     if let Some(interrupts) = initial.interrupt {
         println!("Interrupted for approval:");
         for interrupt in &interrupts {
@@ -67,14 +69,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Resume with approval decision
     println!("\nResuming with approval: true");
-    let resumed = compiled.invoke_with_config_interrupt(
-        Command::resume(true),
-        &config
-    ).await?;
+    let resumed = compiled
+        .invoke_with_config_interrupt(
+            StateOrCommand::Command(Command::resume(serde_json::json!(true))),
+            &config,
+        )
+        .await?;
 
     println!("\nFinal result:");
     for message in &resumed.state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     Ok(())

@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
-    chain::{ChainError, ConversationalRetrieverChainBuilder},
+    chain::ConversationalRetrieverChainBuilder,
     language_models::llm::LLM,
     memory::SimpleMemory,
     rag::RAGError,

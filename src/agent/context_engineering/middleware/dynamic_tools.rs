@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
-        context_engineering::{ModelRequest, ModelResponse},
+        context_engineering::ModelRequest,
         middleware::{Middleware, MiddlewareContext, MiddlewareError},
         AgentState,
     },

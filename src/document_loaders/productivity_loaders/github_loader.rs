@@ -7,7 +7,6 @@ use async_stream::stream;
 use async_trait::async_trait;
 use futures::Stream;
 use serde_json::Value;
-use url::Url;
 
 use crate::{
     document_loaders::{process_doc_stream, Loader, LoaderError},

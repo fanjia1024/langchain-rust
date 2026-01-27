@@ -1,10 +1,8 @@
 use serde_json::Value;
 use tokio::task_local;
 
-/// Task-local interrupt context
-///
-/// This context is used to pass interrupt state and resume values
-/// through the async execution stack, similar to Python's context vars.
+// Task-local interrupt context: passes interrupt state and resume values
+// through the async execution stack, similar to Python's context vars.
 task_local! {
     pub static INTERRUPT_CONTEXT: std::cell::RefCell<Option<InterruptContext>>;
 }

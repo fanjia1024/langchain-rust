@@ -1,7 +1,6 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
-    execution::DurabilityMode,
+    function_node, DurabilityMode, InMemorySaver, MessagesState, RunnableConfig, StateGraph, END,
+    START,
 };
 use langchain_rust::schemas::messages::Message;
 
@@ -51,11 +50,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     graph.add_node("node1", node1)?;
     graph.add_node("node2", node2)?;
     graph.add_node("node3", node3)?;
-    
+
     // Both node1 and node2 start from START (parallel execution)
     graph.add_edge(START, "node1");
     graph.add_edge(START, "node2");
-    
+
     // node3 executes after both node1 and node2
     graph.add_edge("node1", "node3");
     graph.add_edge("node2", "node3");
@@ -72,12 +71,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = RunnableConfig::with_thread_id("thread-parallel-1");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
     let final_state = compiled
-        .invoke_with_config_and_mode(initial_state, &config, DurabilityMode::Sync)
+        .invoke_with_config_and_mode(Some(initial_state), &config, DurabilityMode::Sync)
         .await?;
 
     println!("Final messages count: {}", final_state.messages.len());
     for message in &final_state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     // Example 2: Execute with Async durability mode
@@ -85,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = RunnableConfig::with_thread_id("thread-parallel-2");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
     let final_state = compiled
-        .invoke_with_config_and_mode(initial_state, &config, DurabilityMode::Async)
+        .invoke_with_config_and_mode(Some(initial_state), &config, DurabilityMode::Async)
         .await?;
 
     println!("Final messages count: {}", final_state.messages.len());
@@ -95,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = RunnableConfig::with_thread_id("thread-parallel-3");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
     let final_state = compiled
-        .invoke_with_config_and_mode(initial_state, &config, DurabilityMode::Exit)
+        .invoke_with_config_and_mode(Some(initial_state), &config, DurabilityMode::Exit)
         .await?;
 
     println!("Final messages count: {}", final_state.messages.len());

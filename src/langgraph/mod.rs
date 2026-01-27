@@ -1,4 +1,4 @@
-mod error;
+pub mod error;
 mod state;
 mod node;
 mod edge;
@@ -6,7 +6,7 @@ mod graph;
 mod compiled;
 mod streaming;
 mod persistence;
-mod task;
+pub mod task;
 mod execution;
 mod interrupts;
 

@@ -4,7 +4,6 @@ use langchain_rust::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 /// Example structured output schema for contact information.
 #[derive(Serialize, Deserialize, JsonSchema, Debug)]

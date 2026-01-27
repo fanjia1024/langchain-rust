@@ -25,7 +25,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = std::env::temp_dir().join("langchain_deep_agent_example");
     std::fs::create_dir_all(&workspace)?;
     // Create a sample file for read/edit demos
-    std::fs::write(workspace.join("notes.txt"), "Line 1: Hello\nLine 2: World\n")?;
+    std::fs::write(
+        workspace.join("notes.txt"),
+        "Line 1: Hello\nLine 2: World\n",
+    )?;
 
     let config = DeepAgentConfig::new()
         .with_planning(true)

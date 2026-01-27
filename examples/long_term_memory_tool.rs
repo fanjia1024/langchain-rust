@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use langchain_rust::{
     agent::create_agent,
-    schemas::messages::Message,
+    error::ToolError,
     tools::{
         EnhancedInMemoryStore, EnhancedToolStore, SimpleContext, StoreValue, ToolResult,
         ToolRuntime,
@@ -35,8 +35,10 @@ impl langchain_rust::tools::Tool for GetUserInfoTool {
         })
     }
 
-    async fn run(&self, _input: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
-        Err("This tool requires runtime. Use run_with_runtime instead.".into())
+    async fn run(&self, _input: serde_json::Value) -> Result<String, ToolError> {
+        Err(ToolError::ExecutionError(
+            "This tool requires runtime. Use run_with_runtime instead.".to_string(),
+        ))
     }
 
     async fn run_with_runtime(
@@ -47,7 +49,7 @@ impl langchain_rust::tools::Tool for GetUserInfoTool {
         let user_id = runtime
             .context()
             .user_id()
-            .ok_or("user_id is required in context")?;
+            .ok_or_else(|| ToolError::MissingInput("user_id is required in context".to_string()))?;
 
         // Get user info from store
         let user_info = runtime.store().get(&["users"], user_id).await;
@@ -103,8 +105,10 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         })
     }
 
-    async fn run(&self, _input: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
-        Err("This tool requires runtime. Use run_with_runtime instead.".into())
+    async fn run(&self, _input: serde_json::Value) -> Result<String, ToolError> {
+        Err(ToolError::ExecutionError(
+            "This tool requires runtime. Use run_with_runtime instead.".to_string(),
+        ))
     }
 
     async fn run_with_runtime(
@@ -115,7 +119,7 @@ impl langchain_rust::tools::Tool for SaveUserInfoTool {
         let user_id = runtime
             .context()
             .user_id()
-            .ok_or("user_id is required in context")?;
+            .ok_or_else(|| ToolError::MissingInput("user_id is required in context".to_string()))?;
 
         // Build user info object
         let mut user_info = HashMap::new();
@@ -155,7 +159,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     // Create enhanced store
-    let store: Arc<dyn langchain_rust::tools::ToolStore> = Arc::new(EnhancedInMemoryStore::new());
+    let _store: Arc<dyn langchain_rust::tools::ToolStore> = Arc::new(EnhancedInMemoryStore::new());
 
     // Pre-populate with some data
     // Note: We need to use EnhancedInMemoryStore directly to use enhanced features
@@ -184,10 +188,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         vec![Arc::new(GetUserInfoTool), Arc::new(SaveUserInfoTool)];
 
     // Create context with user_id
-    let context = Arc::new(SimpleContext::new().with_user_id("user_123".to_string()));
+    let _context = Arc::new(SimpleContext::new().with_user_id("user_123".to_string()));
 
     // Create agent
-    let agent = create_agent(
+    let _agent = create_agent(
         "gpt-4o-mini",
         &tools,
         Some("You are a helpful assistant. Use get_user_info to recall user information and save_user_info to remember new information."),

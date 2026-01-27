@@ -3,7 +3,6 @@ use langchain_rust::agent::{
     PIIType,
 };
 use langchain_rust::schemas::Message;
-use serde_json::json;
 use std::sync::Arc;
 
 #[tokio::main]

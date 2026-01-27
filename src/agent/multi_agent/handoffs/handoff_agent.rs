@@ -4,8 +4,7 @@ use std::sync::Arc;
 use crate::{
     agent::multi_agent::handoffs::HandoffTool,
     agent::{AgentError, UnifiedAgent},
-    chain::{chain_trait::Chain, ChainError},
-    prompt::PromptArgs,
+    chain::ChainError,
     schemas::messages::Message,
     tools::Tool,
 };
@@ -63,7 +62,7 @@ impl HandoffAgent {
     /// Invoke with messages, automatically routing based on state
     pub async fn invoke_messages(&self, messages: Vec<Message>) -> Result<String, ChainError> {
         // Extract the last human message to check for handoff instructions
-        let last_human_message = messages
+        let _last_human_message = messages
             .iter()
             .rev()
             .find(|m| matches!(m.message_type, crate::schemas::MessageType::HumanMessage));

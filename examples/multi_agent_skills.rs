@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use langchain_rust::{
-    agent::{create_agent, SimpleSkill, SkillAgentBuilder, SkillContext},
+    agent::{create_agent, SimpleSkill, SkillAgentBuilder},
     schemas::messages::Message,
 };
 

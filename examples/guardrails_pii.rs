@@ -1,6 +1,5 @@
 use langchain_rust::agent::{create_agent, PIIMiddleware, PIIStrategy, PIIType};
 use langchain_rust::schemas::Message;
-use serde_json::json;
 use std::sync::Arc;
 
 #[tokio::main]

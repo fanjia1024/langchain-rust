@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use crate::{
     agent::{
-        context_engineering::{ModelRequest, ModelResponse},
+        context_engineering::ModelRequest,
         middleware::{Middleware, MiddlewareContext, MiddlewareError},
     },
     schemas::Message,
@@ -152,7 +152,7 @@ impl MessageInjectionMiddleware {
         Self::new(
             move |request: &ModelRequest| {
                 if let Some(runtime) = request.runtime() {
-                    if let Some(user_id) = runtime.context().user_id() {
+                    if let Some(_user_id) = runtime.context().user_id() {
                         // In a real implementation, you'd read from store:
                         // let writing_style = runtime.store().get(("writing_style",), user_id).await?;
                         // if let Some(style) = writing_style {

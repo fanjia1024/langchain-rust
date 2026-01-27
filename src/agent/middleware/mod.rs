@@ -225,7 +225,7 @@ pub trait Middleware: Send + Sync {
     async fn before_tool_call_with_runtime(
         &self,
         action: &AgentAction,
-        runtime: Option<&Runtime>,
+        _runtime: Option<&Runtime>,
         context: &mut MiddlewareContext,
     ) -> Result<Option<AgentAction>, MiddlewareError> {
         // Default implementation calls the non-runtime version
@@ -237,7 +237,7 @@ pub trait Middleware: Send + Sync {
         &self,
         action: &AgentAction,
         observation: &str,
-        runtime: Option<&Runtime>,
+        _runtime: Option<&Runtime>,
         context: &mut MiddlewareContext,
     ) -> Result<Option<String>, MiddlewareError> {
         // Default implementation calls the non-runtime version
@@ -248,7 +248,7 @@ pub trait Middleware: Send + Sync {
     async fn before_finish_with_runtime(
         &self,
         finish: &AgentFinish,
-        runtime: Option<&Runtime>,
+        _runtime: Option<&Runtime>,
         context: &mut MiddlewareContext,
     ) -> Result<Option<AgentFinish>, MiddlewareError> {
         // Default implementation calls the non-runtime version
@@ -260,7 +260,7 @@ pub trait Middleware: Send + Sync {
         &self,
         finish: &AgentFinish,
         result: &GenerateResult,
-        runtime: Option<&Runtime>,
+        _runtime: Option<&Runtime>,
         context: &mut MiddlewareContext,
     ) -> Result<(), MiddlewareError> {
         // Default implementation calls the non-runtime version

@@ -17,9 +17,6 @@ use crate::llm::MistralAI;
 #[cfg(feature = "gemini")]
 use crate::llm::Gemini;
 
-#[cfg(feature = "bedrock")]
-use crate::llm::Bedrock;
-
 use crate::llm::HuggingFace;
 
 use super::AgentError;

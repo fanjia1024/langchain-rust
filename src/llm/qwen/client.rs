@@ -90,7 +90,8 @@ fn parse_error_response(code: &str, message: &str) -> LLMError {
     }
 }
 
-/// Qwen model options
+/// Qwen model options (variant names match API/model identifiers)
+#[allow(non_camel_case_types)]
 pub enum QwenModel {
     /// Qwen-Max
     QwenMax,
@@ -461,7 +462,7 @@ impl LLM for Qwen {
                     match result {
                         Ok(bytes) => {
                             // Parse SSE chunk format
-                            let bytes_str = from_utf8(&bytes)
+                            let _bytes_str = from_utf8(&bytes)
                                 .map_err(|e| LLMError::OtherError(e.to_string()))?;
                             let chunks = Self::parse_sse_chunk(&bytes)?;
 

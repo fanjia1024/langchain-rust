@@ -131,15 +131,15 @@ impl Gemini {
     }
 
     /// Builds the API payload from messages
-    fn build_payload(&self, messages: &[Message], stream: bool) -> Payload {
+    fn build_payload(&self, messages: &[Message], _delete_collection: bool) -> Payload {
         // Gemini requires system message to be first user message
-        let mut gemini_messages: Vec<GeminiMessage> =
+        let gemini_messages: Vec<GeminiMessage> =
             messages.iter().map(GeminiMessage::from_message).collect();
 
         // If first message is system, convert it to user message
         // (Already handled in from_message conversion)
 
-        let mut generation_config = GenerationConfig {
+        let generation_config = GenerationConfig {
             temperature: self.options.temperature,
             max_output_tokens: self.options.max_tokens,
             top_p: self.options.top_p,
@@ -245,7 +245,7 @@ impl LLM for Gemini {
                     match result {
                         Ok(bytes) => {
                             // Parse SSE chunk format
-                            let bytes_str = from_utf8(&bytes)
+                            let _bytes_str = from_utf8(&bytes)
                                 .map_err(|e| LLMError::OtherError(e.to_string()))?;
                             let chunks = Gemini::parse_sse_chunk(&bytes)?;
 

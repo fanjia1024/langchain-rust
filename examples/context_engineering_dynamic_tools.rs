@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use langchain_rust::{
     agent::{context_engineering::middleware::DynamicToolsMiddleware, create_agent},
+    error::ToolError,
     schemas::messages::Message,
     tools::{SimpleContext, Tool},
 };
@@ -21,7 +22,7 @@ impl Tool for PublicTool {
     fn description(&self) -> String {
         "Public search tool".to_string()
     }
-    async fn run(&self, _input: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
+    async fn run(&self, _input: serde_json::Value) -> Result<String, ToolError> {
         Ok("Public search result".to_string())
     }
 }
@@ -34,7 +35,7 @@ impl Tool for AdminTool {
     fn description(&self) -> String {
         "Admin delete tool".to_string()
     }
-    async fn run(&self, _input: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
+    async fn run(&self, _input: serde_json::Value) -> Result<String, ToolError> {
         Ok("Deleted".to_string())
     }
 }
@@ -56,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Alternative: exclude specific tools
-    let exclude_tools = DynamicToolsMiddleware::exclude_tools(vec![
+    let _exclude_tools = DynamicToolsMiddleware::exclude_tools(vec![
         "admin_delete".to_string(),
         "sensitive_tool".to_string(),
     ]);

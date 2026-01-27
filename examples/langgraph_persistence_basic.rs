@@ -1,6 +1,5 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
+    function_node, InMemorySaver, MessagesState, RunnableConfig, StateGraph, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 
@@ -38,11 +37,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Invoke with config (includes thread_id)
     let config = RunnableConfig::with_thread_id("thread-1");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("hi!")]);
-    let final_state = compiled.invoke_with_config(Some(initial_state), &config).await?;
+    let final_state = compiled
+        .invoke_with_config(Some(initial_state), &config)
+        .await?;
 
     println!("Final messages:");
     for message in &final_state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     // Get the latest state

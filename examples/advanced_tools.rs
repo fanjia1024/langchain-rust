@@ -1,9 +1,10 @@
-use std::{error::Error, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use langchain_rust::{
     agent::create_agent,
     chain::Chain,
+    error::ToolError,
     prompt_args,
     tools::{Tool, ToolResult, ToolRuntime},
 };
@@ -46,10 +47,10 @@ impl Tool for WeatherTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let location = input["location"]
             .as_str()
-            .ok_or("Missing 'location' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("location".to_string()))?;
         let units = input["units"].as_str().unwrap_or("celsius");
         let include_forecast = input["include_forecast"].as_bool().unwrap_or(false);
 
@@ -83,7 +84,7 @@ impl Tool for LongRunningTool {
         true
     }
 
-    async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, _input: Value) -> Result<String, ToolError> {
         Ok("This tool requires runtime for streaming".to_string())
     }
 
@@ -91,7 +92,7 @@ impl Tool for LongRunningTool {
         &self,
         input: Value,
         runtime: &ToolRuntime,
-    ) -> Result<ToolResult, Box<dyn Error>> {
+    ) -> Result<ToolResult, Box<dyn std::error::Error>> {
         let task = input["task"].as_str().unwrap_or("default");
 
         // Stream progress updates

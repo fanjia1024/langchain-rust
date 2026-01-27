@@ -1,4 +1,4 @@
-use std::{error::Error, sync::Arc};
+use std::sync::Arc;
 
 use async_openai::types::CreateSpeechRequestArgs;
 use async_openai::Client;

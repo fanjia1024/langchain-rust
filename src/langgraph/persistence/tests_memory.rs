@@ -28,7 +28,7 @@ mod memory_tests {
     async fn test_node_with_store() {
         let store = std::sync::Arc::new(InMemoryStore::new());
         
-        let node = function_node_with_store("test_node", |_state: &MessagesState, _config: &RunnableConfig, store: &dyn Store| async move {
+        let node = function_node_with_store("test_node", |_state: &MessagesState, _config: &RunnableConfig, store: std::sync::Arc<dyn Store>| async move {
             use crate::langgraph::error::LangGraphError;
             
             // Store a value
@@ -54,7 +54,7 @@ mod memory_tests {
 
         let state = MessagesState::new();
         let config = RunnableConfig::with_thread_id("test-thread");
-        let result = node.invoke_with_context(&state, Some(&config), Some(store.as_ref())).await.unwrap();
+        let result = node.invoke_with_context(&state, Some(&config), Some(store)).await.unwrap();
         assert_eq!(result.get("result").unwrap().as_str().unwrap(), "success");
     }
 
@@ -63,31 +63,39 @@ mod memory_tests {
         let checkpointer = std::sync::Arc::new(InMemorySaver::new());
         let store = std::sync::Arc::new(InMemoryStore::new());
 
-        let node = function_node_with_store("memory_node", |_state: &MessagesState, config: &RunnableConfig, store: &dyn Store| async move {
-            use crate::langgraph::error::LangGraphError;
-            
+        let node = function_node_with_store("memory_node", |state: &MessagesState, config: &RunnableConfig, store: std::sync::Arc<dyn Store>| {
             let user_id = config.get_user_id().unwrap_or("default".to_string());
-            let namespace = &["memories", &user_id];
+            let messages_is_empty = state.messages.is_empty();
+            async move {
+                use crate::langgraph::error::LangGraphError;
 
-            // Store a memory (only on first call to avoid duplicates in test)
-            if _state.messages.is_empty() {
-                store.put(
-                    namespace,
-                    "memory-1",
-                    serde_json::json!({"data": "User likes pizza"}),
-                ).await.map_err(|e| LangGraphError::ExecutionError(format!("Store error: {}", e)))?;
+                let namespace = ["memories", user_id.as_str()];
+
+                // Store a memory (only on first call to avoid duplicates in test)
+                if messages_is_empty {
+                    store
+                        .put(
+                            &namespace,
+                            "memory-1",
+                            serde_json::json!({"data": "User likes pizza"}),
+                        )
+                        .await
+                        .map_err(|e| LangGraphError::ExecutionError(format!("Store error: {}", e)))?;
+                }
+
+                // Search for memories
+                let memories = store
+                    .search(&namespace, Some("pizza"), None)
+                    .await
+                    .map_err(|e| LangGraphError::ExecutionError(format!("Store error: {}", e)))?;
+
+                let mut update = HashMap::new();
+                update.insert(
+                    "memories_found".to_string(),
+                    serde_json::json!(memories.len()),
+                );
+                Ok(update)
             }
-
-            // Search for memories
-            let memories = store.search(namespace, Some("pizza"), None).await
-                .map_err(|e| LangGraphError::ExecutionError(format!("Store error: {}", e)))?;
-
-            let mut update = HashMap::new();
-            update.insert(
-                "memories_found".to_string(),
-                serde_json::json!(memories.len()),
-            );
-            Ok(update)
         });
 
         let mut graph = StateGraph::<MessagesState>::new();

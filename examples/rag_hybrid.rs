@@ -5,7 +5,6 @@ use std::sync::Arc;
 
 #[cfg(feature = "postgres")]
 use langchain_rust::{
-    add_documents,
     embedding::openai::openai_embedder::OpenAiEmbedder,
     llm::openai::{OpenAI, OpenAIModel},
     memory::SimpleMemory,

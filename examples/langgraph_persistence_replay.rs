@@ -1,6 +1,5 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
+    function_node, InMemorySaver, MessagesState, RunnableConfig, StateGraph, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 
@@ -51,11 +50,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== First Execution ===");
     let config = RunnableConfig::with_thread_id("thread-replay-1");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
-    let final_state = compiled.invoke_with_config(Some(initial_state), &config).await?;
+    let final_state = compiled
+        .invoke_with_config(Some(initial_state), &config)
+        .await?;
 
     println!("Final messages:");
     for message in &final_state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     // Get state history
@@ -63,22 +68,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nCheckpoints created: {}", history.len());
 
     // Find a checkpoint to replay from (e.g., after node1)
-    if let Some(checkpoint) = history.iter().find(|s| {
-        s.metadata.get("node").and_then(|v| v.as_str()) == Some("node1")
-    }) {
+    if let Some(checkpoint) = history
+        .iter()
+        .find(|s| s.metadata.get("node").and_then(|v| v.as_str()) == Some("node1"))
+    {
         let checkpoint_id = checkpoint.checkpoint_id().unwrap().clone();
         println!("\n=== Replaying from checkpoint: {} ===", checkpoint_id);
 
         // Replay from checkpoint (None means resume from checkpoint)
         let replay_config = RunnableConfig::with_checkpoint("thread-replay-1", checkpoint_id);
-        let replay_state = compiled.invoke_with_config(
-            None, // None means resume from checkpoint
-            &replay_config,
-        ).await?;
+        let replay_state = compiled
+            .invoke_with_config(
+                None, // None means resume from checkpoint
+                &replay_config,
+            )
+            .await?;
 
         println!("Replay final messages:");
         for message in &replay_state.messages {
-            println!("  {}: {}", message.message_type.to_string(), message.content);
+            println!(
+                "  {}: {}",
+                message.message_type.to_string(),
+                message.content
+            );
         }
     }
 
@@ -96,10 +108,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             serde_json::to_value(vec![Message::new_ai_message("Forked message")])?,
         );
 
-        let forked_snapshot = compiled.update_state(&fork_config, &update, Some("fork_node")).await?;
-        println!("Forked checkpoint ID: {:?}", forked_snapshot.checkpoint_id());
-        println!("Forked state messages count: {}", 
-            forked_snapshot.values.messages.len());
+        let forked_snapshot = compiled
+            .update_state(&fork_config, &update, Some("fork_node"))
+            .await?;
+        println!(
+            "Forked checkpoint ID: {:?}",
+            forked_snapshot.checkpoint_id()
+        );
+        println!(
+            "Forked state messages count: {}",
+            forked_snapshot.values.messages.len()
+        );
     }
 
     Ok(())

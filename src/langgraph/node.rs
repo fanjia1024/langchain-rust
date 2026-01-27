@@ -18,7 +18,7 @@ use super::{
     compiled::CompiledGraph,
     persistence::{
         config::RunnableConfig,
-        store::Store,
+        store::StoreBox,
     },
 };
 
@@ -55,8 +55,8 @@ pub trait Node<S: State>: Send + Sync {
     async fn invoke_with_context(
         &self,
         state: &S,
-        config: Option<&RunnableConfig>,
-        store: Option<&dyn Store>,
+        _config: Option<&RunnableConfig>,
+        _store: Option<StoreBox>,
     ) -> Result<StateUpdate, LangGraphError> {
         // Default implementation calls invoke for backward compatibility
         self.invoke(state).await
@@ -92,7 +92,7 @@ pub struct FunctionNode<S: State> {
     name: String,
     func_state_only: Option<Arc<dyn Fn(&S) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
     func_with_config: Option<Arc<dyn Fn(&S, &RunnableConfig) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
-    func_with_config_store: Option<Arc<dyn Fn(&S, &RunnableConfig, &dyn Store) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
+    func_with_config_store: Option<Arc<dyn Fn(&S, &RunnableConfig, StoreBox) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
 }
 
 impl<S: State> FunctionNode<S> {
@@ -131,7 +131,7 @@ impl<S: State> FunctionNode<S> {
     /// Create a new function node with state, config, and store
     pub fn with_config_store<F, Fut>(name: String, func: F) -> Self
     where
-        F: Fn(&S, &RunnableConfig, &dyn Store) -> Fut + Send + Sync + 'static,
+        F: Fn(&S, &RunnableConfig, StoreBox) -> Fut + Send + Sync + 'static,
         Fut: std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send + 'static,
     {
         Self {
@@ -167,12 +167,12 @@ impl<S: State> Node<S> for FunctionNode<S> {
         &self,
         state: &S,
         config: Option<&RunnableConfig>,
-        store: Option<&dyn Store>,
+        store: Option<StoreBox>,
     ) -> Result<StateUpdate, LangGraphError> {
         // Try func_with_config_store first (most specific)
         if let Some(ref func) = self.func_with_config_store {
             if let (Some(config), Some(store)) = (config, store) {
-                return func(state, config, store).await;
+                return func(state, config, store.clone()).await;
             } else {
                 return Err(LangGraphError::ExecutionError(
                     "Node requires both config and store".to_string()
@@ -409,10 +409,10 @@ where
 /// Helper function to create a function node with config and store
 ///
 /// Supports function signatures:
-/// - `Fn(&S, &RunnableConfig, &dyn Store) -> Fut` - state, config, and store
+/// - `Fn(&S, &RunnableConfig, StoreBox) -> Fut` - state, config, and store (owned Arc)
 pub fn function_node_with_store<S: State, F, Fut>(name: impl Into<String>, func: F) -> FunctionNode<S>
 where
-    F: Fn(&S, &RunnableConfig, &dyn Store) -> Fut + Send + Sync + 'static,
+    F: Fn(&S, &RunnableConfig, StoreBox) -> Fut + Send + Sync + 'static,
     Fut: std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send + 'static,
 {
     FunctionNode::with_config_store(name.into(), func)

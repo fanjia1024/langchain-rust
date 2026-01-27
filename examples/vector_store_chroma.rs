@@ -4,11 +4,8 @@
 
 #[cfg(feature = "chroma")]
 use langchain_rust::{
-    embedding::openai::openai_embedder::OpenAiEmbedder,
-    schemas::Document,
-    vectorstore::chroma::{Store, StoreBuilder},
-    vectorstore::VecStoreOptions,
-    vectorstore::VectorStore,
+    embedding::openai::openai_embedder::OpenAiEmbedder, schemas::Document,
+    vectorstore::chroma::StoreBuilder, vectorstore::VecStoreOptions, vectorstore::VectorStore,
 };
 
 #[cfg(feature = "chroma")]

@@ -89,7 +89,7 @@ impl<S: State> Checkpointer<S> for InMemorySaver<S> {
             None => return Ok(None),
         };
 
-        let result = if let Some(cp_id) = checkpoint_id {
+        let result = if let Some(_cp_id) = checkpoint_id {
             // Find specific checkpoint
             thread_checkpoints
                 .iter()

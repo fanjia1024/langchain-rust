@@ -14,7 +14,7 @@ use super::{
         checkpointer::CheckpointerBox,
         config::{CheckpointConfig, RunnableConfig},
         snapshot::StateSnapshot,
-        store::{Store, StoreBox},
+        store::StoreBox,
     },
     execution::{
         durability::DurabilityMode,
@@ -27,8 +27,8 @@ use super::{
         metadata::{MessageMetadata, MessageChunk},
     },
     interrupts::{
-        Command, Interrupt, InterruptContext, InterruptError,
-        InvokeResult, StateOrCommand, set_interrupt_context, get_interrupt_value,
+        Interrupt, InterruptContext,
+        InvokeResult, StateOrCommand, set_interrupt_context,
     },
 };
 
@@ -548,7 +548,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                         
                         use futures::StreamExt;
                         let mut full_content = String::new();
-                        let mut metadata = MessageMetadata::new(current_node.clone());
+                        let metadata = MessageMetadata::new(current_node.clone());
                         
                         while let Some(chunk_result) = stream_result.next().await {
                             match chunk_result {
@@ -785,7 +785,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                     StreamEvent::NodeStart { node, .. } => {
                         DebugInfo::with_node("NodeStart", node.clone())
                     }
-                    StreamEvent::NodeEnd { node, state, update, path, .. } => {
+                    StreamEvent::NodeEnd { node, state, update,  .. } => {
                         let mut info = DebugInfo::with_node("NodeEnd", node.clone());
                         info = info.with_info("state".to_string(), serde_json::to_value(state).ok()?);
                         info = info.with_info("update".to_string(), serde_json::to_value(update).ok()?);
@@ -799,13 +799,13 @@ impl<S: State + 'static> CompiledGraph<S> {
                     StreamEvent::Error { error } => {
                         DebugInfo::new("Error").with_info("error".to_string(), serde_json::json!(error.to_string()))
                     }
-                    StreamEvent::MessageChunk { node, chunk, metadata, path, .. } => {
+                    StreamEvent::MessageChunk { node, chunk, metadata,  .. } => {
                         let mut info = DebugInfo::with_node("MessageChunk", node.clone());
                         info = info.with_info("chunk".to_string(), serde_json::to_value(chunk).ok()?);
                         info = info.with_info("metadata".to_string(), serde_json::to_value(metadata).ok()?);
                         info
                     }
-                    StreamEvent::CustomData { node, data, path, .. } => {
+                    StreamEvent::CustomData { node, data,  .. } => {
                         let mut info = DebugInfo::with_node("CustomData", node.clone());
                         info = info.with_info("data".to_string(), data.clone());
                         info
@@ -962,7 +962,7 @@ impl<S: State + 'static> CompiledGraph<S> {
 
         // Update checkpoint_config with parent if we're resuming from a checkpoint
         let mut checkpoint_config = checkpoint_config.clone();
-        if let Some(ref parent) = parent_config {
+        if let Some(ref _parent) = parent_config {
             checkpoint_config.checkpoint_id = None; // Clear checkpoint_id to create new fork
             // Store parent in the checkpoint when saving
         }
@@ -983,7 +983,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                 &checkpoint_config,
                 parent_config.as_ref(),
                 Some(&runnable_config),
-                self.store.as_deref(),
+                self.store.clone(),
             ).await
         }).await;
 
@@ -999,7 +999,7 @@ impl<S: State + 'static> CompiledGraph<S> {
         checkpoint_config: &CheckpointConfig,
         parent_config: Option<&CheckpointConfig>,
         config: Option<&RunnableConfig>,
-        store: Option<&dyn Store>,
+        store: Option<StoreBox>,
     ) -> Result<InvokeResult<S>, LangGraphError> {
         let mut current_state = initial_state;
         let mut current_node = START.to_string();
@@ -1053,7 +1053,7 @@ impl<S: State + 'static> CompiledGraph<S> {
 
             // Execute node and handle interrupts
             // Use invoke_with_context to support config and store
-            let update_result = node.invoke_with_context(&current_state, config, store).await;
+            let update_result = node.invoke_with_context(&current_state, config, store.clone()).await;
 
             match update_result {
                 Ok(update) => {
@@ -1219,7 +1219,7 @@ impl<S: State + 'static> CompiledGraph<S> {
             &new_checkpoint_config,
             parent_config.as_ref(),
             Some(config), // Pass config to nodes
-            self.store.as_deref(), // Pass store to nodes
+            self.store.clone(), // Pass store to nodes
         ).await
     }
 
@@ -1254,11 +1254,11 @@ impl<S: State + 'static> CompiledGraph<S> {
                 });
             }
         };
-        let thread_id = &checkpoint_config.thread_id;
+        let _thread_id = &checkpoint_config.thread_id;
 
         // If checkpoint_id is provided, load state from checkpoint
-        let current_state = if let Some(checkpoint_id) = &checkpoint_config.checkpoint_id {
-            if let Some(checkpointer) = &self.checkpointer {
+        let current_state = if let Some(_checkpoint_id) = &checkpoint_config.checkpoint_id {
+            if let Some(_checkpointer) = &self.checkpointer {
                 // For now, we'll use the initial state
                 // In a full implementation, we'd load from checkpoint
                 initial_state

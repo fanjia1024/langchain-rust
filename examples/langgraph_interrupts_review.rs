@@ -1,7 +1,6 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
-    interrupts::{interrupt, Command},
+    function_node, interrupt, Command, InMemorySaver, LangGraphError, MessagesState,
+    RunnableConfig, StateGraph, StateOrCommand, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 use std::collections::HashMap;
@@ -12,18 +11,18 @@ use std::collections::HashMap;
 /// review and edit content before continuing.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use langchain_rust::langgraph::error::LangGraphError;
-
     // Review node - pauses for human review and editing
-    let review_node = function_node("review", |state: &MessagesState| async move {
+    let review_node = function_node("review", |_state: &MessagesState| async move {
         // Simulate generated content (in a real scenario, this would come from an LLM)
         let generated_text = "This is the initial draft that needs review.";
-        
+
         // Pause and show the content for review
         let edited_content = interrupt(serde_json::json!({
             "instruction": "Review and edit this content",
             "content": generated_text
-        })).await.map_err(|e| LangGraphError::InterruptError(e))?;
+        }))
+        .await
+        .map_err(LangGraphError::InterruptError)?;
 
         // Extract the edited content
         let edited = if let Some(content) = edited_content.as_str() {
@@ -36,9 +35,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut update = HashMap::new();
         update.insert(
             "messages".to_string(),
-            serde_json::to_value(vec![Message::new_ai_message(
-                format!("Edited content: {}", edited)
-            )])?,
+            serde_json::to_value(vec![Message::new_ai_message(format!(
+                "Edited content: {}",
+                edited
+            ))])?,
         );
         Ok(update)
     });
@@ -57,8 +57,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
 
     // Initial run - hits the interrupt
-    let initial = compiled.invoke_with_config_interrupt(initial_state, &config).await?;
-    
+    let initial = compiled
+        .invoke_with_config_interrupt(StateOrCommand::State(initial_state), &config)
+        .await?;
+
     if let Some(interrupts) = initial.interrupt {
         println!("Interrupted for review:");
         for interrupt in &interrupts {
@@ -68,14 +70,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Resume with the edited text
     println!("\nResuming with edited text");
-    let resumed = compiled.invoke_with_config_interrupt(
-        Command::resume("Improved draft after review"),
-        &config
-    ).await?;
+    let resumed = compiled
+        .invoke_with_config_interrupt(
+            StateOrCommand::Command(Command::resume(serde_json::json!(
+                "Improved draft after review"
+            ))),
+            &config,
+        )
+        .await?;
 
     println!("\nFinal result:");
     for message in &resumed.state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     Ok(())

@@ -1,7 +1,6 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
-    interrupts::{interrupt, Command},
+    function_node, interrupt, Command, InMemorySaver, MessagesState, RunnableConfig, StateGraph,
+    StateOrCommand, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 use std::collections::HashMap;
@@ -16,19 +15,21 @@ use std::collections::HashMap;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create an approval node that uses interrupt
     let approval_node = function_node("approval", |_state: &MessagesState| async move {
-        use langchain_rust::langgraph::error::LangGraphError;
-        
+        use langchain_rust::langgraph::LangGraphError;
+
         // Pause and ask for approval
-        let approved = interrupt("Do you approve this action?").await
-            .map_err(|e| LangGraphError::InterruptError(e))?;
-        
+        let approved = interrupt("Do you approve this action?")
+            .await
+            .map_err(LangGraphError::InterruptError)?;
+
         // When resumed, `approved` contains the resume value
         let mut update = HashMap::new();
         update.insert(
             "messages".to_string(),
-            serde_json::to_value(vec![Message::new_ai_message(
-                format!("Approval result: {}", approved)
-            )])?,
+            serde_json::to_value(vec![Message::new_ai_message(format!(
+                "Approval result: {}",
+                approved
+            ))])?,
         );
         Ok(update)
     });
@@ -48,8 +49,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initial run - hits the interrupt and pauses
     let config = RunnableConfig::with_thread_id("thread-1");
     let initial_state = MessagesState::with_messages(vec![Message::new_human_message("start")]);
-    
-    let result = compiled.invoke_with_config_interrupt(initial_state, &config).await?;
+
+    let result = compiled
+        .invoke_with_config_interrupt(StateOrCommand::State(initial_state), &config)
+        .await?;
 
     // Check what was interrupted
     if let Some(interrupts) = result.interrupt {
@@ -60,14 +63,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Resume with the human's response
-    let resumed = compiled.invoke_with_config_interrupt(
-        Command::resume(true),  // Resume value
-        &config
-    ).await?;
+    let resumed = compiled
+        .invoke_with_config_interrupt(
+            StateOrCommand::Command(Command::resume(serde_json::json!(true))),
+            &config,
+        )
+        .await?;
 
-    println!("Final state messages count: {}", resumed.state.messages.len());
+    println!(
+        "Final state messages count: {}",
+        resumed.state.messages.len()
+    );
     for message in &resumed.state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     Ok(())

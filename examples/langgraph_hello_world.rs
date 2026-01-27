@@ -1,4 +1,4 @@
-use langchain_rust::langgraph::{function_node, StateGraph, MessagesState, END, START};
+use langchain_rust::langgraph::{function_node, MessagesState, StateGraph, END, START};
 use langchain_rust::schemas::messages::Message;
 
 /// Simple hello world example for LangGraph
@@ -38,7 +38,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Print the result
     println!("Final messages:");
     for message in &final_state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     Ok(())

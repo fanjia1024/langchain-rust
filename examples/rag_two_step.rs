@@ -3,7 +3,6 @@
 
 #[cfg(feature = "postgres")]
 use langchain_rust::{
-    add_documents,
     embedding::openai::openai_embedder::OpenAiEmbedder,
     llm::openai::{OpenAI, OpenAIModel},
     memory::SimpleMemory,
@@ -40,7 +39,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Create retriever
-    use std::sync::Arc;
     let retriever: Box<dyn langchain_rust::schemas::Retriever> = Box::new(Retriever::new(store, 3));
 
     // Create LLM

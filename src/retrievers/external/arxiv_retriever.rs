@@ -88,7 +88,7 @@ impl ArxivRetriever {
         let mut in_title = false;
         let mut in_summary = false;
         let mut in_author = false;
-        let mut current_tag = String::new();
+        let _current_tag = String::new();
 
         for line in xml_content.lines() {
             let line = line.trim();

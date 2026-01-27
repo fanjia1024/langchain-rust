@@ -11,7 +11,7 @@ use crate::langgraph::{
     StateUpdate,
     persistence::{
         config::RunnableConfig,
-        store::Store,
+        store::StoreBox,
     },
 };
 
@@ -84,7 +84,7 @@ impl<S: State + 'static> Node<S> for SubgraphNode<S> {
         &self,
         state: &S,
         config: Option<&RunnableConfig>,
-        store: Option<&dyn Store>,
+        _store: Option<StoreBox>,
     ) -> Result<StateUpdate, LangGraphError> {
         // Execute the subgraph with config and store
         // Note: subgraph will inherit checkpointer from parent if provided
@@ -199,7 +199,7 @@ impl<ParentState: State + 'static, SubState: State + 'static> Node<ParentState> 
         &self,
         state: &ParentState,
         config: Option<&RunnableConfig>,
-        store: Option<&dyn Store>,
+        _store: Option<StoreBox>,
     ) -> Result<StateUpdate, LangGraphError> {
         // Transform parent state to subgraph state
         let sub_state = (self.transform_in)(state)?;

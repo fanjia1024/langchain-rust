@@ -1,12 +1,8 @@
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use crate::{
-    chain::{Chain, ChainError, ConversationalRetrieverChain, ConversationalRetrieverChainBuilder},
-    language_models::{llm::LLM, GenerateResult},
-    memory::SimpleMemory,
+    chain::{Chain, ChainError, ConversationalRetrieverChain},
+    language_models::GenerateResult,
     prompt::PromptArgs,
-    schemas::{BaseMemory, Retriever},
 };
 
 use crate::rag::RAGError;

@@ -1,6 +1,4 @@
 #[cfg(feature = "sqlite-persistence")]
-use std::collections::HashMap;
-#[cfg(feature = "sqlite-persistence")]
 use std::marker::PhantomData;
 #[cfg(feature = "sqlite-persistence")]
 use std::sync::Arc;
@@ -165,7 +163,7 @@ where
     ) -> Result<Option<StateSnapshot<S>>, PersistenceError> {
         let conn = self.connection.lock().await;
 
-        let query = if let Some(cp_id) = checkpoint_id {
+        let query = if let Some(_cp_id) = checkpoint_id {
             "SELECT checkpoint_id, checkpoint_ns, parent_checkpoint_id, state_values, 
                     next_nodes, metadata, created_at
              FROM checkpoints 
@@ -197,13 +195,13 @@ where
 
             // Deserialize state using serde_json (map to rusqlite::Error for closure return type)
             let values: S = serde_json::from_slice(&state_bytes)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(3, "state_values".to_string(), rusqlite::types::Type::Blob))?;
+                .map_err(|_e| rusqlite::Error::InvalidColumnType(3, "state_values".to_string(), rusqlite::types::Type::Blob))?;
 
             // Deserialize next nodes and metadata
             let next: Vec<String> = serde_json::from_str(&next_nodes_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, "next_nodes".to_string(), rusqlite::types::Type::Text))?;
+                .map_err(|_e| rusqlite::Error::InvalidColumnType(4, "next_nodes".to_string(), rusqlite::types::Type::Text))?;
             let metadata: std::collections::HashMap<String, Value> = serde_json::from_str(&metadata_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(5, "metadata".to_string(), rusqlite::types::Type::Text))?;
+                .map_err(|_e| rusqlite::Error::InvalidColumnType(5, "metadata".to_string(), rusqlite::types::Type::Text))?;
 
             // Parse created_at
             let created_at = DateTime::parse_from_rfc3339(&created_at_str)

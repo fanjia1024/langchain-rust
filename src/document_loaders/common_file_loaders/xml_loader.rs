@@ -90,14 +90,14 @@ impl<R: Read + Send + Sync + 'static> Loader for XmlLoader<R> {
             let mut buf = Vec::new();
             let mut current_text = String::new();
             let mut in_target_element = false;
-            let mut depth = 0;
+            let mut _depth = 0;
 
             if let Some(ref sel) = selector {
                 // Extract specific elements
                 loop {
                     match reader.read_event_into(&mut buf) {
                         Ok(quick_xml::events::Event::Start(e)) => {
-                            depth += 1;
+                            _depth += 1;
                             if e.name().as_ref() == sel.as_bytes() {
                                 in_target_element = true;
                                 current_text.clear();
@@ -122,7 +122,7 @@ impl<R: Read + Send + Sync + 'static> Loader for XmlLoader<R> {
                                 in_target_element = false;
                                 current_text.clear();
                             }
-                            depth -= 1;
+                            _depth -= 1;
                         }
                         Ok(quick_xml::events::Event::Eof) => break,
                         Err(e) => {

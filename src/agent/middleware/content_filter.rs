@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use super::{Middleware, MiddlewareContext, MiddlewareError};
 use crate::prompt::PromptArgs;
-use crate::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
+use crate::schemas::agent::AgentAction;
 
 /// Deterministic guardrail: Block requests containing banned keywords.
 ///

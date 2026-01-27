@@ -1,15 +1,14 @@
-use std::{error::Error, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use langchain_rust::{
     agent::{create_agent_with_runtime, Command},
     chain::Chain,
+    error::ToolError,
     prompt_args,
-    schemas::messages::Message,
     tools::{InMemoryStore, SimpleContext, Tool, ToolResult, ToolRuntime},
 };
 use serde_json::{json, Value};
-use tokio::sync::Mutex;
 
 /// Example tool that accesses runtime state
 struct StateAwareTool;
@@ -28,7 +27,7 @@ impl Tool for StateAwareTool {
         true
     }
 
-    async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, _input: Value) -> Result<String, ToolError> {
         Ok("This tool requires runtime".to_string())
     }
 
@@ -36,7 +35,7 @@ impl Tool for StateAwareTool {
         &self,
         _input: Value,
         runtime: &ToolRuntime,
-    ) -> Result<ToolResult, Box<dyn Error>> {
+    ) -> Result<ToolResult, Box<dyn std::error::Error>> {
         let state = runtime.state().await;
         let messages = &state.messages;
 
@@ -85,7 +84,7 @@ impl Tool for ContextAwareTool {
         true
     }
 
-    async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, _input: Value) -> Result<String, ToolError> {
         Ok("This tool requires runtime".to_string())
     }
 
@@ -93,7 +92,7 @@ impl Tool for ContextAwareTool {
         &self,
         _input: Value,
         runtime: &ToolRuntime,
-    ) -> Result<ToolResult, Box<dyn Error>> {
+    ) -> Result<ToolResult, Box<dyn std::error::Error>> {
         let context = runtime.context();
         let user_id = context.user_id().unwrap_or("unknown");
         let session_id = context.session_id().unwrap_or("none");
@@ -139,7 +138,7 @@ impl Tool for StoreAwareTool {
         true
     }
 
-    async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, _input: Value) -> Result<String, ToolError> {
         Ok("This tool requires runtime".to_string())
     }
 
@@ -147,14 +146,14 @@ impl Tool for StoreAwareTool {
         &self,
         input: Value,
         runtime: &ToolRuntime,
-    ) -> Result<ToolResult, Box<dyn Error>> {
+    ) -> Result<ToolResult, Box<dyn std::error::Error>> {
         let key = input["key"]
             .as_str()
-            .ok_or("Missing 'key' parameter")?
+            .ok_or_else(|| ToolError::MissingInput("key".to_string()))?
             .to_string();
         let value = input["value"]
             .as_str()
-            .ok_or("Missing 'value' parameter")?
+            .ok_or_else(|| ToolError::MissingInput("value".to_string()))?
             .to_string();
 
         runtime
@@ -203,7 +202,7 @@ impl Tool for StateUpdateTool {
         true
     }
 
-    async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, _input: Value) -> Result<String, ToolError> {
         Ok("This tool requires runtime".to_string())
     }
 
@@ -211,10 +210,10 @@ impl Tool for StateUpdateTool {
         &self,
         input: Value,
         runtime: &ToolRuntime,
-    ) -> Result<ToolResult, Box<dyn Error>> {
+    ) -> Result<ToolResult, Box<dyn std::error::Error>> {
         let field = input["field"]
             .as_str()
-            .ok_or("Missing 'field' parameter")?
+            .ok_or_else(|| ToolError::MissingInput("field".to_string()))?
             .to_string();
         let value = input["value"].clone();
 
@@ -258,6 +257,7 @@ async fn main() {
         Some(store),
         None, // response_format
         None, // middleware
+        None, // file_backend
     )
     .expect("Failed to create agent");
 

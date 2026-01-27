@@ -1,9 +1,8 @@
+use futures::StreamExt;
 use langchain_rust::langgraph::{
-    function_node, StateGraph, MessagesState, END, START,
-    streaming::StreamMode,
+    function_node, MessagesState, StateGraph, StreamChunk, StreamMode, END, START,
 };
 use langchain_rust::schemas::messages::Message;
-use futures::StreamExt;
 
 /// Streaming example for LangGraph
 ///
@@ -38,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut graph = StateGraph::<MessagesState>::new();
     graph.add_node("node1", node1)?;
     graph.add_node("node2", node2)?;
-    
+
     graph.add_edge(START, "node1");
     graph.add_edge("node1", "node2");
     graph.add_edge("node2", END);
@@ -51,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut stream = compiled.stream_with_mode(initial_state.clone(), StreamMode::Updates);
     while let Some(chunk) = stream.next().await {
         match chunk {
-            langchain_rust::langgraph::streaming::StreamChunk::Updates { node, update } => {
+            StreamChunk::Updates { node, update } => {
                 println!("Node: {}, Update: {:?}", node, update);
             }
             _ => {}
@@ -63,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut stream = compiled.stream_with_mode(initial_state.clone(), StreamMode::Values);
     while let Some(chunk) = stream.next().await {
         match chunk {
-            langchain_rust::langgraph::streaming::StreamChunk::Values { state } => {
+            StreamChunk::Values { state } => {
                 println!("State messages count: {}", state.messages.len());
             }
             _ => {}
@@ -72,10 +71,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 3: Stream with multiple modes
     println!("\n=== Example 3: Multiple modes ===");
-    let mut stream = compiled.stream_with_modes(
-        initial_state,
-        vec![StreamMode::Updates, StreamMode::Values],
-    );
+    let mut stream =
+        compiled.stream_with_modes(initial_state, vec![StreamMode::Updates, StreamMode::Values]);
     while let Some((mode, chunk)) = stream.next().await {
         println!("Mode: {:?}, Chunk: {:?}", mode, chunk.mode());
     }

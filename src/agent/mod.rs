@@ -33,19 +33,21 @@ pub use state::*;
 mod structured_output;
 pub use structured_output::*;
 
-mod middleware;
+pub mod middleware;
 pub use middleware::*;
 
-mod multi_agent;
+pub mod multi_agent;
+#[allow(ambiguous_glob_reexports)]
 pub use multi_agent::*;
 
 mod runtime;
 pub use runtime::*;
 
-mod context_engineering;
+pub mod context_engineering;
 pub use context_engineering::*;
 
-mod deep_agent;
+pub mod deep_agent;
+#[allow(ambiguous_glob_reexports)]
 pub use deep_agent::*;
 
 use std::sync::Arc;
@@ -53,7 +55,7 @@ use std::sync::Arc;
 use crate::{
     language_models::llm::LLM,
     schemas::StructuredOutputStrategy,
-    tools::{FileBackend, Tool, ToolContext, ToolStore},
+    tools::{Tool, ToolContext, ToolStore},
 };
 
 // Re-export for internal use
@@ -139,7 +141,7 @@ pub fn create_agent_with_runtime(
     store: Option<Arc<dyn ToolStore>>,
     response_format: Option<Box<dyn StructuredOutputStrategy>>,
     middleware: Option<Vec<Arc<dyn Middleware>>>,
-    file_backend: Option<Arc<dyn FileBackend>>,
+    file_backend: Option<Arc<dyn crate::tools::FileBackend>>,
 ) -> Result<UnifiedAgent, AgentError> {
     // Detect and create LLM from model string
     let llm = detect_and_create_llm(model)?;
@@ -215,7 +217,7 @@ pub fn create_agent_with_runtime_from_llm<L: Into<Box<dyn LLM>>>(
     store: Option<Arc<dyn ToolStore>>,
     response_format: Option<Box<dyn StructuredOutputStrategy>>,
     middleware: Option<Vec<Arc<dyn Middleware>>>,
-    file_backend: Option<Arc<dyn FileBackend>>,
+    file_backend: Option<Arc<dyn crate::tools::FileBackend>>,
 ) -> Result<UnifiedAgent, AgentError> {
     let prefix = system_prompt
         .map(|s| s.to_string())

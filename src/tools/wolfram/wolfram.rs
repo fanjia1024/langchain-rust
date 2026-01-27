@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use serde_json::Value;
 
 use crate::tools::Tool;
-use std::error::Error;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct WolframError {

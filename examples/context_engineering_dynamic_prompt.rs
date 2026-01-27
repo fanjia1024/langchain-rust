@@ -23,8 +23,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Alternative: from store
-    let store_based_prompt = EnhancedDynamicPromptMiddleware::from_store(
-        |store: &dyn langchain_rust::tools::ToolStore,
+    let _store_based_prompt = EnhancedDynamicPromptMiddleware::from_store(
+        |_store: &dyn langchain_rust::tools::ToolStore,
          ctx: &dyn langchain_rust::tools::ToolContext| {
             // In a real implementation, you'd read user preferences from store
             let user_id = ctx.user_id().unwrap_or("unknown");

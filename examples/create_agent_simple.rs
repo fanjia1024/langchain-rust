@@ -1,10 +1,11 @@
-use std::{error::Error, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use langchain_rust::{
-    agent::create_agent, chain::Chain, prompt_args, schemas::messages::Message, tools::Tool,
+    agent::create_agent, chain::Chain, error::ToolError, prompt_args, schemas::messages::Message,
+    tools::Tool,
 };
-use serde_json::{json, Value};
+use serde_json::Value;
 
 /// A simple weather tool for demonstration
 struct WeatherTool;
@@ -19,7 +20,7 @@ impl Tool for WeatherTool {
         "Get weather for a given city".to_string()
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let city = input
             .get("input")
             .and_then(|v| v.as_str())

@@ -221,7 +221,7 @@ impl UnifiedAgent {
         let store = Arc::new(crate::tools::InMemoryStore::new()); // Fallback
 
         // Create runtime
-        let runtime = Arc::new(Runtime::new(tool_context, store));
+        let _runtime = Arc::new(Runtime::new(tool_context, store));
 
         // Use executor's invoke_with_runtime if available, otherwise fallback
         // For now, we'll update the executor's context temporarily

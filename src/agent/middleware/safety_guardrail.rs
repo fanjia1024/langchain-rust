@@ -1,14 +1,11 @@
 use async_trait::async_trait;
-use futures::Stream;
 use std::sync::Arc;
 
 use super::{Middleware, MiddlewareContext, MiddlewareError};
 use crate::language_models::llm::LLM;
-use crate::language_models::GenerateResult;
 use crate::prompt::PromptArgs;
-use crate::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
+use crate::schemas::agent::{AgentEvent, AgentFinish};
 use crate::schemas::messages::Message;
-use crate::schemas::StreamData;
 
 /// Model-based guardrail: Use an LLM to evaluate response safety.
 ///

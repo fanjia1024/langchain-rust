@@ -70,7 +70,7 @@ impl LLMHelpers {
     /// 合并调用选项
     ///
     /// 将两个 CallOptions 合并，第二个选项的字段会覆盖第一个。
-    pub fn merge_options(base: CallOptions, override_opts: CallOptions) -> CallOptions {
+    pub fn merge_options(_base: CallOptions, override_opts: CallOptions) -> CallOptions {
         // 注意：这需要根据 CallOptions 的实际结构来实现
         // 目前返回 override_opts，实际实现应该合并字段
         override_opts

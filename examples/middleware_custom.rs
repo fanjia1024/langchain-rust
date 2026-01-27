@@ -1,10 +1,7 @@
 use async_trait::async_trait;
 use langchain_rust::agent::{create_agent, Middleware, MiddlewareContext, MiddlewareError};
-use langchain_rust::language_models::GenerateResult;
-use langchain_rust::prompt::PromptArgs;
-use langchain_rust::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
+use langchain_rust::schemas::agent::AgentAction;
 use langchain_rust::schemas::Message;
-use serde_json::json;
 use std::sync::Arc;
 
 /// Custom middleware that adds a prefix to all tool observations

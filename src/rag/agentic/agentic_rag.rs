@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    agent::{AgentError, UnifiedAgent},
+    agent::UnifiedAgent,
     chain::ChainError,
     schemas::{messages::Message, Retriever},
     tools::Tool,

@@ -1,4 +1,3 @@
-use crate::agent::state::Command;
 use crate::schemas::structured_output::{
     validate_against_schema, StructuredOutputError, StructuredOutputStrategy, ToolStrategy,
 };
@@ -118,9 +117,9 @@ where
 /// This function processes tool call results and extracts structured output,
 /// handling errors and retries as configured.
 pub async fn handle_structured_output_tool_call(
-    tool_name: &str,
+    _tool_name: &str,
     tool_input: &str,
-    strategy: &dyn StructuredOutputStrategy,
+    _strategy: &dyn StructuredOutputStrategy,
 ) -> Result<Value, StructuredOutputError> {
     // Parse the tool input
     let parsed: Value = serde_json::from_str(tool_input).map_err(|e| {
@@ -128,14 +127,14 @@ pub async fn handle_structured_output_tool_call(
     })?;
 
     // Validate against schema
-    validate_against_schema(&parsed, &strategy.schema())?;
+    validate_against_schema(&parsed, &_strategy.schema())?;
 
     Ok(parsed)
 }
 
 /// Create a structured output tool from a strategy.
 pub fn create_structured_output_tool<S: StructuredOutputStrategy>(
-    strategy: Box<S>,
+    _strategy: Box<S>,
 ) -> Result<Arc<dyn Tool>, StructuredOutputError> {
     // This is a placeholder - in practice, we need to know the concrete type T
     // For now, we'll need to handle this differently

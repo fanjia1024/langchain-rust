@@ -116,7 +116,7 @@ mod tests {
 impl RetrievalValidator for RelevanceValidator {
     async fn validate(
         &self,
-        query: &str,
+        _query: &str,
         documents: &[Document],
     ) -> Result<RetrievalValidationResult, RAGError> {
         // Check minimum document count

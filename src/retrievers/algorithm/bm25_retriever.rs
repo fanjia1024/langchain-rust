@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::error::Error;
 
 use async_trait::async_trait;
 use serde_json::Value;
@@ -149,7 +148,7 @@ impl BM25Retriever {
 
     /// Add documents to the index
     pub fn add_documents(&mut self, documents: Vec<Document>) {
-        let start_id = self.documents.len();
+        let _start_id = self.documents.len();
         self.documents.extend(documents);
         self.build_index();
     }

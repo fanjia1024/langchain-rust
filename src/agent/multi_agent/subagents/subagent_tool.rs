@@ -6,7 +6,6 @@ use serde_json::Value;
 
 use crate::{
     agent::UnifiedAgent,
-    chain::ChainError,
     schemas::messages::Message,
     tools::{Tool, ToolResult, ToolRuntime},
 };

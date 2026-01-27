@@ -13,8 +13,6 @@ use std::sync::Arc;
 
 use langchain_rust::{
     agent::{create_agent, create_deep_agent, DeepAgentConfig},
-    chain::Chain,
-    prompt_args,
     schemas::messages::Message,
 };
 
@@ -35,9 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let coder = Arc::new(create_agent(
         "gpt-4o-mini",
         &[],
-        Some(
-            "You are a coding assistant. Provide short, clear code snippets and explanations.",
-        ),
+        Some("You are a coding assistant. Provide short, clear code snippets and explanations."),
         None,
     )?);
 

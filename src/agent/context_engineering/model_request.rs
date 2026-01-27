@@ -5,7 +5,6 @@ use tokio::sync::Mutex;
 use crate::{
     agent::{AgentState, Runtime},
     language_models::{llm::LLM, GenerateResult},
-    prompt::PromptArgs,
     schemas::{messages::Message, StructuredOutputStrategy},
     tools::Tool,
 };

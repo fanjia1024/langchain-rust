@@ -9,7 +9,7 @@ use crate::langgraph::{
         checkpointer::CheckpointerBox,
         config::{CheckpointConfig, RunnableConfig},
         snapshot::StateSnapshot,
-        store::Store,
+        store::StoreBox,
     },
     state::State,
 };
@@ -64,7 +64,7 @@ impl<S: State + 'static> SuperStepExecutor<S> {
         checkpoint_config: &CheckpointConfig,
         parent_config: Option<&CheckpointConfig>,
         config: Option<&RunnableConfig>,
-        store: Option<&dyn Store>,
+        store: Option<StoreBox>,
     ) -> Result<S, LangGraphError> {
         let mut current_state = initial_state;
         let mut executed_nodes = HashSet::new();
@@ -134,7 +134,7 @@ impl<S: State + 'static> SuperStepExecutor<S> {
                 &ready_nodes,
                 &current_state,
                 config, // Pass config to nodes
-                store,  // Pass store to nodes
+                store.clone(),  // Pass store to nodes (clone for each call)
             ).await?;
 
             // Mark nodes as executed

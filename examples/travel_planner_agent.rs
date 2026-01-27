@@ -16,12 +16,12 @@
 
 use std::collections::HashMap;
 use std::env;
-use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use langchain_rust::{
     agent::{create_agent, SubagentInfo, SubagentsBuilder},
+    error::ToolError,
     schemas::messages::Message,
     tools::{DuckDuckGoSearchResults, Tool},
 };
@@ -63,10 +63,10 @@ impl Tool for DestinationSearchTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let destination = input["destination"]
             .as_str()
-            .ok_or("Missing 'destination' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("destination".to_string()))?;
         let search_type = input["search_type"].as_str().unwrap_or("all");
 
         // Simulated search results
@@ -100,7 +100,7 @@ impl Tool for DestinationSearchTool {
             }),
         };
 
-        Ok(serde_json::to_string_pretty(&results)?)
+        serde_json::to_string_pretty(&results).map_err(|e| ToolError::ExecutionError(e.to_string()))
     }
 }
 
@@ -143,16 +143,16 @@ impl Tool for HotelSearchTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let location = input["location"]
             .as_str()
-            .ok_or("Missing 'location' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("location".to_string()))?;
         let check_in = input["check_in"]
             .as_str()
-            .ok_or("Missing 'check_in' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("check_in".to_string()))?;
         let check_out = input["check_out"]
             .as_str()
-            .ok_or("Missing 'check_out' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("check_out".to_string()))?;
         let budget_range = input["budget_range"].as_str().unwrap_or("mid-range");
 
         // Simulated hotel search results
@@ -180,7 +180,7 @@ impl Tool for HotelSearchTool {
             "hotels": hotels
         });
 
-        Ok(serde_json::to_string_pretty(&results)?)
+        serde_json::to_string_pretty(&results).map_err(|e| ToolError::ExecutionError(e.to_string()))
     }
 }
 
@@ -215,10 +215,10 @@ impl Tool for WeatherTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let location = input["location"]
             .as_str()
-            .ok_or("Missing 'location' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("location".to_string()))?;
         let days = input["days"].as_u64().unwrap_or(5) as usize;
 
         // Simulated weather data
@@ -243,7 +243,7 @@ impl Tool for WeatherTool {
             "forecast": forecast
         });
 
-        Ok(serde_json::to_string_pretty(&results)?)
+        serde_json::to_string_pretty(&results).map_err(|e| ToolError::ExecutionError(e.to_string()))
     }
 }
 
@@ -296,10 +296,10 @@ impl Tool for BudgetCalculatorTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let items = input["items"]
             .as_array()
-            .ok_or("Missing 'items' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("items".to_string()))?;
         let currency = input["currency"].as_str().unwrap_or("USD");
 
         let mut totals: HashMap<String, f64> = HashMap::new();
@@ -308,8 +308,10 @@ impl Tool for BudgetCalculatorTool {
         for item in items {
             let category = item["category"]
                 .as_str()
-                .ok_or("Missing 'category' in item")?;
-            let amount = item["amount"].as_f64().ok_or("Missing 'amount' in item")?;
+                .ok_or_else(|| ToolError::MissingInput("category".to_string()))?;
+            let amount = item["amount"]
+                .as_f64()
+                .ok_or_else(|| ToolError::MissingInput("amount".to_string()))?;
 
             *totals.entry(category.to_string()).or_insert(0.0) += amount;
             total += amount;
@@ -324,7 +326,7 @@ impl Tool for BudgetCalculatorTool {
             "summary": format!("Total budget: {:.2} {}", total, currency)
         });
 
-        Ok(serde_json::to_string_pretty(&results)?)
+        serde_json::to_string_pretty(&results).map_err(|e| ToolError::ExecutionError(e.to_string()))
     }
 }
 
@@ -372,13 +374,13 @@ impl Tool for RoutePlannerTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let attractions = input["attractions"]
             .as_array()
-            .ok_or("Missing 'attractions' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("attractions".to_string()))?;
         let start_location = input["start_location"]
             .as_str()
-            .ok_or("Missing 'start_location' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("start_location".to_string()))?;
         let transport_mode = input["transportation_mode"].as_str().unwrap_or("mixed");
 
         // Simple route optimization: sort by distance from start
@@ -410,7 +412,7 @@ impl Tool for RoutePlannerTool {
             "estimated_total_time": format!("{} hours", route.len() * 2)
         });
 
-        Ok(serde_json::to_string_pretty(&results)?)
+        serde_json::to_string_pretty(&results).map_err(|e| ToolError::ExecutionError(e.to_string()))
     }
 }
 
@@ -448,10 +450,10 @@ impl Tool for ItineraryOptimizerTool {
         })
     }
 
-    async fn run(&self, input: Value) -> Result<String, Box<dyn Error>> {
+    async fn run(&self, input: Value) -> Result<String, ToolError> {
         let itinerary = input["itinerary"]
             .as_object()
-            .ok_or("Missing 'itinerary' parameter")?;
+            .ok_or_else(|| ToolError::MissingInput("itinerary".to_string()))?;
         let _constraints = input.get("constraints");
 
         // Simulated optimization
@@ -468,7 +470,8 @@ impl Tool for ItineraryOptimizerTool {
             "itinerary": itinerary
         });
 
-        Ok(serde_json::to_string_pretty(&optimized)?)
+        serde_json::to_string_pretty(&optimized)
+            .map_err(|e| ToolError::ExecutionError(e.to_string()))
     }
 }
 

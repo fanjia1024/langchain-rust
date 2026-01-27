@@ -202,7 +202,7 @@ impl Loader for SitemapLoader {
 
         let stream = stream! {
             // Fetch sitemap
-            let mut loader = SitemapLoader {
+            let loader = SitemapLoader {
                 sitemap_url: sitemap_url.clone(),
                 client: client.clone(),
                 timeout,

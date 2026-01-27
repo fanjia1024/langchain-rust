@@ -40,10 +40,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     interrupt_on.insert(
         "edit_file".to_string(),
-        InterruptConfig::enabled().with_allowed_decisions(vec![
-            "approve".to_string(),
-            "reject".to_string(),
-        ]),
+        InterruptConfig::enabled()
+            .with_allowed_decisions(vec!["approve".to_string(), "reject".to_string()]),
     );
 
     let checkpointer: Arc<dyn langchain_rust::agent::AgentCheckpointer> =

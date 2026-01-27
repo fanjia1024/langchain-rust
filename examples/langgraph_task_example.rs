@@ -1,7 +1,6 @@
 use langchain_rust::langgraph::{
-    function_node, persistence::InMemorySaver, StateGraph, MessagesState, END, START,
-    persistence::RunnableConfig,
-    task::{Task, TaskCache, execute_task_with_cache, FunctionTask, TaskError},
+    execute_task_with_cache, function_node, FunctionTask, InMemorySaver, LangGraphError,
+    MessagesState, RunnableConfig, StateGraph, Task, TaskCache, END, START,
 };
 use langchain_rust::schemas::messages::Message;
 use serde_json::Value;
@@ -16,22 +15,25 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a task that makes an API call (simulated)
-    let api_task: Arc<dyn Task> = Arc::new(FunctionTask::new("api_call", |input: Value| async move {
-        // Simulate API call
-        let url = input.get("url")
-            .and_then(|v| v.as_str())
-            .unwrap_or("https://example.com");
-        
-        // In a real scenario, this would be an actual HTTP request
-        // For demo, we'll just return a mock response
-        Ok(serde_json::json!({
-            "url": url,
-            "response": format!("Response from {}", url),
-            "timestamp": std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs()
-        }))
+    let api_task: Arc<dyn Task> = Arc::new(FunctionTask::new("api_call", |input: Value| {
+        Box::pin(async move {
+            // Simulate API call
+            let url = input
+                .get("url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("https://example.com");
+
+            // In a real scenario, this would be an actual HTTP request
+            // For demo, we'll just return a mock response
+            Ok(serde_json::json!({
+                "url": url,
+                "response": format!("Response from {}", url),
+                "timestamp": std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs()
+            }))
+        })
     }));
 
     // Create a node that uses the task
@@ -40,30 +42,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let api_task = api_task_clone.clone();
         async move {
             use std::collections::HashMap;
-            
+
             // Create task cache
             let cache = TaskCache::new();
-            
+
             // Execute task with cache
             let task_input = serde_json::json!({
                 "url": "https://api.example.com/data"
             });
-            
-            let task_result = execute_task_with_cache(
-                api_task.as_ref(),
-                task_input,
-                Some(&cache),
-            ).await.map_err(|e| crate::langgraph::error::LangGraphError::ExecutionError(e.to_string()))?;
-            
+
+            let task_result = execute_task_with_cache(api_task.as_ref(), task_input, Some(&cache))
+                .await
+                .map_err(|e| LangGraphError::ExecutionError(e.to_string()))?;
+
             // Use task result in state update
             let mut update = HashMap::new();
             update.insert(
                 "messages".to_string(),
-                serde_json::to_value(vec![Message::new_ai_message(
-                    format!("API response: {}", task_result.get("response").unwrap_or(&serde_json::json!("No response")))
-                )])?,
+                serde_json::to_value(vec![Message::new_ai_message(format!(
+                    "API response: {}",
+                    task_result
+                        .get("response")
+                        .unwrap_or(&serde_json::json!("No response"))
+                ))])?,
             );
-            
+
             Ok(update)
         }
     });
@@ -82,12 +85,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Execute the graph
     let config = RunnableConfig::with_thread_id("thread-task-1");
-    let initial_state = MessagesState::with_messages(vec![Message::new_human_message("Fetch data")]);
-    let final_state = compiled.invoke_with_config(Some(initial_state), &config).await?;
+    let initial_state =
+        MessagesState::with_messages(vec![Message::new_human_message("Fetch data")]);
+    let final_state = compiled
+        .invoke_with_config(Some(initial_state), &config)
+        .await?;
 
     println!("Final messages:");
     for message in &final_state.messages {
-        println!("  {}: {}", message.message_type.to_string(), message.content);
+        println!(
+            "  {}: {}",
+            message.message_type.to_string(),
+            message.content
+        );
     }
 
     // If we resume from checkpoint, the task result should be cached

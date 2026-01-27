@@ -3,11 +3,8 @@
 
 #[cfg(feature = "in-memory")]
 use langchain_rust::{
-    embedding::openai::openai_embedder::OpenAiEmbedder,
-    schemas::Document,
-    vectorstore::in_memory::{Store, StoreBuilder},
-    vectorstore::VecStoreOptions,
-    vectorstore::VectorStore,
+    embedding::openai::openai_embedder::OpenAiEmbedder, schemas::Document,
+    vectorstore::in_memory::StoreBuilder, vectorstore::VecStoreOptions, vectorstore::VectorStore,
 };
 
 #[cfg(feature = "in-memory")]
