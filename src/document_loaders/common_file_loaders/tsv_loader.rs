@@ -62,7 +62,7 @@ impl<R: Read + Send + Sync + 'static> Loader for TsvLoader<R> {
         let mut reader = csv::ReaderBuilder::new()
             .delimiter(b'\t')
             .from_reader(self.reader);
-        
+
         let headers = reader.headers()?.clone();
         let columns = self.columns.clone();
 
@@ -75,7 +75,7 @@ impl<R: Read + Send + Sync + 'static> Loader for TsvLoader<R> {
 
                 for (i, field) in record.iter().enumerate() {
                     let header = &headers[i];
-                    
+
                     if let Some(ref cols) = columns {
                         if !cols.contains(&header.to_string()) {
                             continue;
@@ -137,9 +137,6 @@ mod tests {
 
         assert_eq!(documents.len(), 2);
         assert!(documents[0].page_content.contains("John"));
-        assert_eq!(
-            documents[0].metadata.get("row").unwrap(),
-            &Value::from(1)
-        );
+        assert_eq!(documents[0].metadata.get("row").unwrap(), &Value::from(1));
     }
 }

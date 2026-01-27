@@ -21,7 +21,7 @@ pub use super::stream::StreamWriter;
 /// features like vector search and metadata filtering:
 ///
 /// ```rust,ignore
-/// use langchain_rust::tools::long_term_memory::EnhancedToolStore;
+/// use langchain_rs::tools::long_term_memory::EnhancedToolStore;
 ///
 /// async fn my_tool(runtime: &ToolRuntime) -> Result<String, Box<dyn Error>> {
 ///     // Check if store supports enhanced features

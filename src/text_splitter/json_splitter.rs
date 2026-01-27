@@ -73,7 +73,7 @@ impl JsonSplitterOptions {
 }
 
 /// JsonSplitter splits JSON documents based on JSON structure
-/// 
+///
 /// This splitter can split JSON by objects, arrays, or both,
 /// preserving the JSON structure in each chunk.
 pub struct JsonSplitter {
@@ -140,10 +140,10 @@ impl JsonSplitter {
                             } else {
                                 format!("{}.{}", path, key)
                             };
-                            
-                            let json_str = serde_json::to_string(value)
-                                .unwrap_or_else(|_| value.to_string());
-                            
+
+                            let json_str =
+                                serde_json::to_string(value).unwrap_or_else(|_| value.to_string());
+
                             if self.options.include_path {
                                 elements.push((format!("{}: {}", new_path, json_str), new_path));
                             } else {
@@ -153,8 +153,8 @@ impl JsonSplitter {
                     }
                     _ => {
                         // Include entire object
-                        let json_str = serde_json::to_string(json)
-                            .unwrap_or_else(|_| json.to_string());
+                        let json_str =
+                            serde_json::to_string(json).unwrap_or_else(|_| json.to_string());
                         elements.push((json_str, path.to_string()));
                     }
                 }
@@ -168,10 +168,10 @@ impl JsonSplitter {
                             } else {
                                 format!("{}[{}]", path, i)
                             };
-                            
-                            let json_str = serde_json::to_string(value)
-                                .unwrap_or_else(|_| value.to_string());
-                            
+
+                            let json_str =
+                                serde_json::to_string(value).unwrap_or_else(|_| value.to_string());
+
                             if self.options.include_path {
                                 elements.push((format!("{}: {}", new_path, json_str), new_path));
                             } else {
@@ -181,16 +181,15 @@ impl JsonSplitter {
                     }
                     _ => {
                         // Include entire array
-                        let json_str = serde_json::to_string(json)
-                            .unwrap_or_else(|_| json.to_string());
+                        let json_str =
+                            serde_json::to_string(json).unwrap_or_else(|_| json.to_string());
                         elements.push((json_str, path.to_string()));
                     }
                 }
             }
             _ => {
                 // Primitive value
-                let json_str = serde_json::to_string(json)
-                    .unwrap_or_else(|_| json.to_string());
+                let json_str = serde_json::to_string(json).unwrap_or_else(|_| json.to_string());
                 elements.push((json_str, path.to_string()));
             }
         }
@@ -289,11 +288,9 @@ impl JsonSplitter {
             } else {
                 // Add overlap from previous chunk
                 let prev_chunk = &chunks[i - 1];
-                let overlap_start = prev_chunk
-                    .len()
-                    .saturating_sub(self.options.chunk_overlap);
+                let overlap_start = prev_chunk.len().saturating_sub(self.options.chunk_overlap);
                 let overlap_text = &prev_chunk[overlap_start..];
-                
+
                 let mut new_chunk = String::new();
                 if !overlap_text.is_empty() {
                     new_chunk.push_str(overlap_text);
@@ -325,10 +322,10 @@ impl TextSplitter for JsonSplitter {
 
         // Extract elements
         let elements = self.extract_json_elements(&json, "");
-        
+
         // Split into chunks
         let chunks = self.split_elements_into_chunks(elements);
-        
+
         Ok(chunks)
     }
 }

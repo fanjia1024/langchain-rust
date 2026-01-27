@@ -22,8 +22,7 @@ impl Retriever for RetrieverWrapper {
 }
 
 use super::{
-    answer_validator::AnswerValidator,
-    query_enhancer::QueryEnhancer,
+    answer_validator::AnswerValidator, query_enhancer::QueryEnhancer,
     retrieval_validator::RetrievalValidator,
 };
 use crate::rag::RAGError;

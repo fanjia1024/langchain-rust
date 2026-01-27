@@ -1,19 +1,19 @@
-pub mod error;
-pub mod types;
 pub mod command;
 pub mod context;
+pub mod error;
 pub mod result;
 mod state_or_command;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
-pub use error::*;
-pub use types::*;
 pub use command::*;
 pub use context::*;
+pub use error::*;
 pub use result::*;
 pub use state_or_command::*;
+pub use types::*;
 
 /// Interrupt execution and wait for external input
 ///
@@ -36,8 +36,8 @@ pub use state_or_command::*;
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_rust::langgraph::interrupts::interrupt;
-/// use langchain_rust::langgraph::error::LangGraphError;
+/// use langchain_rs::langgraph::interrupts::interrupt;
+/// use langchain_rs::langgraph::error::LangGraphError;
 ///
 /// async fn approval_node(state: &MessagesState) -> Result<StateUpdate, LangGraphError> {
 ///     let approved = interrupt("Do you approve this action?").await
@@ -46,11 +46,13 @@ pub use state_or_command::*;
 ///     Ok(/* ... */)
 /// }
 /// ```
-pub async fn interrupt(value: impl Into<serde_json::Value>) -> Result<serde_json::Value, InterruptError> {
+pub async fn interrupt(
+    value: impl Into<serde_json::Value>,
+) -> Result<serde_json::Value, InterruptError> {
     use context::INTERRUPT_CONTEXT;
-    
+
     let value = value.into();
-    
+
     // Get the current context
     let resume_value = INTERRUPT_CONTEXT.with(|ctx| {
         let ctx = ctx.borrow();
@@ -65,7 +67,7 @@ pub async fn interrupt(value: impl Into<serde_json::Value>) -> Result<serde_json
             None
         }
     });
-    
+
     if let Some((resume, index)) = resume_value {
         // We have a resume value, return it and increment index
         INTERRUPT_CONTEXT.with(|ctx| {

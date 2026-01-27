@@ -75,12 +75,7 @@ pub fn list_files_under_workspace(
         .canonicalize()
         .unwrap_or_else(|_| workspace_root.to_path_buf());
     let mut out = Vec::new();
-    list_files_under_workspace_impl(
-        &canonical_workspace,
-        dir,
-        &canonical_workspace,
-        &mut out,
-    )?;
+    list_files_under_workspace_impl(&canonical_workspace, dir, &canonical_workspace, &mut out)?;
     Ok(out)
 }
 
@@ -101,12 +96,7 @@ fn list_files_under_workspace_impl(
             if !canonical.starts_with(canonical_workspace) {
                 continue;
             }
-            list_files_under_workspace_impl(
-                workspace_root,
-                &path,
-                canonical_workspace,
-                out,
-            )?;
+            list_files_under_workspace_impl(workspace_root, &path, canonical_workspace, out)?;
         } else {
             let canonical = path.canonicalize().unwrap_or_else(|_| path.clone());
             if !canonical.starts_with(canonical_workspace) {

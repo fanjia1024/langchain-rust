@@ -11,7 +11,7 @@
 
 use std::sync::Arc;
 
-use langchain_rust::{
+use langchain_rs::{
     agent::{create_deep_agent, DeepAgentConfig},
     chain::Chain,
     prompt_args,

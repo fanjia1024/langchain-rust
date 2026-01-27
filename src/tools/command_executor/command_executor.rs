@@ -1,4 +1,3 @@
-
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -135,9 +134,9 @@ impl Tool for CommandExecutor {
             let mut command_to_execute = std::process::Command::new(&command.cmd);
             command_to_execute.args(&command.args);
 
-            let output = command_to_execute.output().map_err(|e| {
-                crate::error::ToolError::ExecutionError(e.to_string())
-            })?;
+            let output = command_to_execute
+                .output()
+                .map_err(|e| crate::error::ToolError::ExecutionError(e.to_string()))?;
 
             result.push_str(&format!(
                 "Command: {}\nOutput: {}",

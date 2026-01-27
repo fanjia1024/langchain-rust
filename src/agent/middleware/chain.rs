@@ -4,14 +4,14 @@
 
 use std::sync::Arc;
 
+use crate::agent::context_engineering::{ModelRequest, ModelResponse};
 use crate::agent::{
     middleware::{Middleware, MiddlewareContext, MiddlewareError},
     runtime::Runtime,
 };
-use crate::schemas::agent::{AgentAction, AgentFinish};
 use crate::language_models::GenerateResult;
 use crate::prompt::PromptArgs;
-use crate::agent::context_engineering::{ModelRequest, ModelResponse};
+use crate::schemas::agent::{AgentAction, AgentFinish};
 
 /// Middleware 执行结果
 #[derive(Debug)]
@@ -61,9 +61,7 @@ impl MiddlewareChainExecutor {
         for mw in middleware {
             // 尝试使用 runtime-aware 版本（如果有）
             // 注意：这里需要 RuntimeRequest，但在简化版本中我们使用非 runtime 版本
-            let modified = mw
-                .before_agent_plan(&current_input, steps, context)
-                .await?;
+            let modified = mw.before_agent_plan(&current_input, steps, context).await?;
 
             if let Some(new_input) = modified {
                 current_input = new_input;
@@ -88,10 +86,7 @@ impl MiddlewareChainExecutor {
 
         let mut modified_request = None;
         for mw in middleware {
-            if let Some(new_request) = mw
-                .before_model_call(current_request, context)
-                .await?
-            {
+            if let Some(new_request) = mw.before_model_call(current_request, context).await? {
                 modified_request = Some(new_request);
                 current_request = modified_request.as_ref().unwrap();
             }
@@ -164,10 +159,16 @@ impl MiddlewareChainExecutor {
 
         for mw in middleware {
             let modified = if let Some(runtime) = runtime {
-                mw.after_tool_call_with_runtime(action, &current_observation, Some(runtime), context)
-                    .await?
+                mw.after_tool_call_with_runtime(
+                    action,
+                    &current_observation,
+                    Some(runtime),
+                    context,
+                )
+                .await?
             } else {
-                mw.after_tool_call(action, &current_observation, context).await?
+                mw.after_tool_call(action, &current_observation, context)
+                    .await?
             };
 
             if let Some(new_observation) = modified {
@@ -193,7 +194,8 @@ impl MiddlewareChainExecutor {
 
         for mw in middleware {
             let modified = if let Some(runtime) = runtime {
-                mw.before_finish_with_runtime(&current_finish, Some(runtime), context).await?
+                mw.before_finish_with_runtime(&current_finish, Some(runtime), context)
+                    .await?
             } else {
                 mw.before_finish(&current_finish, context).await?
             };
@@ -220,7 +222,8 @@ impl MiddlewareChainExecutor {
     ) -> Result<(), MiddlewareError> {
         for mw in middleware {
             if let Some(runtime) = runtime {
-                mw.after_finish_with_runtime(finish, result, Some(runtime), context).await?;
+                mw.after_finish_with_runtime(finish, result, Some(runtime), context)
+                    .await?;
             } else {
                 mw.after_finish(finish, result, context).await?;
             }

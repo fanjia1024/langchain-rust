@@ -3,9 +3,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use super::{Middleware, MiddlewareContext, MiddlewareError};
-use crate::agent::hitl::{
-    ActionRequest, InterruptConfig, InterruptPayload, ReviewConfig,
-};
+use crate::agent::hitl::{ActionRequest, InterruptConfig, InterruptPayload, ReviewConfig};
 use crate::schemas::agent::{AgentAction, AgentFinish};
 
 /// Key in MiddlewareContext for pending decisions on resume (serde Value array of HitlDecision).
@@ -26,8 +24,8 @@ pub const CURRENT_BATCH_ACTIONS_KEY: &str = "current_batch_actions";
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_rust::agent::middleware::HumanInTheLoopMiddleware;
-/// use langchain_rust::agent::InterruptConfig;
+/// use langchain_rs::agent::middleware::HumanInTheLoopMiddleware;
+/// use langchain_rs::agent::InterruptConfig;
 ///
 /// let middleware = HumanInTheLoopMiddleware::new()
 ///     .with_interrupt_on("send_email".to_string(), true)
@@ -78,7 +76,11 @@ impl HumanInTheLoopMiddleware {
     }
 
     /// Configure one tool with full [InterruptConfig].
-    pub fn with_interrupt_config(mut self, tool_name: impl Into<String>, config: InterruptConfig) -> Self {
+    pub fn with_interrupt_config(
+        mut self,
+        tool_name: impl Into<String>,
+        config: InterruptConfig,
+    ) -> Self {
         self.interrupt_on.insert(tool_name.into(), config);
         self
     }
@@ -142,7 +144,9 @@ impl Middleware for HumanInTheLoopMiddleware {
         context: &mut MiddlewareContext,
     ) -> Result<Option<AgentAction>, MiddlewareError> {
         let config = self.interrupt_config_for_tool(&action.tool);
-        let needs_approval = config.map(|c| c.enabled).unwrap_or(self.approval_required_for_tool_calls);
+        let needs_approval = config
+            .map(|c| c.enabled)
+            .unwrap_or(self.approval_required_for_tool_calls);
 
         if !needs_approval {
             return Ok(None);
@@ -157,7 +161,9 @@ impl Middleware for HumanInTheLoopMiddleware {
             let idx = n.as_u64().unwrap_or(0) as usize;
             if idx < decisions.len() {
                 let decision_value = &decisions[idx];
-                if let Ok(decision) = serde_json::from_value::<crate::agent::HitlDecision>(decision_value.clone()) {
+                if let Ok(decision) =
+                    serde_json::from_value::<crate::agent::HitlDecision>(decision_value.clone())
+                {
                     context.set_custom_data(
                         RESUME_DECISION_INDEX_KEY.to_string(),
                         serde_json::json!(idx + 1),
@@ -167,7 +173,8 @@ impl Middleware for HumanInTheLoopMiddleware {
                         crate::agent::HitlDecision::Edit { edited_action } => {
                             let modified = AgentAction {
                                 tool: edited_action.name.clone(),
-                                tool_input: serde_json::to_string(&edited_action.args).unwrap_or_default(),
+                                tool_input: serde_json::to_string(&edited_action.args)
+                                    .unwrap_or_default(),
                                 log: action.log.clone(),
                             };
                             Ok(Some(modified))
@@ -188,7 +195,9 @@ impl Middleware for HumanInTheLoopMiddleware {
         let mut review_configs: Vec<ReviewConfig> = Vec::new();
         for a in &batch_actions {
             let cfg = self.interrupt_config_for_tool(&a.tool);
-            let enabled = cfg.map(|c| c.enabled).unwrap_or(self.approval_required_for_tool_calls);
+            let enabled = cfg
+                .map(|c| c.enabled)
+                .unwrap_or(self.approval_required_for_tool_calls);
             if enabled {
                 action_requests.push(ActionRequest {
                     name: a.tool.clone(),
@@ -196,12 +205,14 @@ impl Middleware for HumanInTheLoopMiddleware {
                 });
                 review_configs.push(ReviewConfig {
                     action_name: a.tool.clone(),
-                    allowed_decisions: cfg
-                        .map(|c| c.allowed_decisions.clone())
-                        .unwrap_or_else(|| crate::agent::hitl::DEFAULT_ALLOWED_DECISIONS
-                            .iter()
-                            .map(|s| (*s).to_string())
-                            .collect()),
+                    allowed_decisions: cfg.map(|c| c.allowed_decisions.clone()).unwrap_or_else(
+                        || {
+                            crate::agent::hitl::DEFAULT_ALLOWED_DECISIONS
+                                .iter()
+                                .map(|s| (*s).to_string())
+                                .collect()
+                        },
+                    ),
                 });
             }
         }
@@ -215,7 +226,9 @@ impl Middleware for HumanInTheLoopMiddleware {
             action_requests,
             review_configs,
         };
-        Err(MiddlewareError::Interrupt(serde_json::to_value(&payload).unwrap_or_default()))
+        Err(MiddlewareError::Interrupt(
+            serde_json::to_value(&payload).unwrap_or_default(),
+        ))
     }
 
     async fn before_finish(
@@ -263,8 +276,13 @@ mod tests {
 
     #[test]
     fn test_with_interrupt_config() {
-        let middleware = HumanInTheLoopMiddleware::new()
-            .with_interrupt_config("write_file", InterruptConfig::with_allowed_decisions(vec!["approve".to_string(), "reject".to_string()]));
+        let middleware = HumanInTheLoopMiddleware::new().with_interrupt_config(
+            "write_file",
+            InterruptConfig::with_allowed_decisions(vec![
+                "approve".to_string(),
+                "reject".to_string(),
+            ]),
+        );
 
         assert!(middleware.requires_approval_for_tool("write_file"));
         let cfg = middleware.interrupt_config_for_tool("write_file").unwrap();

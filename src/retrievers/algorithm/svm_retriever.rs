@@ -109,10 +109,7 @@ impl SVMRetriever {
     }
 
     /// Calculate dot product (simplified linear classifier score)
-    fn linear_score(
-        query_vector: &HashMap<String, f64>,
-        doc_vector: &HashMap<String, f64>,
-    ) -> f64 {
+    fn linear_score(query_vector: &HashMap<String, f64>, doc_vector: &HashMap<String, f64>) -> f64 {
         let mut score = 0.0;
         for (term, query_val) in query_vector {
             if let Some(doc_val) = doc_vector.get(term) {
@@ -131,10 +128,7 @@ impl SVMRetriever {
 
 #[async_trait]
 impl Retriever for SVMRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Build query feature vector (simplified)
         let query_tokens = Self::tokenize(query);
         let mut query_term_counts: HashMap<String, usize> = HashMap::new();
@@ -171,7 +165,8 @@ impl Retriever for SVMRetriever {
             if let Some(doc) = self.documents.get(doc_id) {
                 let mut doc = doc.clone();
                 // Add score to metadata
-                doc.metadata.insert("svm_score".to_string(), Value::from(score));
+                doc.metadata
+                    .insert("svm_score".to_string(), Value::from(score));
                 results.push(doc);
             }
         }

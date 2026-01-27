@@ -1,5 +1,5 @@
 #[cfg(feature = "gemini")]
-use langchain_rust::language_models::init_chat_model;
+use langchain_rs::language_models::init_chat_model;
 
 #[tokio::main]
 #[cfg(feature = "gemini")]

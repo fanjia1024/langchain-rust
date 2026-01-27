@@ -93,11 +93,20 @@ impl TavilySearchAPIRetriever {
 
         if !response.status().is_success() {
             let status = response.status();
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(RetrieverError::TavilyError(format!("{}: {}", status, error_text)));
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(RetrieverError::TavilyError(format!(
+                "{}: {}",
+                status, error_text
+            )));
         }
 
-        let json: Value = response.json().await.map_err(|e| RetrieverError::TavilyError(e.to_string()))?;
+        let json: Value = response
+            .json()
+            .await
+            .map_err(|e| RetrieverError::TavilyError(e.to_string()))?;
 
         let mut documents = Vec::new();
 
@@ -130,7 +139,8 @@ impl TavilySearchAPIRetriever {
 
                 if let Some(content_str) = result.get("content").and_then(|c| c.as_str()) {
                     content.push_str(content_str);
-                } else if let Some(raw_content) = result.get("raw_content").and_then(|c| c.as_str()) {
+                } else if let Some(raw_content) = result.get("raw_content").and_then(|c| c.as_str())
+                {
                     content.push_str(raw_content);
                 }
 
@@ -150,10 +160,7 @@ impl TavilySearchAPIRetriever {
 
 #[async_trait]
 impl Retriever for TavilySearchAPIRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         self.search(query).await
     }
 }

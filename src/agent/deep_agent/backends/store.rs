@@ -54,12 +54,7 @@ impl FileBackend for StoreBackend {
         Ok(infos)
     }
 
-    async fn read(
-        &self,
-        file_path: &str,
-        offset: u32,
-        limit: u32,
-    ) -> Result<String, String> {
+    async fn read(&self, file_path: &str, offset: u32, limit: u32) -> Result<String, String> {
         let path = file_path.trim().trim_start_matches('/');
         let value = self
             .store
@@ -119,7 +114,10 @@ impl FileBackend for StoreBackend {
             (content.replace(old_string, new_string), n as u32)
         } else {
             if content.matches(old_string).count() != 1 {
-                return Err("Expected exactly one occurrence of old_string (use replace_all for multiple)".to_string());
+                return Err(
+                    "Expected exactly one occurrence of old_string (use replace_all for multiple)"
+                        .to_string(),
+                );
             }
             let mut n = 0u32;
             let out = content.replacen(old_string, new_string, 1);

@@ -1,5 +1,5 @@
 use futures::StreamExt;
-use langchain_rust::{
+use langchain_rs::{
     chain::{Chain, LLMChainBuilder},
     fmt_message, fmt_template,
     llm::openai::OpenAI,

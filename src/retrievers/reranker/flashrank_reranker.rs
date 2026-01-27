@@ -23,12 +23,12 @@ impl Default for FlashRankRerankerConfig {
 }
 
 /// FlashRank reranker that uses local ONNX models for reranking
-/// 
+///
 /// Note: This is a placeholder implementation. Full implementation would require:
 /// - ONNX Runtime integration (ort crate)
 /// - Model loading and inference
 /// - Tokenization support
-/// 
+///
 /// For now, this provides a simple similarity-based reranking as a fallback.
 pub struct FlashRankReranker {
     base_retriever: Arc<dyn Retriever>,
@@ -37,9 +37,7 @@ pub struct FlashRankReranker {
 
 impl FlashRankReranker {
     /// Create a new FlashRank reranker
-    pub fn new(
-        base_retriever: Arc<dyn Retriever>,
-    ) -> Self {
+    pub fn new(base_retriever: Arc<dyn Retriever>) -> Self {
         Self::with_config(base_retriever, FlashRankRerankerConfig::default())
     }
 
@@ -56,11 +54,7 @@ impl FlashRankReranker {
 
     /// Simple reranking based on query-document similarity
     /// In a full implementation, this would use the FlashRank ONNX model
-    fn rerank_simple(
-        &self,
-        query: &str,
-        documents: Vec<Document>,
-    ) -> Vec<Document> {
+    fn rerank_simple(&self, query: &str, documents: Vec<Document>) -> Vec<Document> {
         // Simple keyword-based scoring as placeholder
         let query_lower = query.to_lowercase();
         let query_words: Vec<&str> = query_lower.split_whitespace().collect();
@@ -69,15 +63,11 @@ impl FlashRankReranker {
             .into_iter()
             .map(|doc| {
                 let doc_lower = doc.page_content.to_lowercase();
-                let score = query_words.iter()
-                    .map(|word| {
-                        if doc_lower.contains(word) {
-                            1.0
-                        } else {
-                            0.0
-                        }
-                    })
-                    .sum::<f64>() / query_words.len() as f64;
+                let score = query_words
+                    .iter()
+                    .map(|word| if doc_lower.contains(word) { 1.0 } else { 0.0 })
+                    .sum::<f64>()
+                    / query_words.len() as f64;
                 (doc, score)
             })
             .collect();
@@ -103,7 +93,7 @@ impl Retriever for FlashRankReranker {
     ) -> Result<Vec<Document>, crate::error::RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
-        
+
         // Rerank documents (using simple method for now)
         // TODO: Integrate actual FlashRank ONNX model when ort crate is available
         Ok(self.rerank_simple(query, documents))

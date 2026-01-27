@@ -1,7 +1,7 @@
 // To run this example execute: cargo run --example vector_store_qdrant --features qdrant
 
 #[cfg(feature = "qdrant")]
-use langchain_rust::{
+use langchain_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     schemas::Document,
     vectorstore::qdrant::{Qdrant, StoreBuilder},
@@ -15,7 +15,7 @@ use std::io::Write;
 async fn main() {
     // Initialize Embedder
 
-    use langchain_rust::vectorstore::VecStoreOptions;
+    use langchain_rs::vectorstore::VecStoreOptions;
 
     // Requires OpenAI API key to be set in the environment variable OPENAI_API_KEY
     let embedder = OpenAiEmbedder::default();
@@ -35,7 +35,7 @@ async fn main() {
 
     // Add documents to the database
     let doc1 = Document::new(
-        "langchain-rust is a port of the langchain python library to rust and was written in 2024.",
+        "langchain-rs is a port of the langchain python library to rust and was written in 2024.",
     );
     let doc2 = Document::new(
         "langchaingo is a port of the langchain python library to go language and was written in 2023."

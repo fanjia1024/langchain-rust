@@ -45,12 +45,7 @@ pub trait FileBackend: Send + Sync {
     async fn ls_info(&self, path: &str) -> Result<Vec<FileInfo>, String>;
 
     /// Read file content with optional offset (1-based line) and limit (max lines). Returns numbered lines.
-    async fn read(
-        &self,
-        file_path: &str,
-        offset: u32,
-        limit: u32,
-    ) -> Result<String, String>;
+    async fn read(&self, file_path: &str, offset: u32, limit: u32) -> Result<String, String>;
 
     /// Write content to a file. Create-only or overwrite per backend semantics.
     async fn write(&self, file_path: &str, content: &str) -> Result<WriteResult, String>;

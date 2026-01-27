@@ -17,10 +17,7 @@ pub struct BM25Params {
 
 impl Default for BM25Params {
     fn default() -> Self {
-        Self {
-            k1: 1.5,
-            b: 0.75,
-        }
+        Self { k1: 1.5, b: 0.75 }
     }
 }
 
@@ -141,7 +138,8 @@ impl BM25Retriever {
         let numerator = idf * tf * (self.config.params.k1 + 1.0);
         let denominator = tf
             + self.config.params.k1
-                * (1.0 - self.config.params.b + self.config.params.b * doc_length / self.avg_doc_length);
+                * (1.0 - self.config.params.b
+                    + self.config.params.b * doc_length / self.avg_doc_length);
 
         numerator / denominator
     }
@@ -156,10 +154,7 @@ impl BM25Retriever {
 
 #[async_trait]
 impl Retriever for BM25Retriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         let query_tokens = Self::tokenize(query);
         let mut doc_scores: HashMap<usize, f64> = HashMap::new();
 
@@ -184,7 +179,8 @@ impl Retriever for BM25Retriever {
             if let Some(doc) = self.documents.get(doc_id) {
                 let mut doc = doc.clone();
                 // Add score to metadata
-                doc.metadata.insert("bm25_score".to_string(), Value::from(_score));
+                doc.metadata
+                    .insert("bm25_score".to_string(), Value::from(_score));
                 results.push(doc);
             }
         }

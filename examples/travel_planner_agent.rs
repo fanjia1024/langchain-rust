@@ -19,7 +19,7 @@ use std::env;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use langchain_rust::{
+use langchain_rs::{
     agent::{create_agent, SubagentInfo, SubagentsBuilder},
     error::ToolError,
     schemas::messages::Message,

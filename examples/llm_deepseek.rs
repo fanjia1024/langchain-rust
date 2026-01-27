@@ -1,6 +1,6 @@
-use langchain_rust::language_models::llm::LLM;
-use langchain_rust::llm::Deepseek;
-use langchain_rust::schemas::Message;
+use langchain_rs::language_models::llm::LLM;
+use langchain_rs::llm::Deepseek;
+use langchain_rs::schemas::Message;
 
 #[tokio::main]
 async fn main() {

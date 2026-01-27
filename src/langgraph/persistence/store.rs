@@ -24,11 +24,7 @@ pub struct StoreItem {
 
 impl StoreItem {
     /// Create a new StoreItem
-    pub fn new(
-        value: Value,
-        key: String,
-        namespace: Vec<String>,
-    ) -> Self {
+    pub fn new(value: Value, key: String, namespace: Vec<String>) -> Self {
         let now = Utc::now();
         Self {
             value,
@@ -74,11 +70,7 @@ pub trait Store: Send + Sync {
     ) -> Result<Vec<StoreItem>, PersistenceError>;
 
     /// Delete a value from the store
-    async fn delete(
-        &self,
-        namespace: &[&str],
-        key: &str,
-    ) -> Result<(), PersistenceError>;
+    async fn delete(&self, namespace: &[&str], key: &str) -> Result<(), PersistenceError>;
 
     /// Check if semantic search is enabled
     ///
@@ -207,11 +199,7 @@ impl Store for InMemoryStore {
         Ok(results)
     }
 
-    async fn delete(
-        &self,
-        namespace: &[&str],
-        key: &str,
-    ) -> Result<(), PersistenceError> {
+    async fn delete(&self, namespace: &[&str], key: &str) -> Result<(), PersistenceError> {
         let store_key = Self::make_key(namespace, key);
         let mut data = self.data.write().await;
         data.remove(&store_key);

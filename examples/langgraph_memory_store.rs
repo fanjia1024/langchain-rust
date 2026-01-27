@@ -1,8 +1,8 @@
-use langchain_rust::langgraph::{
+use langchain_rs::langgraph::{
     function_node_with_store, InMemorySaver, InMemoryStore, LangGraphError, MessagesState,
     RunnableConfig, StateGraph, END, START,
 };
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::schemas::messages::Message;
 
 /// Store usage example for LangGraph
 ///
@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "process",
         |state: &MessagesState,
          config: &RunnableConfig,
-         store: langchain_rust::langgraph::StoreBox| {
+         store: langchain_rs::langgraph::StoreBox| {
             let user_id = config.get_user_id().unwrap_or("default".to_string());
             let last_message = state
                 .messages

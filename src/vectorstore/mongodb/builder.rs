@@ -25,10 +25,7 @@ impl StoreBuilder {
         }
     }
 
-    pub fn collection(
-        mut self,
-        collection: Collection<mongodb::bson::Document>,
-    ) -> Self {
+    pub fn collection(mut self, collection: Collection<mongodb::bson::Document>) -> Self {
         self.collection = Some(collection);
         self
     }
@@ -56,8 +53,9 @@ impl StoreBuilder {
     pub fn build(self) -> Result<Store, Box<dyn std::error::Error>> {
         let collection = self.collection.ok_or("collection is required")?;
         let embedder = self.embedder.ok_or("embedder is required")?;
-        let index_name =
-            self.index_name.ok_or("index_name is required (Atlas Vector Search index)")?;
+        let index_name = self
+            .index_name
+            .ok_or("index_name is required (Atlas Vector Search index)")?;
         Ok(Store {
             collection,
             embedder,

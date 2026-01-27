@@ -1,8 +1,8 @@
 #[cfg(feature = "sqlite-persistence")]
-use langchain_rust::langgraph::{
+use langchain_rs::langgraph::{
     function_node, MessagesState, RunnableConfig, SqliteSaver, StateGraph, END, START,
 };
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::schemas::messages::Message;
 use std::fs;
 
 /// SQLite persistence example for LangGraph

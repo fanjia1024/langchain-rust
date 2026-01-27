@@ -74,17 +74,21 @@ impl Tool for WriteFileTool {
             .get("path")
             .and_then(Value::as_str)
             .ok_or_else(|| FileSystemToolError::InvalidPath("missing path".to_string()))?;
-        let content = input
-            .get("content")
-            .and_then(Value::as_str)
-            .unwrap_or("");
+        let content = input.get("content").and_then(Value::as_str).unwrap_or("");
         if let Some(backend) = runtime.file_backend() {
-            let res = backend.write(path_str, content).await.map_err(|e| e.to_string())?;
+            let res = backend
+                .write(path_str, content)
+                .await
+                .map_err(|e| e.to_string())?;
             if let Some(err) = res.error {
                 return Err(err.into());
             }
             let p = res.path.as_deref().unwrap_or(path_str);
-            return Ok(ToolResult::Text(format!("Wrote {} bytes to {}", content.len(), p)));
+            return Ok(ToolResult::Text(format!(
+                "Wrote {} bytes to {}",
+                content.len(),
+                p
+            )));
         }
         let root = workspace_root_from_context(self.workspace_root.as_ref(), runtime.context())
             .ok_or(FileSystemToolError::WorkspaceNotSet)?;
@@ -93,7 +97,11 @@ impl Tool for WriteFileTool {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(&path, content)?;
-        Ok(ToolResult::Text(format!("Wrote {} bytes to {}", content.len(), path.display())))
+        Ok(ToolResult::Text(format!(
+            "Wrote {} bytes to {}",
+            content.len(),
+            path.display()
+        )))
     }
 
     fn requires_runtime(&self) -> bool {

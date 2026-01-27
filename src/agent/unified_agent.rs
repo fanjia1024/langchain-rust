@@ -16,10 +16,7 @@ use crate::{
 };
 
 use super::{
-    agent::Agent,
-    checkpoint::AgentCheckpointer,
-    executor::AgentExecutor,
-    state::AgentState,
+    agent::Agent, checkpoint::AgentCheckpointer, executor::AgentExecutor, state::AgentState,
     AgentError, AgentInvokeResult,
 };
 use crate::agent::runtime::{Runtime, TypedContext};
@@ -133,10 +130,7 @@ impl UnifiedAgent {
     }
 
     /// Set the checkpointer for human-in-the-loop (save on interrupt, load on resume).
-    pub fn with_checkpointer(
-        mut self,
-        checkpointer: Option<Arc<dyn AgentCheckpointer>>,
-    ) -> Self {
+    pub fn with_checkpointer(mut self, checkpointer: Option<Arc<dyn AgentCheckpointer>>) -> Self {
         self.executor = self.executor.with_checkpointer(checkpointer);
         self
     }

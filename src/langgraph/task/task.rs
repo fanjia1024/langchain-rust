@@ -52,7 +52,13 @@ pub struct FunctionTask<F> {
 
 impl<F> FunctionTask<F>
 where
-    F: Fn(Value) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value, TaskError>> + Send>> + Send + Sync + 'static,
+    F: Fn(
+            Value,
+        )
+            -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value, TaskError>> + Send>>
+        + Send
+        + Sync
+        + 'static,
 {
     /// Create a new function task
     pub fn new(task_id: impl Into<String>, func: F) -> Self {
@@ -66,7 +72,13 @@ where
 #[async_trait]
 impl<F> Task for FunctionTask<F>
 where
-    F: Fn(Value) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value, TaskError>> + Send>> + Send + Sync + 'static,
+    F: Fn(
+            Value,
+        )
+            -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value, TaskError>> + Send>>
+        + Send
+        + Sync
+        + 'static,
 {
     async fn execute(&self, input: Value) -> Result<Value, TaskError> {
         (self.func)(input).await
@@ -77,10 +89,12 @@ where
         // Use a hash of the serialized input for efficiency
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher = DefaultHasher::new();
         self.task_id.hash(&mut hasher);
-        serde_json::to_string(input).unwrap_or_default().hash(&mut hasher);
+        serde_json::to_string(input)
+            .unwrap_or_default()
+            .hash(&mut hasher);
         format!("task:{}:{}", self.task_id, hasher.finish())
     }
 

@@ -1,5 +1,5 @@
-mod chroma;
 mod builder;
+mod chroma;
 
-pub use chroma::*;
 pub use builder::*;
+pub use chroma::*;

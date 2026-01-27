@@ -181,8 +181,7 @@ mod tests {
         let tool = WriteTodosTool::new();
         let store = Arc::new(InMemoryStore::new());
         let ctx = Arc::new(EmptyContext);
-        let state =
-            Arc::new(tokio::sync::Mutex::new(crate::agent::AgentState::new()));
+        let state = Arc::new(tokio::sync::Mutex::new(crate::agent::AgentState::new()));
         let runtime = ToolRuntime::new(state, ctx, store, "call_1".to_string());
 
         let input = json!({

@@ -96,7 +96,10 @@ impl std::fmt::Debug for DeepAgentConfig {
             .field("store", &self.store.as_ref().map(|_| "..."))
             .field("context", &self.context.as_ref().map(|_| "..."))
             .field("middleware", &self.middleware.as_ref().map(|m| m.len()))
-            .field("response_format", &self.response_format.as_ref().map(|_| "..."))
+            .field(
+                "response_format",
+                &self.response_format.as_ref().map(|_| "..."),
+            )
             .field("skill_paths", &self.skill_paths)
             .field("skill_contents", &self.skill_contents.len())
             .field("skill_dirs", &self.skill_dirs)
@@ -104,13 +107,25 @@ impl std::fmt::Debug for DeepAgentConfig {
             .field("memory_contents", &self.memory_contents.len())
             .field("interrupt_before_tools", &self.interrupt_before_tools)
             .field("interrupt_on", &self.interrupt_on.len())
-            .field("evict_tool_result_over_tokens", &self.evict_tool_result_over_tokens)
+            .field(
+                "evict_tool_result_over_tokens",
+                &self.evict_tool_result_over_tokens,
+            )
             .field("default_subagent_model", &self.default_subagent_model)
             .field("file_backend", &self.file_backend.as_ref().map(|_| "..."))
             .field("checkpointer", &self.checkpointer.as_ref().map(|_| "..."))
-            .field("planning_system_prompt", &self.planning_system_prompt.as_ref().map(|_| "..."))
-            .field("filesystem_system_prompt", &self.filesystem_system_prompt.as_ref().map(|_| "..."))
-            .field("custom_tool_descriptions", &self.custom_tool_descriptions.len())
+            .field(
+                "planning_system_prompt",
+                &self.planning_system_prompt.as_ref().map(|_| "..."),
+            )
+            .field(
+                "filesystem_system_prompt",
+                &self.filesystem_system_prompt.as_ref().map(|_| "..."),
+            )
+            .field(
+                "custom_tool_descriptions",
+                &self.custom_tool_descriptions.len(),
+            )
             .field("long_term_memory_prefix", &self.long_term_memory_prefix)
             .finish()
     }
@@ -280,7 +295,11 @@ impl DeepAgentConfig {
     }
 
     /// Add inline skill (name, content) to be appended under "## Skills".
-    pub fn with_skill_content(mut self, name: impl Into<String>, content: impl Into<String>) -> Self {
+    pub fn with_skill_content(
+        mut self,
+        name: impl Into<String>,
+        content: impl Into<String>,
+    ) -> Self {
         self.skill_contents.push((name.into(), content.into()));
         self
     }
@@ -327,16 +346,17 @@ impl DeepAgentConfig {
     }
 
     /// Set per-tool interrupt config (tool name -> InterruptConfig). Replaces existing interrupt_on; use with [Self::with_interrupt_before_tools] to also set legacy list (merged in build_middleware).
-    pub fn with_interrupt_on(
-        mut self,
-        interrupt_on: HashMap<String, InterruptConfig>,
-    ) -> Self {
+    pub fn with_interrupt_on(mut self, interrupt_on: HashMap<String, InterruptConfig>) -> Self {
         self.interrupt_on = interrupt_on;
         self
     }
 
     /// Add or set one tool's interrupt config.
-    pub fn with_interrupt_on_tool(mut self, tool_name: impl Into<String>, config: InterruptConfig) -> Self {
+    pub fn with_interrupt_on_tool(
+        mut self,
+        tool_name: impl Into<String>,
+        config: InterruptConfig,
+    ) -> Self {
         self.interrupt_on.insert(tool_name.into(), config);
         self
     }
@@ -360,10 +380,7 @@ impl DeepAgentConfig {
     }
 
     /// Set checkpointer for human-in-the-loop (save on interrupt, load on resume; required for HILP).
-    pub fn with_checkpointer(
-        mut self,
-        checkpointer: Option<Arc<dyn AgentCheckpointer>>,
-    ) -> Self {
+    pub fn with_checkpointer(mut self, checkpointer: Option<Arc<dyn AgentCheckpointer>>) -> Self {
         self.checkpointer = checkpointer;
         self
     }
@@ -392,10 +409,7 @@ impl DeepAgentConfig {
     }
 
     /// Set custom tool descriptions for built-in tools (replaces existing overrides).
-    pub fn with_custom_tool_descriptions(
-        mut self,
-        descriptions: HashMap<String, String>,
-    ) -> Self {
+    pub fn with_custom_tool_descriptions(mut self, descriptions: HashMap<String, String>) -> Self {
         self.custom_tool_descriptions = descriptions;
         self
     }

@@ -1,13 +1,9 @@
-use std::{
-    collections::HashMap,
-    pin::Pin,
-    time::Duration,
-};
+use std::{collections::HashMap, pin::Pin, time::Duration};
 
-use async_trait::async_trait;
 use async_stream::stream;
+use async_trait::async_trait;
 use futures::Stream;
-use reqwest::{Client, ClientBuilder, header::HeaderMap};
+use reqwest::{header::HeaderMap, Client, ClientBuilder};
 use serde_json::Value;
 use url::Url;
 
@@ -63,11 +59,11 @@ impl WebBaseLoader {
 
     fn build_client(&self) -> Client {
         let mut builder = ClientBuilder::new();
-        
+
         if let Some(ref headers) = self.headers {
             builder = builder.default_headers(headers.clone());
         }
-        
+
         if let Some(timeout) = self.timeout {
             builder = builder.timeout(timeout);
         }
@@ -115,7 +111,7 @@ impl Loader for WebBaseLoader {
                 .map_err(|e| LoaderError::ReadabilityError(e))?;
 
             let content = format!("{}\n{}", cleaned.title, cleaned.text);
-            
+
             let mut metadata = HashMap::new();
             metadata.insert("source".to_string(), Value::from(url.as_str()));
             metadata.insert("source_type".to_string(), Value::from("web"));
@@ -150,8 +146,8 @@ mod tests {
     #[tokio::test]
     #[ignore] // Requires network access
     async fn test_web_base_loader() {
-        let loader = WebBaseLoader::from_url_str("https://example.com")
-            .expect("Failed to create loader");
+        let loader =
+            WebBaseLoader::from_url_str("https://example.com").expect("Failed to create loader");
 
         let documents = loader
             .load()

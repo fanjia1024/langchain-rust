@@ -89,12 +89,8 @@ impl<S: State + 'static> SuperStepExecutor<S> {
                         checkpoint_config.clone(),
                     )
                 };
-                save_checkpoint(
-                    Some(&checkpointer),
-                    &initial_snapshot,
-                    self.durability_mode,
-                )
-                .await?;
+                save_checkpoint(Some(&checkpointer), &initial_snapshot, self.durability_mode)
+                    .await?;
             }
         }
 
@@ -116,7 +112,10 @@ impl<S: State + 'static> SuperStepExecutor<S> {
                 // Check if we've reached END
                 if self
                     .scheduler
-                    .is_complete(&executed_nodes.iter().cloned().collect::<Vec<_>>(), &current_state)
+                    .is_complete(
+                        &executed_nodes.iter().cloned().collect::<Vec<_>>(),
+                        &current_state,
+                    )
                     .await?
                 {
                     break;
@@ -133,9 +132,10 @@ impl<S: State + 'static> SuperStepExecutor<S> {
                 &self.nodes,
                 &ready_nodes,
                 &current_state,
-                config, // Pass config to nodes
-                store.clone(),  // Pass store to nodes (clone for each call)
-            ).await?;
+                config,        // Pass config to nodes
+                store.clone(), // Pass store to nodes (clone for each call)
+            )
+            .await?;
 
             // Mark nodes as executed
             for node_name in &ready_nodes {
@@ -154,10 +154,7 @@ impl<S: State + 'static> SuperStepExecutor<S> {
 
                 let mut metadata = HashMap::new();
                 metadata.insert("step".to_string(), serde_json::json!(step));
-                metadata.insert(
-                    "executed_nodes".to_string(),
-                    serde_json::json!(ready_nodes),
-                );
+                metadata.insert("executed_nodes".to_string(), serde_json::json!(ready_nodes));
 
                 let snapshot = if let Some(parent) = parent_config {
                     // Create snapshot with parent config for fork tracking
@@ -179,12 +176,7 @@ impl<S: State + 'static> SuperStepExecutor<S> {
                     )
                 };
 
-                save_checkpoint(
-                    Some(&checkpointer),
-                    &snapshot,
-                    self.durability_mode,
-                )
-                .await?;
+                save_checkpoint(Some(&checkpointer), &snapshot, self.durability_mode).await?;
             }
 
             // Check if we've reached END using scheduler's is_complete method
@@ -209,17 +201,16 @@ impl<S: State + 'static> SuperStepExecutor<S> {
                         parent.clone(),
                     )
                 } else {
-                    StateSnapshot::new(
-                        current_state.clone(),
-                        vec![],
-                        checkpoint_config.clone(),
-                    )
+                    StateSnapshot::new(current_state.clone(), vec![], checkpoint_config.clone())
                 };
                 checkpointer
                     .put(checkpoint_config.thread_id.as_str(), &final_snapshot)
                     .await
                     .map_err(|e| {
-                        LangGraphError::ExecutionError(format!("Failed to save final checkpoint: {}", e))
+                        LangGraphError::ExecutionError(format!(
+                            "Failed to save final checkpoint: {}",
+                            e
+                        ))
                     })?;
             }
         }
@@ -242,7 +233,9 @@ mod tests {
                 let mut update = HashMap::new();
                 update.insert(
                     "messages".to_string(),
-                    serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message("Hello")])?,
+                    serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message(
+                        "Hello",
+                    )])?,
                 );
                 Ok(update)
             })),
@@ -258,16 +251,14 @@ mod tests {
         );
         adjacency.insert(
             "node1".to_string(),
-            vec![crate::langgraph::edge::Edge::new("node1", crate::langgraph::edge::END)],
+            vec![crate::langgraph::edge::Edge::new(
+                "node1",
+                crate::langgraph::edge::END,
+            )],
         );
 
         let scheduler = NodeScheduler::new(adjacency);
-        let executor = SuperStepExecutor::new(
-            nodes,
-            scheduler,
-            None,
-            DurabilityMode::Exit,
-        );
+        let executor = SuperStepExecutor::new(nodes, scheduler, None, DurabilityMode::Exit);
 
         let config = CheckpointConfig::new("thread-1");
         let state = MessagesState::new();

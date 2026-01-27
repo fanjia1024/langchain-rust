@@ -318,7 +318,7 @@ pub mod tool_result_eviction;
 pub use content_filter::ContentFilterMiddleware;
 pub use guardrail_utils::*;
 pub use human_in_loop::HumanInTheLoopMiddleware;
-pub use logging::{LoggingMiddleware, LogLevel};
+pub use logging::{LogLevel, LoggingMiddleware};
 pub use pii::{PIIMiddleware, PIIStrategy};
 pub use pii_detector::{detect_all_pii, PIIDetector, PIIMatch, PIIType};
 pub use rate_limit::RateLimitMiddleware;
@@ -330,7 +330,7 @@ pub use tool_result_eviction::ToolResultEvictionMiddleware;
 
 // Re-export middleware chain executor
 pub mod chain;
-pub use chain::{MiddlewareChainExecutor, MiddlewareChainConfig, MiddlewareResult};
+pub use chain::{MiddlewareChainConfig, MiddlewareChainExecutor, MiddlewareResult};
 
 #[cfg(test)]
 mod tests {

@@ -1,5 +1,5 @@
-use langchain_rust::langgraph::{function_node, MessagesState, StateGraph, END, START};
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::langgraph::{function_node, MessagesState, StateGraph, END, START};
+use langchain_rs::schemas::messages::Message;
 use std::collections::HashMap;
 
 /// Subgraph example with shared state

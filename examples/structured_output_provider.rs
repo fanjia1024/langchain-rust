@@ -1,4 +1,4 @@
-use langchain_rust::{
+use langchain_rs::{
     agent::create_agent_with_structured_output,
     schemas::structured_output::{ProviderStrategy, StructuredOutputSchema},
 };
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Analyze a product review
     let result = agent
-        .invoke_messages(vec![langchain_rust::schemas::Message::new_human_message(
+        .invoke_messages(vec![langchain_rs::schemas::Message::new_human_message(
             "Analyze this review: 'Great product: 5 out of 5 stars. Fast shipping, but expensive'",
         )])
         .await?;

@@ -1,8 +1,8 @@
 use futures::StreamExt;
-use langchain_rust::langgraph::{
+use langchain_rs::langgraph::{
     function_node, MessagesState, StateGraph, StreamMode, StreamOptions, END, START,
 };
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::schemas::messages::Message;
 use std::collections::HashMap;
 
 /// Subgraph streaming example
@@ -61,24 +61,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Streaming events (with subgraphs):");
     while let Some(event) = stream.next().await {
         match event {
-            langchain_rust::langgraph::StreamEvent::NodeStart { node, path, .. } => {
+            langchain_rs::langgraph::StreamEvent::NodeStart { node, path, .. } => {
                 if path.is_empty() {
                     println!("  NodeStart: {}", node);
                 } else {
                     println!("  NodeStart: {} (path: {:?})", node, path);
                 }
             }
-            langchain_rust::langgraph::StreamEvent::NodeEnd { node, path, .. } => {
+            langchain_rs::langgraph::StreamEvent::NodeEnd { node, path, .. } => {
                 if path.is_empty() {
                     println!("  NodeEnd: {}", node);
                 } else {
                     println!("  NodeEnd: {} (path: {:?})", node, path);
                 }
             }
-            langchain_rust::langgraph::StreamEvent::GraphEnd { .. } => {
+            langchain_rs::langgraph::StreamEvent::GraphEnd { .. } => {
                 println!("  GraphEnd");
             }
-            langchain_rust::langgraph::StreamEvent::Error { error } => {
+            langchain_rs::langgraph::StreamEvent::Error { error } => {
                 eprintln!("  Error: {}", error);
             }
             _ => {}

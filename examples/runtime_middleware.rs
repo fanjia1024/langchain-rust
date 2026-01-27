@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_rust::{
+use langchain_rs::{
     agent::{
         create_agent, Middleware, MiddlewareContext, MiddlewareError, Runtime, RuntimeRequest,
     },

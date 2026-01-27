@@ -201,7 +201,7 @@ impl Loader for RecursiveUrlLoader {
                         match readability::extractor::extract(&mut html_reader, &url) {
                             Ok(cleaned) => {
                                 let content = format!("{}\n{}", cleaned.title, cleaned.text);
-                                
+
                                 let mut metadata = HashMap::new();
                                 metadata.insert("source".to_string(), Value::from(url.as_str()));
                                 metadata.insert("source_type".to_string(), Value::from("web"));

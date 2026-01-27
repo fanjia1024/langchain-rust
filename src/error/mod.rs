@@ -1,6 +1,6 @@
 //! 统一的错误处理模块
 //!
-//! 提供 langchain-rust 项目所有模块的错误类型定义。
+//! 提供 langchain-rs 项目所有模块的错误类型定义。
 //! 使用 thiserror 库，提供类型安全且易于理解的错误类型。
 
 pub use crate::chain::ChainError;
@@ -16,7 +16,7 @@ pub use crate::rag::RAGError;
 
 // Re-export error utilities
 pub mod utils;
-pub use utils::{ErrorCode, ErrorContext, error_context, error_info};
+pub use utils::{error_context, error_info, ErrorCode, ErrorContext};
 
 /// 统一的错误枚举，组合所有子模块错误
 ///
@@ -26,7 +26,7 @@ pub use utils::{ErrorCode, ErrorContext, error_context, error_info};
 /// # 使用示例
 ///
 /// ```rust,ignore
-/// use langchain_rust::error::LangChainError;
+/// use langchain_rs::error::LangChainError;
 ///
 /// async fn example() -> Result<(), LangChainError> {
 ///     // 所有子模块错误都可以自动转换
@@ -149,9 +149,8 @@ mod tests {
 
     #[test]
     fn test_multi_agent_error_creation() {
-        let multi_agent_error = crate::agent::multi_agent::MultiAgentError::AgentNotFound(
-            "test_agent".to_string(),
-        );
+        let multi_agent_error =
+            crate::agent::multi_agent::MultiAgentError::AgentNotFound("test_agent".to_string());
         let langchain_error: LangChainError = multi_agent_error.into();
 
         match langchain_error {

@@ -61,18 +61,12 @@ pub struct CohereReranker {
 
 impl CohereReranker {
     /// Create a new Cohere reranker
-    pub fn new(
-        base_retriever: Arc<dyn Retriever>,
-        api_key: String,
-    ) -> Self {
+    pub fn new(base_retriever: Arc<dyn Retriever>, api_key: String) -> Self {
         Self::with_config(base_retriever, CohereRerankerConfig::new(api_key))
     }
 
     /// Create a new Cohere reranker with custom config
-    pub fn with_config(
-        base_retriever: Arc<dyn Retriever>,
-        config: CohereRerankerConfig,
-    ) -> Self {
+    pub fn with_config(base_retriever: Arc<dyn Retriever>, config: CohereRerankerConfig) -> Self {
         let mut client_builder = Client::builder();
         if let Some(timeout) = config.timeout {
             client_builder = client_builder.timeout(timeout);
@@ -97,7 +91,7 @@ impl CohereReranker {
         }
 
         let texts: Vec<String> = documents.iter().map(|d| d.page_content.clone()).collect();
-        
+
         let request = RerankRequest {
             model: self.config.model.clone(),
             query: query.to_string(),
@@ -105,7 +99,8 @@ impl CohereReranker {
             top_n: self.config.top_k,
         };
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.cohere.ai/v1/rerank")
             .header("Authorization", format!("Bearer {}", self.config.api_key))
             .header("Content-Type", "application/json")
@@ -121,7 +116,8 @@ impl CohereReranker {
         let rerank_response: RerankResponse = response.json().await?;
 
         // Sort results by relevance score (descending) and map back to documents
-        let mut indexed_results: Vec<(usize, f64)> = rerank_response.results
+        let mut indexed_results: Vec<(usize, f64)> = rerank_response
+            .results
             .into_iter()
             .map(|r| (r.index, r.relevance_score))
             .collect();
@@ -138,13 +134,10 @@ impl CohereReranker {
 
 #[async_trait]
 impl Retriever for CohereReranker {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
-        
+
         // Rerank documents
         self.rerank(query, documents)
             .await

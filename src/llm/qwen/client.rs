@@ -220,7 +220,9 @@ impl ToString for QwenModel {
             QwenModel::Qwen3_235B_A22B => "qwen3-235b-a22b".to_string(),
             QwenModel::Qwen3CoderPlus => "qwen3-coder-plus".to_string(),
             QwenModel::Qwen3CoderFlash => "qwen3-coder-flash".to_string(),
-            QwenModel::Qwen3Coder_480B_A35B_Instruct => "qwen3-coder-480b-a35b-instruct".to_string(),
+            QwenModel::Qwen3Coder_480B_A35B_Instruct => {
+                "qwen3-coder-480b-a35b-instruct".to_string()
+            }
             QwenModel::Qwen3Coder_30B_A3B_Instruct => "qwen3-coder-30b-a3b-instruct".to_string(),
             QwenModel::Qwen3VlPlus => "qwen3-vl-plus".to_string(),
             QwenModel::Qwen3VlMax => "qwen3-vl-max".to_string(),
@@ -297,10 +299,10 @@ impl Qwen {
             .await?;
 
         let status = res.status().as_u16();
-        
+
         // Read response text first (can only be read once)
         let response_text = res.text().await?;
-        
+
         match status {
             200 => {
                 // Try to parse as ApiResponse

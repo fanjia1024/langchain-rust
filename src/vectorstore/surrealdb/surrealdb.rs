@@ -227,7 +227,11 @@ impl<C: Connection> VectorStore for Store<C> {
         Ok(documents)
     }
 
-    async fn delete(&self, ids: &[String], _opt: &VecStoreOptions<Value>) -> Result<(), VectorStoreError> {
+    async fn delete(
+        &self,
+        ids: &[String],
+        _opt: &VecStoreOptions<Value>,
+    ) -> Result<(), VectorStoreError> {
         if ids.is_empty() {
             return Ok(());
         }

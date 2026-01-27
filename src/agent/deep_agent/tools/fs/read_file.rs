@@ -79,7 +79,10 @@ impl Tool for ReadFileTool {
         let offset = input.get("offset").and_then(Value::as_u64).unwrap_or(0) as u32;
         let limit = input.get("limit").and_then(Value::as_u64).unwrap_or(0) as u32;
         if let Some(backend) = runtime.file_backend() {
-            let content = backend.read(path_str, offset, limit).await.map_err(|e| e.to_string())?;
+            let content = backend
+                .read(path_str, offset, limit)
+                .await
+                .map_err(|e| e.to_string())?;
             return Ok(ToolResult::Text(content));
         }
         let root = workspace_root_from_context(self.workspace_root.as_ref(), runtime.context())

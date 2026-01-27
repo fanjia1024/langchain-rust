@@ -1,5 +1,5 @@
-mod pinecone;
 mod builder;
+mod pinecone;
 
-pub use pinecone::*;
 pub use builder::*;
+pub use pinecone::*;

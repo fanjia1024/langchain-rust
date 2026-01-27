@@ -1,7 +1,7 @@
-use langchain_rust::langgraph::{
+use langchain_rs::langgraph::{
     function_node, InMemorySaver, MessagesState, RunnableConfig, StateGraph, END, START,
 };
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::schemas::messages::Message;
 
 /// Replay example for LangGraph persistence
 ///

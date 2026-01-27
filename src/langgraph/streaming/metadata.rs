@@ -13,10 +13,10 @@ use crate::schemas::StreamData;
 pub struct MessageMetadata {
     /// The name of the graph node where the LLM was invoked
     pub langgraph_node: String,
-    
+
     /// Tags associated with the LLM invocation (if any)
     pub tags: Vec<String>,
-    
+
     /// Additional metadata about the LLM invocation
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
@@ -53,10 +53,10 @@ impl MessageMetadata {
 pub struct DebugInfo {
     /// Event type (e.g., "NodeStart", "NodeEnd", "MessageChunk")
     pub event_type: String,
-    
+
     /// Node name (if applicable)
     pub node: Option<String>,
-    
+
     /// Additional debug information
     #[serde(flatten)]
     pub info: HashMap<String, Value>,
@@ -96,7 +96,7 @@ impl DebugInfo {
 pub struct MessageChunk {
     /// The stream data (token content)
     pub chunk: StreamData,
-    
+
     /// Metadata about the LLM invocation
     pub metadata: MessageMetadata,
 }

@@ -55,7 +55,10 @@ impl<R: Read + Send + Sync + 'static> Loader for MarkdownLoader<R> {
         self.reader.read_to_string(&mut content)?;
 
         let mut metadata = HashMap::new();
-        metadata.insert("source_type".to_string(), serde_json::Value::from("markdown"));
+        metadata.insert(
+            "source_type".to_string(),
+            serde_json::Value::from("markdown"),
+        );
 
         let doc = Document::new(content).with_metadata(metadata);
         let stream = stream::iter(vec![Ok(doc)]);

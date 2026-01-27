@@ -97,11 +97,7 @@ impl InterruptConfig {
     /// Parse from a config value: `true` | `false` | `{"allowed_decisions": [...]}`.
     pub fn from_value(v: &Value) -> Option<Self> {
         if let Some(b) = v.as_bool() {
-            return Some(if b {
-                Self::enabled()
-            } else {
-                Self::disabled()
-            });
+            return Some(if b { Self::enabled() } else { Self::disabled() });
         }
         if let Some(obj) = v.as_object() {
             let enabled = obj.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true);

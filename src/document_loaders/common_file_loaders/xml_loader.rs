@@ -82,7 +82,7 @@ impl<R: Read + Send + Sync + 'static> Loader for XmlLoader<R> {
                 yield Err(LoaderError::OtherError("XML feature not enabled".to_string()));
                 return;
             }
-            
+
             #[cfg(feature = "xml")]
             {
             reader.trim_text(true);
@@ -115,10 +115,10 @@ impl<R: Read + Send + Sync + 'static> Loader for XmlLoader<R> {
                                 let mut metadata = HashMap::new();
                                 metadata.insert("source_type".to_string(), serde_json::Value::from("xml"));
                                 metadata.insert("element".to_string(), serde_json::Value::from(sel.clone()));
-                                
+
                                 let doc = Document::new(current_text.trim().to_string()).with_metadata(metadata);
                                 yield Ok(doc);
-                                
+
                                 in_target_element = false;
                                 current_text.clear();
                             }
@@ -154,7 +154,7 @@ impl<R: Read + Send + Sync + 'static> Loader for XmlLoader<R> {
                 if !current_text.trim().is_empty() {
                     let mut metadata = HashMap::new();
                     metadata.insert("source_type".to_string(), serde_json::Value::from("xml"));
-                    
+
                     let doc = Document::new(current_text.trim().to_string()).with_metadata(metadata);
                     yield Ok(doc);
                 }

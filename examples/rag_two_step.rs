@@ -2,7 +2,7 @@
 // This demonstrates the optimized 2-Step RAG implementation
 
 #[cfg(feature = "postgres")]
-use langchain_rust::{
+use langchain_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     llm::openai::{OpenAI, OpenAIModel},
     memory::SimpleMemory,
@@ -33,13 +33,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Add documents to store
-    use langchain_rust::vectorstore::{pgvector::PgOptions, VectorStore};
+    use langchain_rs::vectorstore::{pgvector::PgOptions, VectorStore};
     let _ = store
         .add_documents(&documents, &PgOptions::default())
         .await?;
 
     // Create retriever
-    let retriever: Box<dyn langchain_rust::schemas::Retriever> = Box::new(Retriever::new(store, 3));
+    let retriever: Box<dyn langchain_rs::schemas::Retriever> = Box::new(Retriever::new(store, 3));
 
     // Create LLM
     let llm = OpenAI::default().with_model(OpenAIModel::Gpt4oMini.to_string());

@@ -306,9 +306,15 @@ impl VectorStore for Store {
         let docs = rows
             .into_iter()
             .map(|row| {
-                let page_content: String = row.try_get(0).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
-                let metadata_json: Value = row.try_get(1).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
-                let score: f64 = row.try_get(2).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let page_content: String = row
+                    .try_get(0)
+                    .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let metadata_json: Value = row
+                    .try_get(1)
+                    .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let score: f64 = row
+                    .try_get(2)
+                    .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
                 let metadata = if let Value::Object(obj) = metadata_json {
                     obj.into_iter().collect()

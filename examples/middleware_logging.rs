@@ -1,5 +1,5 @@
-use langchain_rust::agent::{create_agent, LoggingMiddleware};
-use langchain_rust::schemas::Message;
+use langchain_rs::agent::{create_agent, LoggingMiddleware};
+use langchain_rs::schemas::Message;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create logging middleware
     let logging_middleware = LoggingMiddleware::new()
-        .with_log_level(langchain_rust::agent::LogLevel::Info)
+        .with_log_level(langchain_rs::agent::LogLevel::Info)
         .with_structured_logging(false);
 
     // Create agent with middleware

@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_rust::{
+use langchain_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     tools::{
         EnhancedInMemoryStore, EnhancedInMemoryStoreConfig, EnhancedToolStore, StoreFilter,

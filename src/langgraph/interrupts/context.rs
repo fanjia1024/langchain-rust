@@ -32,7 +32,7 @@ impl InterruptContext {
             current_index: 0,
         }
     }
-    
+
     /// Create a context with a single resume value
     pub fn with_resume_value(value: Value) -> Self {
         Self {
@@ -41,7 +41,7 @@ impl InterruptContext {
             current_index: 0,
         }
     }
-    
+
     /// Create a context with multiple resume values
     pub fn with_resume_values(values: Vec<Value>) -> Self {
         Self {
@@ -50,17 +50,17 @@ impl InterruptContext {
             current_index: 0,
         }
     }
-    
+
     /// Check if there's an active interrupt
     pub fn has_interrupt(&self) -> bool {
         self.interrupt_value.is_some()
     }
-    
+
     /// Get the interrupt value
     pub fn interrupt_value(&self) -> Option<&Value> {
         self.interrupt_value.as_ref()
     }
-    
+
     /// Reset the context for a new execution
     pub fn reset(&mut self) {
         self.interrupt_value = None;
@@ -79,30 +79,34 @@ pub async fn set_interrupt_context<F, R>(context: InterruptContext, f: F) -> R
 where
     F: std::future::Future<Output = R>,
 {
-    INTERRUPT_CONTEXT.scope(std::cell::RefCell::new(Some(context)), f).await
+    INTERRUPT_CONTEXT
+        .scope(std::cell::RefCell::new(Some(context)), f)
+        .await
 }
 
 /// Get the current interrupt value from context
 pub fn get_interrupt_value() -> Option<Value> {
-    INTERRUPT_CONTEXT.try_with(|ctx| {
-        ctx.borrow()
-            .as_ref()
-            .and_then(|c| c.interrupt_value.clone())
-    })
-    .ok()
-    .flatten()
+    INTERRUPT_CONTEXT
+        .try_with(|ctx| {
+            ctx.borrow()
+                .as_ref()
+                .and_then(|c| c.interrupt_value.clone())
+        })
+        .ok()
+        .flatten()
 }
 
 /// Check if there's an active interrupt in the context
 pub fn has_interrupt() -> bool {
-    INTERRUPT_CONTEXT.try_with(|ctx| {
-        ctx.borrow()
-            .as_ref()
-            .map(|c| c.has_interrupt())
-            .unwrap_or(false)
-    })
-    .ok()
-    .unwrap_or(false)
+    INTERRUPT_CONTEXT
+        .try_with(|ctx| {
+            ctx.borrow()
+                .as_ref()
+                .map(|c| c.has_interrupt())
+                .unwrap_or(false)
+        })
+        .ok()
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -112,7 +116,7 @@ mod tests {
     #[tokio::test]
     async fn test_interrupt_context() {
         let ctx = InterruptContext::with_resume_value(serde_json::json!("resume"));
-        
+
         set_interrupt_context(ctx, async {
             let value = get_interrupt_value();
             assert_eq!(value, None);

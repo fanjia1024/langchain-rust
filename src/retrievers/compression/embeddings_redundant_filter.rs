@@ -34,11 +34,12 @@ pub struct EmbeddingsRedundantFilter {
 
 impl EmbeddingsRedundantFilter {
     /// Create a new embeddings redundant filter
-    pub fn new(
-        base_retriever: Arc<dyn Retriever>,
-        embedder: Arc<dyn Embedder>,
-    ) -> Self {
-        Self::with_config(base_retriever, embedder, EmbeddingsRedundantFilterConfig::default())
+    pub fn new(base_retriever: Arc<dyn Retriever>, embedder: Arc<dyn Embedder>) -> Self {
+        Self::with_config(
+            base_retriever,
+            embedder,
+            EmbeddingsRedundantFilterConfig::default(),
+        )
     }
 
     /// Create a new embeddings redundant filter with custom config
@@ -125,10 +126,7 @@ impl EmbeddingsRedundantFilter {
 
 #[async_trait]
 impl Retriever for EmbeddingsRedundantFilter {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
 

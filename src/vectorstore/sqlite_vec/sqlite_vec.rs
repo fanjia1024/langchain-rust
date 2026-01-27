@@ -152,7 +152,9 @@ impl VectorStore for Store {
 
         let query_vector = json!(self.embedder.embed_query(query).await?);
 
-        let filter = self.get_filters(opt).map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+        let filter = self
+            .get_filters(opt)
+            .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
         let mut metadata_query = filter
             .iter()
@@ -184,9 +186,15 @@ impl VectorStore for Store {
         let docs = rows
             .into_iter()
             .map(|row| {
-                let page_content: String = row.try_get("text").map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
-                let metadata_json: Value = row.try_get("metadata").map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
-                let score: f64 = row.try_get("distance").map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let page_content: String = row
+                    .try_get("text")
+                    .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let metadata_json: Value = row
+                    .try_get("metadata")
+                    .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
+                let score: f64 = row
+                    .try_get("distance")
+                    .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
 
                 let metadata = if let Value::Object(obj) = metadata_json {
                     obj.into_iter().collect()
@@ -213,7 +221,9 @@ impl VectorStore for Store {
             .iter()
             .map(|s| s.parse::<i64>())
             .collect::<Result<_, _>>()
-            .map_err(|e: std::num::ParseIntError| VectorStoreError::InvalidParameter(e.to_string()))?;
+            .map_err(|e: std::num::ParseIntError| {
+                VectorStoreError::InvalidParameter(e.to_string())
+            })?;
         let placeholders: Vec<String> = (0..rowids.len()).map(|_| "?".to_string()).collect();
         let sql = format!(
             "DELETE FROM {} WHERE rowid IN ({})",

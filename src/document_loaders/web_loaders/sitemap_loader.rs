@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    pin::Pin,
-    time::Duration,
-};
+use std::{collections::HashMap, pin::Pin, time::Duration};
 
 use async_stream::stream;
 use async_trait::async_trait;
@@ -210,7 +206,7 @@ impl Loader for SitemapLoader {
             };
 
             let sitemap_xml = loader.fetch_sitemap().await?;
-            
+
             #[cfg(feature = "xml")]
             {
                 let urls = loader.parse_sitemap(&sitemap_xml)?;

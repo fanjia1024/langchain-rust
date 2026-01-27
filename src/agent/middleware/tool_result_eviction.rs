@@ -49,7 +49,9 @@ impl ToolResultEvictionMiddleware {
     }
 
     fn tool_call_id_from_action(action: &AgentAction) -> Option<String> {
-        serde_json::from_str::<LogTools>(&action.log).ok().map(|l| l.tool_id)
+        serde_json::from_str::<LogTools>(&action.log)
+            .ok()
+            .map(|l| l.tool_id)
     }
 }
 
@@ -79,10 +81,14 @@ impl Middleware for ToolResultEvictionMiddleware {
         if self.estimated_tokens(observation) <= limit {
             return Ok(None);
         }
-        let tool_id = Self::tool_call_id_from_action(action).unwrap_or_else(|| "unknown".to_string());
+        let tool_id =
+            Self::tool_call_id_from_action(action).unwrap_or_else(|| "unknown".to_string());
         let key = format!("{}", tool_id);
         let full_value = json!(observation);
-        runtime.store().put(TOOL_EVICTION_NAMESPACE, &key, full_value).await;
+        runtime
+            .store()
+            .put(TOOL_EVICTION_NAMESPACE, &key, full_value)
+            .await;
 
         let preview = if observation.chars().count() <= self.preview_chars {
             observation.to_string()

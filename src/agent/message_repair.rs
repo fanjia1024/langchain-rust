@@ -28,7 +28,9 @@ pub fn repair_dangling_tool_calls(messages: Vec<Message>) -> Vec<Message> {
 
         let mut count = 0usize;
         let mut j = i + 1;
-        while j < messages.len() && count < needed && messages[j].message_type == MessageType::ToolMessage
+        while j < messages.len()
+            && count < needed
+            && messages[j].message_type == MessageType::ToolMessage
         {
             count += 1;
             j += 1;
@@ -39,9 +41,10 @@ pub fn repair_dangling_tool_calls(messages: Vec<Message>) -> Vec<Message> {
             out.push(messages[i + 1 + k].clone());
         }
         for k in count..needed {
-            let id = ids.get(k).cloned().unwrap_or_else(|| {
-                format!("call_cancelled_{}", k)
-            });
+            let id = ids
+                .get(k)
+                .cloned()
+                .unwrap_or_else(|| format!("call_cancelled_{}", k));
             out.push(Message::new_tool_message(CANCELLED_CONTENT, id));
         }
         i = j;
@@ -82,8 +85,9 @@ mod tests {
     fn repair_inserts_missing_tool_messages() {
         let messages = vec![
             Message::new_human_message("run X"),
-            Message::new_ai_message("")
-                .with_tool_calls(json!([{"id": "call_1", "name": "tool_a"}, {"id": "call_2", "name": "tool_b"}])),
+            Message::new_ai_message("").with_tool_calls(
+                json!([{"id": "call_1", "name": "tool_a"}, {"id": "call_2", "name": "tool_b"}]),
+            ),
         ];
         let repaired = repair_dangling_tool_calls(messages);
         assert_eq!(repaired.len(), 4);

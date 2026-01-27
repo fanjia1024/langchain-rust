@@ -12,7 +12,7 @@
 
 use std::path::PathBuf;
 
-use langchain_rust::{
+use langchain_rs::{
     agent::{create_deep_agent, DeepAgentConfig},
     chain::Chain,
     prompt_args,

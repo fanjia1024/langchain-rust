@@ -54,9 +54,12 @@ impl StoreBuilder {
         let client = match self.client {
             Some(c) => c,
             None => {
-                let api_key = self.api_key.ok_or("api_key is required when client is not provided")?;
-                let environment =
-                    self.environment.ok_or("environment is required when client is not provided")?;
+                let api_key = self
+                    .api_key
+                    .ok_or("api_key is required when client is not provided")?;
+                let environment = self
+                    .environment
+                    .ok_or("environment is required when client is not provided")?;
                 Client::new(api_key, environment).await?
             }
         };

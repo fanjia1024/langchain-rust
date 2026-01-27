@@ -43,7 +43,8 @@ impl VectorStore for Store {
         for (doc, vec_f64) in docs.iter().zip(vectors.into_iter()) {
             let id = Uuid::new_v4();
             ids.push(id.to_string());
-            let metadata_json = serde_json::to_string(&doc.metadata).unwrap_or_else(|_| "{}".to_string());
+            let metadata_json =
+                serde_json::to_string(&doc.metadata).unwrap_or_else(|_| "{}".to_string());
             let properties = serde_json::json!({
                 "content": doc.page_content,
                 "metadata": metadata_json,
@@ -86,7 +87,10 @@ impl VectorStore for Store {
             .get(query_result)
             .await
             .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
-        let score_threshold = opt.score_threshold.map(f64::from).unwrap_or(f64::NEG_INFINITY);
+        let score_threshold = opt
+            .score_threshold
+            .map(f64::from)
+            .unwrap_or(f64::NEG_INFINITY);
         let docs = parse_get_response(&raw, &self.class_name, score_threshold)?;
         Ok(docs)
     }
@@ -96,8 +100,9 @@ impl VectorStore for Store {
             return Ok(());
         }
         for id in ids {
-            let uuid = Uuid::parse_str(id)
-                .map_err(|e| VectorStoreError::InvalidParameter(format!("invalid uuid {}: {}", id, e)))?;
+            let uuid = Uuid::parse_str(id).map_err(|e| {
+                VectorStoreError::InvalidParameter(format!("invalid uuid {}: {}", id, e))
+            })?;
             self.client
                 .objects
                 .delete(&self.class_name, &uuid, None, None)
@@ -113,7 +118,7 @@ fn parse_get_response(
     class_name: &str,
     score_threshold: f64,
 ) -> Result<Vec<Document>, VectorStoreError> {
-        let get = raw
+    let get = raw
         .get("data")
         .and_then(|d| d.get("Get"))
         .and_then(|g| g.get(class_name))

@@ -24,13 +24,17 @@ fn metadata_to_btreemap(doc: &Document) -> BTreeMap<String, Value> {
         .iter()
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
-    m.insert("content".to_string(), Value::String(doc.page_content.clone()));
+    m.insert(
+        "content".to_string(),
+        Value::String(doc.page_content.clone()),
+    );
     m
 }
 
 fn filters_to_btreemap(f: &Option<Value>) -> Option<BTreeMap<String, Value>> {
     f.as_ref().and_then(|v| {
-        v.as_object().map(|o| o.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+        v.as_object()
+            .map(|o| o.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     })
 }
 
@@ -104,7 +108,10 @@ impl VectorStore for Store {
             .query(request)
             .await
             .map_err(|e| VectorStoreError::Unknown(e.to_string()))?;
-        let score_threshold = opt.score_threshold.map(f64::from).unwrap_or(f64::NEG_INFINITY);
+        let score_threshold = opt
+            .score_threshold
+            .map(f64::from)
+            .unwrap_or(f64::NEG_INFINITY);
         let docs: Vec<Document> = resp
             .matches
             .into_iter()
@@ -120,10 +127,8 @@ impl VectorStore for Store {
                             .and_then(|v| v.as_str())
                             .unwrap_or("")
                             .to_string();
-                        let md: std::collections::HashMap<String, Value> = meta
-                            .into_iter()
-                            .filter(|(k, _)| k != "content")
-                            .collect();
+                        let md: std::collections::HashMap<String, Value> =
+                            meta.into_iter().filter(|(k, _)| k != "content").collect();
                         (pc, md)
                     }
                     None => (String::new(), std::collections::HashMap::new()),
@@ -138,7 +143,11 @@ impl VectorStore for Store {
         Ok(docs)
     }
 
-    async fn delete(&self, _ids: &[String], _opt: &PineconeOptions) -> Result<(), VectorStoreError> {
+    async fn delete(
+        &self,
+        _ids: &[String],
+        _opt: &PineconeOptions,
+    ) -> Result<(), VectorStoreError> {
         Err(VectorStoreError::DeleteNotSupported)
     }
 }

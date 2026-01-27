@@ -96,7 +96,13 @@ impl FileBackend for CompositeBackend {
         } else {
             ""
         };
-        let infos = backend.ls_info(if inner_path.is_empty() { "." } else { &inner_path }).await?;
+        let infos = backend
+            .ls_info(if inner_path.is_empty() {
+                "."
+            } else {
+                &inner_path
+            })
+            .await?;
         let out: Vec<FileInfo> = infos
             .into_iter()
             .map(|f| FileInfo {
@@ -109,12 +115,7 @@ impl FileBackend for CompositeBackend {
         Ok(out)
     }
 
-    async fn read(
-        &self,
-        file_path: &str,
-        offset: u32,
-        limit: u32,
-    ) -> Result<String, String> {
+    async fn read(&self, file_path: &str, offset: u32, limit: u32) -> Result<String, String> {
         let (backend, inner_path) = choose_backend(file_path, &self.default, &self.routes);
         backend.read(&inner_path, offset, limit).await
     }
@@ -148,7 +149,9 @@ impl FileBackend for CompositeBackend {
         replace_all: bool,
     ) -> Result<EditResult, String> {
         let (backend, inner_path) = choose_backend(file_path, &self.default, &self.routes);
-        let res = backend.edit(&inner_path, old_string, new_string, replace_all).await?;
+        let res = backend
+            .edit(&inner_path, old_string, new_string, replace_all)
+            .await?;
         let full = file_path.trim().trim_start_matches('/');
         let prefix_str = if inner_path.is_empty() {
             ""
@@ -177,7 +180,16 @@ impl FileBackend for CompositeBackend {
         } else {
             ""
         };
-        let infos = backend.glob_info(pattern, if inner_path.is_empty() { "." } else { &inner_path }).await?;
+        let infos = backend
+            .glob_info(
+                pattern,
+                if inner_path.is_empty() {
+                    "."
+                } else {
+                    &inner_path
+                },
+            )
+            .await?;
         let out: Vec<FileInfo> = infos
             .into_iter()
             .map(|f| FileInfo {
@@ -207,7 +219,11 @@ impl FileBackend for CompositeBackend {
                     ""
                 };
                 let matches = backend
-                    .grep_raw(pattern, Some(if inner.is_empty() { "." } else { &inner }), glob_pattern)
+                    .grep_raw(
+                        pattern,
+                        Some(if inner.is_empty() { "." } else { &inner }),
+                        glob_pattern,
+                    )
                     .await?;
                 let out: Vec<GrepMatch> = matches
                     .into_iter()

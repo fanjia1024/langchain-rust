@@ -58,11 +58,11 @@ impl RecursiveCharacterTextSplitterOptions {
 }
 
 /// RecursiveCharacterTextSplitter splits text recursively by trying different separators
-/// 
+///
 /// This is the recommended text splitter for most use cases. It attempts to split text
 /// on a list of separators in order, trying to keep larger semantic units (paragraphs,
 /// sentences, words) intact.
-/// 
+///
 /// Default separators: ["\n\n", "\n", " ", ""]
 pub struct RecursiveCharacterTextSplitter {
     options: RecursiveCharacterTextSplitterOptions,
@@ -229,11 +229,9 @@ impl RecursiveCharacterTextSplitter {
             } else {
                 // Add overlap from previous chunk
                 let prev_chunk = &chunks[i - 1];
-                let overlap_start = prev_chunk
-                    .len()
-                    .saturating_sub(self.options.chunk_overlap);
+                let overlap_start = prev_chunk.len().saturating_sub(self.options.chunk_overlap);
                 let overlap_text = &prev_chunk[overlap_start..];
-                
+
                 let mut new_chunk = String::new();
                 if !overlap_text.is_empty() {
                     new_chunk.push_str(overlap_text);

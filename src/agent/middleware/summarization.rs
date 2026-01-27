@@ -17,7 +17,7 @@ use crate::schemas::Message;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_rust::agent::middleware::SummarizationMiddleware;
+/// use langchain_rs::agent::middleware::SummarizationMiddleware;
 ///
 /// let middleware = SummarizationMiddleware::new()
 ///     .with_token_threshold(4000)
@@ -161,13 +161,9 @@ impl Middleware for SummarizationMiddleware {
             .join("\n");
 
         let summary = self.summarize_history(&history_text).await?;
-        let summary_message = Message::new_system_message(format!(
-            "[Previous conversation summary]\n{}",
-            summary
-        ));
-        let new_history: Vec<Message> = std::iter::once(summary_message)
-            .chain(recent)
-            .collect();
+        let summary_message =
+            Message::new_system_message(format!("[Previous conversation summary]\n{}", summary));
+        let new_history: Vec<Message> = std::iter::once(summary_message).chain(recent).collect();
 
         log::info!(
             "Summarized {} messages to 1 + {} recent",

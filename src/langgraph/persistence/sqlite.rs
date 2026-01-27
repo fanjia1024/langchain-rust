@@ -8,7 +8,7 @@ use async_trait::async_trait;
 #[cfg(feature = "sqlite-persistence")]
 use chrono::{DateTime, Utc};
 #[cfg(feature = "sqlite-persistence")]
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 #[cfg(feature = "sqlite-persistence")]
 use serde_json::Value;
 #[cfg(feature = "sqlite-persistence")]
@@ -19,10 +19,8 @@ use crate::langgraph::state::State;
 
 #[cfg(feature = "sqlite-persistence")]
 use super::{
-    checkpointer::Checkpointer,
-    error::PersistenceError,
+    checkpointer::Checkpointer, config::CheckpointConfig, error::PersistenceError,
     snapshot::StateSnapshot,
-    config::CheckpointConfig,
 };
 
 #[cfg(feature = "sqlite-persistence")]
@@ -105,24 +103,27 @@ where
         thread_id: &str,
         checkpoint: &StateSnapshot<S>,
     ) -> Result<String, PersistenceError> {
-        let checkpoint_id = checkpoint
-            .checkpoint_id()
-            .cloned()
-            .unwrap_or_else(|| {
-                #[cfg(feature = "uuid")]
-                {
-                    uuid::Uuid::new_v4().to_string()
-                }
-                #[cfg(not(feature = "uuid"))]
-                {
-                    use std::time::{SystemTime, UNIX_EPOCH};
-                    format!("checkpoint-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos())
-                }
-            });
+        let checkpoint_id = checkpoint.checkpoint_id().cloned().unwrap_or_else(|| {
+            #[cfg(feature = "uuid")]
+            {
+                uuid::Uuid::new_v4().to_string()
+            }
+            #[cfg(not(feature = "uuid"))]
+            {
+                use std::time::{SystemTime, UNIX_EPOCH};
+                format!(
+                    "checkpoint-{}",
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_nanos()
+                )
+            }
+        });
 
         // Serialize state using serde_json
-        let state_bytes = serde_json::to_vec(&checkpoint.values)
-            .map_err(PersistenceError::SerializationError)?;
+        let state_bytes =
+            serde_json::to_vec(&checkpoint.values).map_err(PersistenceError::SerializationError)?;
 
         // Serialize next nodes and metadata
         let next_nodes_json = serde_json::to_string(&checkpoint.next)?;
@@ -194,18 +195,40 @@ where
             let created_at_str: String = row.get(6)?;
 
             // Deserialize state using serde_json (map to rusqlite::Error for closure return type)
-            let values: S = serde_json::from_slice(&state_bytes)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(3, "state_values".to_string(), rusqlite::types::Type::Blob))?;
+            let values: S = serde_json::from_slice(&state_bytes).map_err(|_e| {
+                rusqlite::Error::InvalidColumnType(
+                    3,
+                    "state_values".to_string(),
+                    rusqlite::types::Type::Blob,
+                )
+            })?;
 
             // Deserialize next nodes and metadata
-            let next: Vec<String> = serde_json::from_str(&next_nodes_json)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(4, "next_nodes".to_string(), rusqlite::types::Type::Text))?;
-            let metadata: std::collections::HashMap<String, Value> = serde_json::from_str(&metadata_json)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(5, "metadata".to_string(), rusqlite::types::Type::Text))?;
+            let next: Vec<String> = serde_json::from_str(&next_nodes_json).map_err(|_e| {
+                rusqlite::Error::InvalidColumnType(
+                    4,
+                    "next_nodes".to_string(),
+                    rusqlite::types::Type::Text,
+                )
+            })?;
+            let metadata: std::collections::HashMap<String, Value> =
+                serde_json::from_str(&metadata_json).map_err(|_e| {
+                    rusqlite::Error::InvalidColumnType(
+                        5,
+                        "metadata".to_string(),
+                        rusqlite::types::Type::Text,
+                    )
+                })?;
 
             // Parse created_at
             let created_at = DateTime::parse_from_rfc3339(&created_at_str)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(7, "created_at".to_string(), rusqlite::types::Type::Text))?
+                .map_err(|_e| {
+                    rusqlite::Error::InvalidColumnType(
+                        7,
+                        "created_at".to_string(),
+                        rusqlite::types::Type::Text,
+                    )
+                })?
                 .with_timezone(&Utc);
 
             // Build config
@@ -267,18 +290,40 @@ where
             let created_at_str: String = row.get(6)?;
 
             // Deserialize state using serde_json (map to rusqlite::Error for closure return type)
-            let values: S = serde_json::from_slice(&state_bytes)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(3, "state_values".to_string(), rusqlite::types::Type::Blob))?;
+            let values: S = serde_json::from_slice(&state_bytes).map_err(|_e| {
+                rusqlite::Error::InvalidColumnType(
+                    3,
+                    "state_values".to_string(),
+                    rusqlite::types::Type::Blob,
+                )
+            })?;
 
             // Deserialize next nodes and metadata
-            let next: Vec<String> = serde_json::from_str(&next_nodes_json)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(4, "next_nodes".to_string(), rusqlite::types::Type::Text))?;
-            let metadata: std::collections::HashMap<String, Value> = serde_json::from_str(&metadata_json)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(5, "metadata".to_string(), rusqlite::types::Type::Text))?;
+            let next: Vec<String> = serde_json::from_str(&next_nodes_json).map_err(|_e| {
+                rusqlite::Error::InvalidColumnType(
+                    4,
+                    "next_nodes".to_string(),
+                    rusqlite::types::Type::Text,
+                )
+            })?;
+            let metadata: std::collections::HashMap<String, Value> =
+                serde_json::from_str(&metadata_json).map_err(|_e| {
+                    rusqlite::Error::InvalidColumnType(
+                        5,
+                        "metadata".to_string(),
+                        rusqlite::types::Type::Text,
+                    )
+                })?;
 
             // Parse created_at
             let created_at = DateTime::parse_from_rfc3339(&created_at_str)
-                .map_err(|_e| rusqlite::Error::InvalidColumnType(7, "created_at".to_string(), rusqlite::types::Type::Text))?
+                .map_err(|_e| {
+                    rusqlite::Error::InvalidColumnType(
+                        7,
+                        "created_at".to_string(),
+                        rusqlite::types::Type::Text,
+                    )
+                })?
                 .with_timezone(&Utc);
 
             // Build config
@@ -325,7 +370,7 @@ mod tests {
         let db_path = "test_checkpoints.db";
         // Remove if exists
         let _ = fs::remove_file(db_path);
-        
+
         let saver = SqliteSaver::<MessagesState>::new(db_path).unwrap();
 
         let state = MessagesState::new();
@@ -341,7 +386,7 @@ mod tests {
 
         let list = saver.list("thread-1", None).await.unwrap();
         assert_eq!(list.len(), 1);
-        
+
         // Clean up
         let _ = fs::remove_file(db_path);
     }

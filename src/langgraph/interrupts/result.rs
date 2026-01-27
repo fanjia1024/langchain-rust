@@ -24,7 +24,7 @@ impl<S: State> InvokeResult<S> {
             interrupt: None,
         }
     }
-    
+
     /// Create a new InvokeResult with interrupt information
     pub fn with_interrupt(state: S, interrupt: Vec<Interrupt>) -> Self {
         Self {
@@ -32,7 +32,7 @@ impl<S: State> InvokeResult<S> {
             interrupt: Some(interrupt),
         }
     }
-    
+
     /// Convert to JSON format (similar to Python's result format)
     ///
     /// The result will have the state as the main object, with
@@ -40,20 +40,20 @@ impl<S: State> InvokeResult<S> {
     pub fn to_json(&self) -> Result<Value, crate::langgraph::error::LangGraphError> {
         let mut result = serde_json::to_value(&self.state)
             .map_err(crate::langgraph::error::LangGraphError::SerializationError)?;
-        
+
         if let Some(ref interrupts) = self.interrupt {
             result["__interrupt__"] = serde_json::to_value(interrupts)
                 .map_err(crate::langgraph::error::LangGraphError::SerializationError)?;
         }
-        
+
         Ok(result)
     }
-    
+
     /// Check if this result contains an interrupt
     pub fn has_interrupt(&self) -> bool {
         self.interrupt.is_some()
     }
-    
+
     /// Get the interrupt information
     pub fn interrupt(&self) -> Option<&Vec<Interrupt>> {
         self.interrupt.as_ref()

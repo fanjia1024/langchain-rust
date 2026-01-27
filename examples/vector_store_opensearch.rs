@@ -3,9 +3,9 @@
 #[cfg(feature = "opensearch")]
 use aws_config::SdkConfig;
 #[cfg(feature = "opensearch")]
-use langchain_rust::vectorstore::{VecStoreOptions, VectorStore};
+use langchain_rs::vectorstore::{VecStoreOptions, VectorStore};
 #[cfg(feature = "opensearch")]
-use langchain_rust::{
+use langchain_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder, schemas::Document,
     vectorstore::opensearch::Store, vectorstore::opensearch::*,
 };
@@ -101,7 +101,7 @@ async fn main() {
 #[cfg(feature = "opensearch")]
 async fn add_documents_to_index(store: &Store) -> Result<Vec<String>, Box<dyn Error>> {
     let doc1 = Document::new(
-        "langchain-rust is a port of the langchain python library to rust and was written in 2024.",
+        "langchain-rs is a port of the langchain python library to rust and was written in 2024.",
     )
     .with_metadata(HashMap::from([("source".to_string(), json!("cli"))]));
 

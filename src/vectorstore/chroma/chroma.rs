@@ -45,7 +45,12 @@ impl VectorStore for Store {
             .collect();
         let metadatas: Vec<Map<String, Value>> = docs
             .iter()
-            .map(|d| d.metadata.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+            .map(|d| {
+                d.metadata
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect()
+            })
             .collect();
         let entries = CollectionEntries {
             ids: ids.iter().map(|s| s.as_str()).collect(),

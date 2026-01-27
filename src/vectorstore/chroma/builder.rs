@@ -53,7 +53,9 @@ impl StoreBuilder {
         };
         let embedder = self.embedder.ok_or("embedder is required")?;
         let collection_name = self.collection_name.ok_or("collection_name is required")?;
-        let collection = client.get_or_create_collection(&collection_name, None).await?;
+        let collection = client
+            .get_or_create_collection(&collection_name, None)
+            .await?;
         Ok(Store {
             collection,
             embedder,

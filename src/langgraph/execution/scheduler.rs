@@ -20,7 +20,7 @@ impl<S: State> NodeScheduler<S> {
     pub fn new(adjacency: HashMap<String, Vec<Edge<S>>>) -> Self {
         // Build reverse adjacency for dependency analysis
         let mut reverse_adjacency: HashMap<String, Vec<String>> = HashMap::new();
-        
+
         for (from, edges) in &adjacency {
             for edge in edges {
                 match &edge.edge_type {
@@ -146,14 +146,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_ready_nodes() {
         let mut adjacency = HashMap::new();
-        adjacency.insert(
-            START.to_string(),
-            vec![Edge::new(START, "node1")],
-        );
-        adjacency.insert(
-            "node1".to_string(),
-            vec![Edge::new("node1", "node2")],
-        );
+        adjacency.insert(START.to_string(), vec![Edge::new(START, "node1")]);
+        adjacency.insert("node1".to_string(), vec![Edge::new("node1", "node2")]);
 
         let scheduler = NodeScheduler::<MessagesState>::new(adjacency);
         let executed = HashSet::new();

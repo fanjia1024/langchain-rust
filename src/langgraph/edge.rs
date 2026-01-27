@@ -31,12 +31,11 @@ impl<S: State> std::fmt::Debug for EdgeType<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EdgeType::Regular { to } => f.debug_struct("Regular").field("to", to).finish(),
-            EdgeType::Conditional { mapping, .. } => {
-                f.debug_struct("Conditional")
-                    .field("condition", &"<fn>")
-                    .field("mapping", mapping)
-                    .finish()
-            }
+            EdgeType::Conditional { mapping, .. } => f
+                .debug_struct("Conditional")
+                .field("condition", &"<fn>")
+                .field("mapping", mapping)
+                .finish(),
         }
     }
 }

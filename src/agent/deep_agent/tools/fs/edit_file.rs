@@ -110,8 +110,7 @@ impl Tool for EditFileTool {
             }
             return Ok(ToolResult::Text(format!(
                 "Applied {} replacement(s) to {}",
-                total,
-                path_str
+                total, path_str
             )));
         }
         let root = workspace_root_from_context(self.workspace_root.as_ref(), runtime.context())

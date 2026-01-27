@@ -35,10 +35,7 @@ pub struct MultiQueryRetriever {
 
 impl MultiQueryRetriever {
     /// Create a new multi query retriever
-    pub fn new(
-        base_retriever: Arc<dyn Retriever>,
-        llm: Arc<dyn LLM>,
-    ) -> Self {
+    pub fn new(base_retriever: Arc<dyn Retriever>, llm: Arc<dyn LLM>) -> Self {
         Self::with_config(base_retriever, llm, MultiQueryRetrieverConfig::default())
     }
 
@@ -74,11 +71,14 @@ impl MultiQueryRetriever {
             )
         });
 
-        let messages = vec![crate::schemas::messages::Message::new_human_message(&prompt)];
+        let messages = vec![crate::schemas::messages::Message::new_human_message(
+            &prompt,
+        )];
         let result = self.llm.generate(&messages).await?;
-        
+
         // Parse the generated queries (split by newlines)
-        let queries: Vec<String> = result.generation
+        let queries: Vec<String> = result
+            .generation
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.is_empty())
@@ -88,7 +88,7 @@ impl MultiQueryRetriever {
         // Always include the original query
         let mut all_queries = vec![original_query.to_string()];
         all_queries.extend(queries);
-        
+
         Ok(all_queries)
     }
 
@@ -114,16 +114,13 @@ impl MultiQueryRetriever {
 
 #[async_trait]
 impl Retriever for MultiQueryRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Generate multiple query variations
         let queries = self
             .generate_queries(query)
             .await
             .map_err(|e| RetrieverError::DocumentProcessingError(e.to_string()))?;
-        
+
         // Retrieve documents for each query
         let mut all_results = Vec::new();
         for q in queries {
@@ -135,10 +132,10 @@ impl Retriever for MultiQueryRetriever {
                 }
             }
         }
-        
+
         // Merge and deduplicate results
         let merged = self.merge_results(all_results);
-        
+
         Ok(merged)
     }
 }

@@ -1,4 +1,4 @@
-use langchain_rust::{
+use langchain_rs::{
     language_models::{llm::LLM, options::CallOptions},
     llm::{Qwen, QwenModel},
     schemas::Message,

@@ -169,7 +169,7 @@ mod tests {
         let config = LLMInitConfig::new()
             .with_model("gpt-4")
             .with_api_key("test-key");
-        
+
         assert_eq!(config.model, Some("gpt-4".to_string()));
         assert_eq!(config.api_key, Some("test-key".to_string()));
     }

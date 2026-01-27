@@ -13,9 +13,7 @@ use serde_json::json;
 use crate::schemas::Message;
 
 use super::{Middleware, MiddlewareContext, MiddlewareError};
-use crate::agent::deep_agent::skills::{
-    load_skill_full_content, match_skills, SkillMeta,
-};
+use crate::agent::deep_agent::skills::{load_skill_full_content, match_skills, SkillMeta};
 use crate::agent::runtime::RuntimeRequest;
 use crate::schemas::agent::AgentAction;
 

@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    pin::Pin,
-};
+use std::{collections::HashMap, pin::Pin};
 
 use async_stream::stream;
 use async_trait::async_trait;
@@ -164,8 +161,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // Requires GitHub token
     async fn test_github_loader() {
-        let loader = GitHubLoader::from_repo("octocat", "Hello-World")
-            .with_path("README.md");
+        let loader = GitHubLoader::from_repo("octocat", "Hello-World").with_path("README.md");
 
         let documents = loader
             .load()

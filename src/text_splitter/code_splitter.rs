@@ -45,7 +45,7 @@ impl CodeSplitterOptions {
 }
 
 /// CodeSplitter splits code based on syntax tree structure
-/// 
+///
 /// This splitter uses tree-sitter to parse code and split by
 /// functions, classes, modules, etc. Requires the `tree-sitter` feature.
 #[cfg(feature = "tree-sitter")]
@@ -74,7 +74,6 @@ impl CodeSplitter {
     pub fn with_options(language: tree_sitter::Language, options: CodeSplitterOptions) -> Self {
         Self { language, options }
     }
-    
 
     /// Create with custom chunk size
     #[cfg(feature = "tree-sitter")]
@@ -152,10 +151,7 @@ impl TextSplitter for CodeSplitter {
             let splitter = TextSplitterCodeSplitter::new(language, chunk_config)
                 .map_err(|e| TextSplitterError::CodeParseError(format!("{}", e)))?;
 
-            let chunks: Vec<String> = splitter
-                .chunks(text)
-                .map(|x| x.to_string())
-                .collect();
+            let chunks: Vec<String> = splitter.chunks(text).map(|x| x.to_string()).collect();
 
             Ok(chunks)
         }
@@ -163,7 +159,7 @@ impl TextSplitter for CodeSplitter {
         #[cfg(not(feature = "tree-sitter"))]
         {
             Err(TextSplitterError::OtherError(
-                "CodeSplitter requires the 'tree-sitter' feature to be enabled.".to_string()
+                "CodeSplitter requires the 'tree-sitter' feature to be enabled.".to_string(),
             ))
         }
     }

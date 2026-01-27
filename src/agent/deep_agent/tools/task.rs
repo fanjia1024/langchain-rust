@@ -56,11 +56,7 @@ impl Tool for TaskTool {
     }
 
     fn parameters(&self) -> Value {
-        let names: Vec<Value> = self
-            .subagents
-            .iter()
-            .map(|t| json!(t.name()))
-            .collect();
+        let names: Vec<Value> = self.subagents.iter().map(|t| json!(t.name())).collect();
         json!({
             "type": "object",
             "properties": {
@@ -93,7 +89,10 @@ impl Tool for TaskTool {
         input: Value,
         runtime: &ToolRuntime,
     ) -> Result<ToolResult, Box<dyn Error>> {
-        let subagent_id = input.get("subagent_id").and_then(Value::as_str).map(String::from);
+        let subagent_id = input
+            .get("subagent_id")
+            .and_then(Value::as_str)
+            .map(String::from);
 
         let task_input = input
             .get("input")
@@ -134,9 +133,7 @@ mod tests {
 
     #[test]
     fn test_task_tool_from_subagents() {
-        let agent = Arc::new(
-            create_agent("gpt-4o-mini", &[], Some("Test"), None).unwrap(),
-        );
+        let agent = Arc::new(create_agent("gpt-4o-mini", &[], Some("Test"), None).unwrap());
         let t1 = SubagentTool::new(
             Arc::clone(&agent),
             "researcher".to_string(),

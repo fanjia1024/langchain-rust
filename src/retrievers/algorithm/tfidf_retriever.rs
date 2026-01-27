@@ -103,10 +103,7 @@ impl TFIDFRetriever {
     }
 
     /// Calculate cosine similarity between two vectors
-    fn cosine_similarity(
-        vec1: &HashMap<String, f64>,
-        vec2: &HashMap<String, f64>,
-    ) -> f64 {
+    fn cosine_similarity(vec1: &HashMap<String, f64>, vec2: &HashMap<String, f64>) -> f64 {
         let mut dot_product = 0.0;
         let mut norm1 = 0.0;
         let mut norm2 = 0.0;
@@ -143,10 +140,7 @@ impl TFIDFRetriever {
 
 #[async_trait]
 impl Retriever for TFIDFRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Build query TF-IDF vector
         let query_tokens = Self::tokenize(query);
         let mut query_term_counts: HashMap<String, usize> = HashMap::new();
@@ -183,7 +177,8 @@ impl Retriever for TFIDFRetriever {
             if let Some(doc) = self.documents.get(doc_id) {
                 let mut doc = doc.clone();
                 // Add similarity score to metadata
-                doc.metadata.insert("tfidf_similarity".to_string(), Value::from(similarity));
+                doc.metadata
+                    .insert("tfidf_similarity".to_string(), Value::from(similarity));
                 results.push(doc);
             }
         }

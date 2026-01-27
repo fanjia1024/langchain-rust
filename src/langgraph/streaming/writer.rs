@@ -33,9 +33,9 @@ impl ChannelStreamWriter {
 #[async_trait]
 impl StreamWriter for ChannelStreamWriter {
     async fn write(&self, data: Value) -> Result<(), LangGraphError> {
-        self.sender
-            .send(data)
-            .map_err(|_| LangGraphError::StreamingError("Failed to send custom data".to_string()))?;
+        self.sender.send(data).map_err(|_| {
+            LangGraphError::StreamingError("Failed to send custom data".to_string())
+        })?;
         Ok(())
     }
 }
@@ -58,10 +58,10 @@ mod tests {
     #[tokio::test]
     async fn test_channel_stream_writer() {
         let (writer, mut receiver) = create_stream_writer();
-        
+
         let data = serde_json::json!({"test": "data"});
         writer.write(data.clone()).await.unwrap();
-        
+
         let received = receiver.recv().await.unwrap();
         assert_eq!(received, data);
     }
@@ -69,13 +69,16 @@ mod tests {
     #[tokio::test]
     async fn test_stream_writer_multiple_writes() {
         let (writer, mut receiver) = create_stream_writer();
-        
+
         writer.write(serde_json::json!({"first": 1})).await.unwrap();
-        writer.write(serde_json::json!({"second": 2})).await.unwrap();
-        
+        writer
+            .write(serde_json::json!({"second": 2}))
+            .await
+            .unwrap();
+
         let first = receiver.recv().await.unwrap();
         assert_eq!(first, serde_json::json!({"first": 1}));
-        
+
         let second = receiver.recv().await.unwrap();
         assert_eq!(second, serde_json::json!({"second": 2}));
     }

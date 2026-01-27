@@ -85,8 +85,8 @@ use crate::{
 ///
 /// ```rust,no_run
 /// use std::sync::Arc;
-/// use langchain_rust::agent::create_agent;
-/// use langchain_rust::agent::middleware::LoggingMiddleware;
+/// use langchain_rs::agent::create_agent;
+/// use langchain_rs::agent::middleware::LoggingMiddleware;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let middleware = vec![Arc::new(LoggingMiddleware::new())];
@@ -98,7 +98,7 @@ use crate::{
 /// )?;
 ///
 /// let result = agent.invoke_messages(
-///     vec![langchain_rust::schemas::Message::new_human_message("Hello")]
+///     vec![langchain_rs::schemas::Message::new_human_message("Hello")]
 /// ).await?;
 /// # Ok(())
 /// # }
@@ -109,7 +109,16 @@ pub fn create_agent(
     system_prompt: Option<&str>,
     middleware: Option<Vec<Arc<dyn Middleware>>>,
 ) -> Result<UnifiedAgent, AgentError> {
-    create_agent_with_runtime(model, tools, system_prompt, None, None, None, middleware, None)
+    create_agent_with_runtime(
+        model,
+        tools,
+        system_prompt,
+        None,
+        None,
+        None,
+        middleware,
+        None,
+    )
 }
 
 /// Create an agent with structured output support.

@@ -1,8 +1,8 @@
-use langchain_rust::langgraph::{
+use langchain_rs::langgraph::{
     function_node, interrupt, Command, InMemorySaver, LangGraphError, MessagesState,
     RunnableConfig, StateGraph, StateOrCommand, END, START,
 };
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::schemas::messages::Message;
 use std::collections::HashMap;
 
 /// Approval workflow example with interrupts

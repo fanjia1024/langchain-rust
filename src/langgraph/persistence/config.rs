@@ -22,14 +22,19 @@ impl RunnableConfig {
     /// Create a config with thread_id
     pub fn with_thread_id(thread_id: impl Into<String>) -> Self {
         let mut config = Self::new();
-        config.configurable.insert("thread_id".to_string(), Value::String(thread_id.into()));
+        config
+            .configurable
+            .insert("thread_id".to_string(), Value::String(thread_id.into()));
         config
     }
 
     /// Create a config with thread_id and checkpoint_id
     pub fn with_checkpoint(thread_id: impl Into<String>, checkpoint_id: impl Into<String>) -> Self {
         let mut config = Self::with_thread_id(thread_id);
-        config.configurable.insert("checkpoint_id".to_string(), Value::String(checkpoint_id.into()));
+        config.configurable.insert(
+            "checkpoint_id".to_string(),
+            Value::String(checkpoint_id.into()),
+        );
         config
     }
 
@@ -88,11 +93,14 @@ impl CheckpointConfig {
     }
 
     /// Create from RunnableConfig
-    pub fn from_config(config: &RunnableConfig) -> Result<Self, crate::langgraph::error::LangGraphError> {
-        let thread_id = config.get_thread_id()
-            .ok_or_else(|| crate::langgraph::error::LangGraphError::ExecutionError(
-                "thread_id is required in config".to_string()
-            ))?;
+    pub fn from_config(
+        config: &RunnableConfig,
+    ) -> Result<Self, crate::langgraph::error::LangGraphError> {
+        let thread_id = config.get_thread_id().ok_or_else(|| {
+            crate::langgraph::error::LangGraphError::ExecutionError(
+                "thread_id is required in config".to_string(),
+            )
+        })?;
 
         Ok(Self {
             thread_id,
@@ -122,6 +130,9 @@ mod tests {
         let runnable_config = RunnableConfig::with_checkpoint("thread-1", "checkpoint-1");
         let checkpoint_config = CheckpointConfig::from_config(&runnable_config).unwrap();
         assert_eq!(checkpoint_config.thread_id, "thread-1");
-        assert_eq!(checkpoint_config.checkpoint_id, Some("checkpoint-1".to_string()));
+        assert_eq!(
+            checkpoint_config.checkpoint_id,
+            Some("checkpoint-1".to_string())
+        );
     }
 }

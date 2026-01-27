@@ -8,27 +8,24 @@ use futures::Stream;
 use super::{
     edge::{Edge, END, START},
     error::LangGraphError,
+    execution::{
+        durability::DurabilityMode, scheduler::NodeScheduler, superstep::SuperStepExecutor,
+    },
+    interrupts::{
+        set_interrupt_context, Interrupt, InterruptContext, InvokeResult, StateOrCommand,
+    },
     node::Node,
-    state::{State, StateUpdate},
     persistence::{
         checkpointer::CheckpointerBox,
         config::{CheckpointConfig, RunnableConfig},
         snapshot::StateSnapshot,
         store::StoreBox,
     },
-    execution::{
-        durability::DurabilityMode,
-        scheduler::NodeScheduler,
-        superstep::SuperStepExecutor,
-    },
+    state::{State, StateUpdate},
     streaming::{
-        mode::StreamMode,
         chunk::StreamChunk,
-        metadata::{MessageMetadata, MessageChunk},
-    },
-    interrupts::{
-        Interrupt, InterruptContext,
-        InvokeResult, StateOrCommand, set_interrupt_context,
+        metadata::{MessageChunk, MessageMetadata},
+        mode::StreamMode,
     },
 };
 
@@ -111,7 +108,7 @@ impl<S: State + 'static> CompiledGraph<S> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_rust::langgraph::{CompiledGraph, MessagesState};
+    /// use langchain_rs::langgraph::{CompiledGraph, MessagesState};
     ///
     /// let graph: CompiledGraph<MessagesState> = // ... create graph
     /// let initial_state = MessagesState::new();
@@ -173,9 +170,10 @@ impl<S: State + 'static> CompiledGraph<S> {
             }
 
             // Execute the current node
-            let node = self.nodes.get(&current_node).ok_or_else(|| {
-                LangGraphError::NodeNotFound(current_node.clone())
-            })?;
+            let node = self
+                .nodes
+                .get(&current_node)
+                .ok_or_else(|| LangGraphError::NodeNotFound(current_node.clone()))?;
 
             // Use invoke for basic invoke method (no config/store available)
             let update = node.invoke(&current_state).await?;
@@ -215,44 +213,46 @@ impl<S: State + 'static> CompiledGraph<S> {
         // For other state types, we'll need to serialize/deserialize
         // This is a limitation of the current design - in a full implementation,
         // we'd have a StateUpdate trait or similar
-        
+
         // Convert state to JSON to check if it's MessagesState-like
-        let state_json = serde_json::to_value(state)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
+
         // If state has "messages" field, treat it as MessagesState
         if state_json.get("messages").is_some() {
             // This is a workaround - we need to handle MessagesState specially
             // In practice, we'd use specialization or a different approach
             return self.merge_messages_state_update(state, update);
         }
-        
+
         // For other state types, create a new state from the update and merge
         // This requires the state to be serializable/deserializable
-        let update_json = serde_json::to_value(update)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let update_json =
+            serde_json::to_value(update).map_err(LangGraphError::SerializationError)?;
+
         // Try to deserialize update as state and merge
         // This is a simplified approach
-        let update_state: S = serde_json::from_value(update_json.clone())
-            .map_err(|_| LangGraphError::StateMergeError(
-                "Cannot deserialize update as state".to_string()
-            ))?;
-        
+        let update_state: S = serde_json::from_value(update_json.clone()).map_err(|_| {
+            LangGraphError::StateMergeError("Cannot deserialize update as state".to_string())
+        })?;
+
         Ok(state.merge(&update_state))
     }
 
     /// Merge update for MessagesState (specialized handling)
-    fn merge_messages_state_update(&self, state: &S, update: &StateUpdate) -> Result<S, LangGraphError> {
-        use super::state::{MessagesState, apply_update_to_messages_state};
-        
+    fn merge_messages_state_update(
+        &self,
+        state: &S,
+        update: &StateUpdate,
+    ) -> Result<S, LangGraphError> {
+        use super::state::{apply_update_to_messages_state, MessagesState};
+
         // Try to convert state to MessagesState
-        let state_json = serde_json::to_value(state)
-            .map_err(LangGraphError::SerializationError)?;
-        
-        let messages_state: MessagesState = if let Some(messages_value) = state_json.get("messages") {
+        let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
+
+        let messages_state: MessagesState = if let Some(messages_value) = state_json.get("messages")
+        {
             if let Ok(messages) = serde_json::from_value::<Vec<crate::schemas::messages::Message>>(
-                messages_value.clone()
+                messages_value.clone(),
             ) {
                 MessagesState::with_messages(messages)
             } else {
@@ -261,15 +261,14 @@ impl<S: State + 'static> CompiledGraph<S> {
         } else {
             MessagesState::new()
         };
-        
+
         // Apply update
         let updated_state = apply_update_to_messages_state(&messages_state, update);
-        
+
         // Convert back to S
-        let updated_json = serde_json::to_value(&updated_state)
-            .map_err(LangGraphError::SerializationError)?;
-        serde_json::from_value(updated_json)
-            .map_err(LangGraphError::SerializationError)
+        let updated_json =
+            serde_json::to_value(&updated_state).map_err(LangGraphError::SerializationError)?;
+        serde_json::from_value(updated_json).map_err(LangGraphError::SerializationError)
     }
 
     /// Stream the graph execution, yielding events as they occur
@@ -299,7 +298,7 @@ impl<S: State + 'static> CompiledGraph<S> {
     ) -> Pin<Box<dyn Stream<Item = StreamEvent<S>> + Send + 'a>> {
         self.stream_internal(initial_state, options.stream_modes, options.subgraphs)
     }
-    
+
     /// Internal stream method with optional stream modes and subgraphs support
     fn stream_internal<'a>(
         &'a self,
@@ -401,28 +400,28 @@ impl<S: State + 'static> CompiledGraph<S> {
 
                 // Check if this is a subgraph node and subgraphs streaming is enabled
                 let is_subgraph = subgraphs && node.get_subgraph().is_some();
-                
+
                 // Check if we need to stream LLM tokens
                 let needs_message_streaming = stream_modes.as_ref()
                     .map(|modes| modes.contains(&StreamMode::Messages))
                     .unwrap_or(false);
-                
+
                 let update = if is_subgraph {
                     // This is a subgraph node - stream its execution
                     let subgraph = node.get_subgraph().unwrap();
                     let subgraph_path = vec![current_node.clone()]; // Path prefix for subgraph events
-                    
+
                     // Create stream options for subgraph
                     let subgraph_options = StreamOptions {
                         stream_modes: stream_modes.clone(),
                         subgraphs: subgraphs, // Recursively enable subgraphs
                     };
-                    
+
                     // Stream subgraph execution
                     use futures::StreamExt;
                     let mut subgraph_stream = subgraph.stream_with_options(current_state.clone(), subgraph_options);
                     let mut final_state = current_state.clone();
-                    
+
                     while let Some(sub_event) = subgraph_stream.next().await {
                         match sub_event {
                             StreamEvent::NodeStart { node: sub_node, state, path: sub_path, .. } => {
@@ -430,7 +429,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 let mut full_path = subgraph_path.clone();
                                 full_path.extend(sub_path);
                                 full_path.push(sub_node.clone());
-                                
+
                                 yield StreamEvent::NodeStart {
                                     node: sub_node,
                                     state,
@@ -442,14 +441,14 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 let mut full_path = subgraph_path.clone();
                                 full_path.extend(sub_path);
                                 full_path.push(sub_node.clone());
-                                
+
                                 yield StreamEvent::NodeEnd {
                                     node: sub_node,
                                     state: state.clone(),
                                     update: sub_update,
                                     path: full_path,
                                 };
-                                
+
                                 // Update final state
                                 final_state = state;
                             }
@@ -458,7 +457,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 let mut full_path = subgraph_path.clone();
                                 full_path.extend(sub_path);
                                 full_path.push(sub_node.clone());
-                                
+
                                 yield StreamEvent::MessageChunk {
                                     node: sub_node,
                                     chunk,
@@ -471,7 +470,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 let mut full_path = subgraph_path.clone();
                                 full_path.extend(sub_path);
                                 full_path.push(sub_node.clone());
-                                
+
                                 yield StreamEvent::CustomData {
                                     node: sub_node,
                                     data,
@@ -488,7 +487,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                             }
                         }
                     }
-                    
+
                     // Convert final state to update
                     let state_json = match serde_json::to_value(&final_state) {
                         Ok(json) => json,
@@ -499,7 +498,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                             return;
                         }
                     };
-                    
+
                     let mut update = HashMap::new();
                     if let serde_json::Value::Object(map) = state_json {
                         for (key, value) in map {
@@ -520,7 +519,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 return;
                             }
                         };
-                        
+
                         let messages: Vec<crate::schemas::messages::Message> = if let Some(messages_value) = state_json.get("messages") {
                             match serde_json::from_value(messages_value.clone()) {
                                 Ok(msgs) => msgs,
@@ -545,16 +544,16 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 return;
                             }
                         };
-                        
+
                         use futures::StreamExt;
                         let mut full_content = String::new();
                         let metadata = MessageMetadata::new(current_node.clone());
-                        
+
                         while let Some(chunk_result) = stream_result.next().await {
                             match chunk_result {
                                 Ok(stream_data) => {
                                     full_content.push_str(&stream_data.content);
-                                    
+
                                     // Yield message chunk event
                                     yield StreamEvent::MessageChunk {
                                         node: current_node.clone(),
@@ -571,7 +570,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                                 }
                             }
                         }
-                        
+
                         // Create state update with full content
                         let ai_message = crate::schemas::messages::Message::new_ai_message(&full_content);
                         let mut update = HashMap::new();
@@ -696,7 +695,7 @@ impl<S: State + 'static> CompiledGraph<S> {
         Box::pin(stream! {
             use futures::StreamExt;
             let mut event_stream = event_stream;
-            
+
             while let Some(event) = event_stream.next().await {
                 if let Some(chunk) = Self::convert_event_to_chunk(&event, mode) {
                     yield chunk;
@@ -732,7 +731,7 @@ impl<S: State + 'static> CompiledGraph<S> {
         Box::pin(stream! {
             use futures::StreamExt;
             let mut event_stream = event_stream;
-            
+
             while let Some(event) = event_stream.next().await {
                 for mode in &modes {
                     if let Some(chunk) = Self::convert_event_to_chunk(&event, *mode) {
@@ -746,16 +745,18 @@ impl<S: State + 'static> CompiledGraph<S> {
     /// Convert a StreamEvent to a StreamChunk based on the stream mode
     fn convert_event_to_chunk(event: &StreamEvent<S>, mode: StreamMode) -> Option<StreamChunk<S>> {
         use super::streaming::metadata::DebugInfo;
-        
+
         match (event, mode) {
             // Values mode: extract full state from NodeEnd
-            (StreamEvent::NodeEnd { state, .. }, StreamMode::Values) => {
-                Some(StreamChunk::Values { state: state.clone() })
-            }
+            (StreamEvent::NodeEnd { state, .. }, StreamMode::Values) => Some(StreamChunk::Values {
+                state: state.clone(),
+            }),
             (StreamEvent::GraphEnd { final_state }, StreamMode::Values) => {
-                Some(StreamChunk::Values { state: final_state.clone() })
+                Some(StreamChunk::Values {
+                    state: final_state.clone(),
+                })
             }
-            
+
             // Updates mode: extract update from NodeEnd
             (StreamEvent::NodeEnd { node, update, .. }, StreamMode::Updates) => {
                 Some(StreamChunk::Updates {
@@ -763,14 +764,17 @@ impl<S: State + 'static> CompiledGraph<S> {
                     update: update.clone(),
                 })
             }
-            
+
             // Messages mode: extract from MessageChunk event
-            (StreamEvent::MessageChunk { chunk, metadata, .. }, StreamMode::Messages) => {
-                Some(StreamChunk::Messages {
-                    chunk: MessageChunk::new(chunk.clone(), metadata.clone()),
-                })
-            }
-            
+            (
+                StreamEvent::MessageChunk {
+                    chunk, metadata, ..
+                },
+                StreamMode::Messages,
+            ) => Some(StreamChunk::Messages {
+                chunk: MessageChunk::new(chunk.clone(), metadata.clone()),
+            }),
+
             // Custom mode: extract from CustomData event
             (StreamEvent::CustomData { node, data, .. }, StreamMode::Custom) => {
                 Some(StreamChunk::Custom {
@@ -778,34 +782,52 @@ impl<S: State + 'static> CompiledGraph<S> {
                     data: data.clone(),
                 })
             }
-            
+
             // Debug mode: convert all events to debug info
             (_, StreamMode::Debug) => {
                 let debug_info = match event {
                     StreamEvent::NodeStart { node, .. } => {
                         DebugInfo::with_node("NodeStart", node.clone())
                     }
-                    StreamEvent::NodeEnd { node, state, update,  .. } => {
+                    StreamEvent::NodeEnd {
+                        node,
+                        state,
+                        update,
+                        ..
+                    } => {
                         let mut info = DebugInfo::with_node("NodeEnd", node.clone());
-                        info = info.with_info("state".to_string(), serde_json::to_value(state).ok()?);
-                        info = info.with_info("update".to_string(), serde_json::to_value(update).ok()?);
+                        info =
+                            info.with_info("state".to_string(), serde_json::to_value(state).ok()?);
+                        info = info
+                            .with_info("update".to_string(), serde_json::to_value(update).ok()?);
                         info
                     }
                     StreamEvent::GraphEnd { final_state } => {
                         let mut info = DebugInfo::new("GraphEnd");
-                        info = info.with_info("final_state".to_string(), serde_json::to_value(final_state).ok()?);
+                        info = info.with_info(
+                            "final_state".to_string(),
+                            serde_json::to_value(final_state).ok()?,
+                        );
                         info
                     }
-                    StreamEvent::Error { error } => {
-                        DebugInfo::new("Error").with_info("error".to_string(), serde_json::json!(error.to_string()))
-                    }
-                    StreamEvent::MessageChunk { node, chunk, metadata,  .. } => {
+                    StreamEvent::Error { error } => DebugInfo::new("Error")
+                        .with_info("error".to_string(), serde_json::json!(error.to_string())),
+                    StreamEvent::MessageChunk {
+                        node,
+                        chunk,
+                        metadata,
+                        ..
+                    } => {
                         let mut info = DebugInfo::with_node("MessageChunk", node.clone());
-                        info = info.with_info("chunk".to_string(), serde_json::to_value(chunk).ok()?);
-                        info = info.with_info("metadata".to_string(), serde_json::to_value(metadata).ok()?);
+                        info =
+                            info.with_info("chunk".to_string(), serde_json::to_value(chunk).ok()?);
+                        info = info.with_info(
+                            "metadata".to_string(),
+                            serde_json::to_value(metadata).ok()?,
+                        );
                         info
                     }
-                    StreamEvent::CustomData { node, data,  .. } => {
+                    StreamEvent::CustomData { node, data, .. } => {
                         let mut info = DebugInfo::with_node("CustomData", node.clone());
                         info = info.with_info("data".to_string(), data.clone());
                         info
@@ -813,7 +835,7 @@ impl<S: State + 'static> CompiledGraph<S> {
                 };
                 Some(StreamChunk::Debug { info: debug_info })
             }
-            
+
             // Other combinations don't match
             _ => None,
         }
@@ -853,27 +875,38 @@ impl<S: State + 'static> CompiledGraph<S> {
                 let checkpoint_config = CheckpointConfig::from_config(config)?;
                 if checkpoint_config.checkpoint_id.is_none() {
                     return Err(LangGraphError::ExecutionError(
-                        "Cannot resume: initial_state is None but no checkpoint_id provided".to_string()
+                        "Cannot resume: initial_state is None but no checkpoint_id provided"
+                            .to_string(),
                     ));
                 }
                 // Convert to StateOrCommand::State by loading from checkpoint
                 // This will be handled in invoke_with_config_interrupt
                 let checkpointer = self.checkpointer.as_ref().ok_or_else(|| {
                     LangGraphError::ExecutionError(
-                        "Checkpointer is required to resume from checkpoint".to_string()
+                        "Checkpointer is required to resume from checkpoint".to_string(),
                     )
                 })?;
                 let snapshot = checkpointer
-                    .get(&checkpoint_config.thread_id, checkpoint_config.checkpoint_id.as_deref())
+                    .get(
+                        &checkpoint_config.thread_id,
+                        checkpoint_config.checkpoint_id.as_deref(),
+                    )
                     .await
-                    .map_err(|e| LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e)))?;
+                    .map_err(|e| {
+                        LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e))
+                    })?;
                 let snapshot = snapshot.ok_or_else(|| {
-                    LangGraphError::ExecutionError(format!("Checkpoint not found: {:?}", checkpoint_config.checkpoint_id))
+                    LangGraphError::ExecutionError(format!(
+                        "Checkpoint not found: {:?}",
+                        checkpoint_config.checkpoint_id
+                    ))
                 })?;
                 StateOrCommand::State(snapshot.values)
             }
         };
-        let result = self.invoke_with_config_interrupt(state_or_command, config).await?;
+        let result = self
+            .invoke_with_config_interrupt(state_or_command, config)
+            .await?;
         Ok(result.state)
     }
 
@@ -901,7 +934,7 @@ impl<S: State + 'static> CompiledGraph<S> {
         // Check if checkpointer is available (required for interrupts)
         let checkpointer = self.checkpointer.as_ref().ok_or_else(|| {
             LangGraphError::ExecutionError(
-                "Checkpointer is required for interrupt support".to_string()
+                "Checkpointer is required for interrupt support".to_string(),
             )
         })?;
 
@@ -910,16 +943,25 @@ impl<S: State + 'static> CompiledGraph<S> {
             StateOrCommand::State(state) => {
                 // Regular state input
                 // Check if we should load from checkpoint (time-travel)
-                let (state, parent) = if let Some(checkpoint_id) = &checkpoint_config.checkpoint_id {
+                let (state, parent) = if let Some(checkpoint_id) = &checkpoint_config.checkpoint_id
+                {
                     let snapshot = checkpointer
                         .get(thread_id, Some(checkpoint_id))
                         .await
-                        .map_err(|e| LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e)))?;
-                    
+                        .map_err(|e| {
+                            LangGraphError::ExecutionError(format!(
+                                "Failed to load checkpoint: {}",
+                                e
+                            ))
+                        })?;
+
                     let snapshot = snapshot.ok_or_else(|| {
-                        LangGraphError::ExecutionError(format!("Checkpoint not found: {}", checkpoint_id))
+                        LangGraphError::ExecutionError(format!(
+                            "Checkpoint not found: {}",
+                            checkpoint_id
+                        ))
                     })?;
-                    
+
                     // Record parent config for fork tracking
                     let parent = Some(snapshot.config.clone());
                     (snapshot.values, parent)
@@ -931,13 +973,15 @@ impl<S: State + 'static> CompiledGraph<S> {
             StateOrCommand::Command(cmd) => {
                 // Command input - resume from checkpoint
                 // Get the latest checkpoint
-                let snapshot = checkpointer
-                    .get(thread_id, None)
-                    .await
-                    .map_err(|e| LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e)))?;
-                
+                let snapshot = checkpointer.get(thread_id, None).await.map_err(|e| {
+                    LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e))
+                })?;
+
                 let snapshot = snapshot.ok_or_else(|| {
-                    LangGraphError::ExecutionError(format!("No checkpoint found for thread: {}", thread_id))
+                    LangGraphError::ExecutionError(format!(
+                        "No checkpoint found for thread: {}",
+                        thread_id
+                    ))
                 })?;
 
                 // Extract resume values from command
@@ -964,11 +1008,12 @@ impl<S: State + 'static> CompiledGraph<S> {
         let mut checkpoint_config = checkpoint_config.clone();
         if let Some(ref _parent) = parent_config {
             checkpoint_config.checkpoint_id = None; // Clear checkpoint_id to create new fork
-            // Store parent in the checkpoint when saving
+                                                    // Store parent in the checkpoint when saving
         }
 
         // Create RunnableConfig from checkpoint_config for nodes
-        let mut runnable_config = RunnableConfig::with_thread_id(checkpoint_config.thread_id.clone());
+        let mut runnable_config =
+            RunnableConfig::with_thread_id(checkpoint_config.thread_id.clone());
         if let Some(checkpoint_id) = &checkpoint_config.checkpoint_id {
             runnable_config.configurable.insert(
                 "checkpoint_id".to_string(),
@@ -984,8 +1029,10 @@ impl<S: State + 'static> CompiledGraph<S> {
                 parent_config.as_ref(),
                 Some(&runnable_config),
                 self.store.clone(),
-            ).await
-        }).await;
+            )
+            .await
+        })
+        .await;
 
         result
     }
@@ -1047,13 +1094,16 @@ impl<S: State + 'static> CompiledGraph<S> {
             }
 
             // Execute the current node
-            let node = self.nodes.get(&current_node).ok_or_else(|| {
-                LangGraphError::NodeNotFound(current_node.clone())
-            })?;
+            let node = self
+                .nodes
+                .get(&current_node)
+                .ok_or_else(|| LangGraphError::NodeNotFound(current_node.clone()))?;
 
             // Execute node and handle interrupts
             // Use invoke_with_context to support config and store
-            let update_result = node.invoke_with_context(&current_state, config, store.clone()).await;
+            let update_result = node
+                .invoke_with_context(&current_state, config, store.clone())
+                .await;
 
             match update_result {
                 Ok(update) => {
@@ -1088,14 +1138,14 @@ impl<S: State + 'static> CompiledGraph<S> {
                             .put(checkpoint_config.thread_id.as_str(), &snapshot)
                             .await
                             .map_err(|e| {
-                                LangGraphError::ExecutionError(format!("Failed to save checkpoint: {}", e))
+                                LangGraphError::ExecutionError(format!(
+                                    "Failed to save checkpoint: {}",
+                                    e
+                                ))
                             })?;
                     }
 
-                    return Ok(InvokeResult::with_interrupt(
-                        current_state,
-                        vec![interrupt],
-                    ));
+                    return Ok(InvokeResult::with_interrupt(current_state, vec![interrupt]));
                 }
                 Err(e) => {
                     // Other error
@@ -1153,10 +1203,20 @@ impl<S: State + 'static> CompiledGraph<S> {
                         let snapshot = checkpointer
                             .get(thread_id, Some(checkpoint_id))
                             .await
-                            .map_err(|e| LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e)))?;
-                        
+                            .map_err(|e| {
+                                LangGraphError::ExecutionError(format!(
+                                    "Failed to load checkpoint: {}",
+                                    e
+                                ))
+                            })?;
+
                         snapshot
-                            .ok_or_else(|| LangGraphError::ExecutionError(format!("Checkpoint not found: {}", checkpoint_id)))?
+                            .ok_or_else(|| {
+                                LangGraphError::ExecutionError(format!(
+                                    "Checkpoint not found: {}",
+                                    checkpoint_id
+                                ))
+                            })?
                             .values
                     } else {
                         return Err(LangGraphError::ExecutionError(
@@ -1174,10 +1234,20 @@ impl<S: State + 'static> CompiledGraph<S> {
                         let snapshot = checkpointer
                             .get(thread_id, Some(checkpoint_id))
                             .await
-                            .map_err(|e| LangGraphError::ExecutionError(format!("Failed to load checkpoint: {}", e)))?;
-                        
+                            .map_err(|e| {
+                                LangGraphError::ExecutionError(format!(
+                                    "Failed to load checkpoint: {}",
+                                    e
+                                ))
+                            })?;
+
                         snapshot
-                            .ok_or_else(|| LangGraphError::ExecutionError(format!("Checkpoint not found: {}", checkpoint_id)))?
+                            .ok_or_else(|| {
+                                LangGraphError::ExecutionError(format!(
+                                    "Checkpoint not found: {}",
+                                    checkpoint_id
+                                ))
+                            })?
                             .values
                     } else {
                         return Err(LangGraphError::ExecutionError(
@@ -1186,7 +1256,8 @@ impl<S: State + 'static> CompiledGraph<S> {
                     }
                 } else {
                     return Err(LangGraphError::ExecutionError(
-                        "Cannot resume: initial_state is None but no checkpoint_id provided".to_string()
+                        "Cannot resume: initial_state is None but no checkpoint_id provided"
+                            .to_string(),
                     ));
                 }
             }
@@ -1214,13 +1285,15 @@ impl<S: State + 'static> CompiledGraph<S> {
         new_checkpoint_config.checkpoint_id = None;
 
         // Pass config and store to executor for nodes to access
-        executor.execute(
-            current_state,
-            &new_checkpoint_config,
-            parent_config.as_ref(),
-            Some(config), // Pass config to nodes
-            self.store.clone(), // Pass store to nodes
-        ).await
+        executor
+            .execute(
+                current_state,
+                &new_checkpoint_config,
+                parent_config.as_ref(),
+                Some(config),       // Pass config to nodes
+                self.store.clone(), // Pass store to nodes
+            )
+            .await
     }
 
     /// Stream the graph execution with config and stream mode
@@ -1276,11 +1349,11 @@ impl<S: State + 'static> CompiledGraph<S> {
             None
         };
         let event_stream = self.stream_internal(current_state, stream_modes, false);
-        
+
         Box::pin(stream! {
             use futures::StreamExt;
             let mut event_stream = event_stream;
-            
+
             while let Some(event) = event_stream.next().await {
                 if let Some(chunk) = Self::convert_event_to_chunk(&event, mode) {
                     yield chunk;
@@ -1327,10 +1400,9 @@ impl<S: State + 'static> CompiledGraph<S> {
             LangGraphError::ExecutionError("Checkpointer not configured".to_string())
         })?;
 
-        checkpointer
-            .list(thread_id, None)
-            .await
-            .map_err(|e| LangGraphError::ExecutionError(format!("Failed to get state history: {}", e)))
+        checkpointer.list(thread_id, None).await.map_err(|e| {
+            LangGraphError::ExecutionError(format!("Failed to get state history: {}", e))
+        })
     }
 
     /// Update the state for a thread
@@ -1375,7 +1447,9 @@ impl<S: State + 'static> CompiledGraph<S> {
 
         // Update metadata
         if let Some(node) = as_node {
-            new_snapshot.metadata.insert("as_node".to_string(), serde_json::json!(node));
+            new_snapshot
+                .metadata
+                .insert("as_node".to_string(), serde_json::json!(node));
         }
 
         // Save updated checkpoint
@@ -1386,7 +1460,9 @@ impl<S: State + 'static> CompiledGraph<S> {
         let checkpoint_id = checkpointer
             .put(new_snapshot.thread_id(), &new_snapshot)
             .await
-            .map_err(|e| LangGraphError::ExecutionError(format!("Failed to update state: {}", e)))?;
+            .map_err(|e| {
+                LangGraphError::ExecutionError(format!("Failed to update state: {}", e))
+            })?;
 
         // Update snapshot with new checkpoint_id
         new_snapshot.config.checkpoint_id = Some(checkpoint_id);
@@ -1442,9 +1518,7 @@ pub enum StreamEvent<S: State> {
         path: Vec<String>,
     },
     /// The graph has completed execution
-    GraphEnd {
-        final_state: S,
-    },
+    GraphEnd { final_state: S },
     /// An error occurred during execution
     Error {
         error: std::sync::Arc<LangGraphError>,
@@ -1475,51 +1549,65 @@ mod tests {
     #[tokio::test]
     async fn test_invoke_simple_graph() {
         let mut graph = StateGraph::<MessagesState>::new();
-        
-        graph.add_node("node1", function_node("node1", |_state| async move {
-            let mut update = HashMap::new();
-            update.insert(
-                "messages".to_string(),
-                serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message("Hello")])?,
-            );
-            Ok(update)
-        })).unwrap();
-        
+
+        graph
+            .add_node(
+                "node1",
+                function_node("node1", |_state| async move {
+                    let mut update = HashMap::new();
+                    update.insert(
+                        "messages".to_string(),
+                        serde_json::to_value(vec![
+                            crate::schemas::messages::Message::new_ai_message("Hello"),
+                        ])?,
+                    );
+                    Ok(update)
+                }),
+            )
+            .unwrap();
+
         graph.add_edge(START, "node1");
         graph.add_edge("node1", END);
-        
+
         let compiled = graph.compile().unwrap();
         let initial_state = MessagesState::new();
         let result = compiled.invoke(initial_state).await;
-        
+
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_stream_simple_graph() {
         let mut graph = StateGraph::<MessagesState>::new();
-        
-        graph.add_node("node1", function_node("node1", |_state| async move {
-            let mut update = HashMap::new();
-            update.insert(
-                "messages".to_string(),
-                serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message("Hello")])?,
-            );
-            Ok(update)
-        })).unwrap();
-        
+
+        graph
+            .add_node(
+                "node1",
+                function_node("node1", |_state| async move {
+                    let mut update = HashMap::new();
+                    update.insert(
+                        "messages".to_string(),
+                        serde_json::to_value(vec![
+                            crate::schemas::messages::Message::new_ai_message("Hello"),
+                        ])?,
+                    );
+                    Ok(update)
+                }),
+            )
+            .unwrap();
+
         graph.add_edge(START, "node1");
         graph.add_edge("node1", END);
-        
+
         let compiled = graph.compile().unwrap();
         let initial_state = MessagesState::new();
         let mut stream = compiled.stream(initial_state);
-        
+
         let mut events = Vec::new();
         while let Some(event) = stream.next().await {
             events.push(event);
         }
-        
+
         // Should have at least NodeStart, NodeEnd, and GraphEnd events
         assert!(events.len() >= 3);
     }

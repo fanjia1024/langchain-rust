@@ -9,11 +9,7 @@ use uuid::Uuid;
 
 use crate::langgraph::state::State;
 
-use super::{
-    checkpointer::Checkpointer,
-    error::PersistenceError,
-    snapshot::StateSnapshot,
-};
+use super::{checkpointer::Checkpointer, error::PersistenceError, snapshot::StateSnapshot};
 
 /// In-memory checkpointer implementation
 ///
@@ -45,20 +41,23 @@ impl<S: State> Checkpointer<S> for InMemorySaver<S> {
         thread_id: &str,
         checkpoint: &StateSnapshot<S>,
     ) -> Result<String, PersistenceError> {
-        let checkpoint_id = checkpoint
-            .checkpoint_id()
-            .cloned()
-            .unwrap_or_else(|| {
-                #[cfg(feature = "uuid")]
-                {
-                    Uuid::new_v4().to_string()
-                }
-                #[cfg(not(feature = "uuid"))]
-                {
-                    use std::time::{SystemTime, UNIX_EPOCH};
-                    format!("checkpoint-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos())
-                }
-            });
+        let checkpoint_id = checkpoint.checkpoint_id().cloned().unwrap_or_else(|| {
+            #[cfg(feature = "uuid")]
+            {
+                Uuid::new_v4().to_string()
+            }
+            #[cfg(not(feature = "uuid"))]
+            {
+                use std::time::{SystemTime, UNIX_EPOCH};
+                format!(
+                    "checkpoint-{}",
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_nanos()
+                )
+            }
+        });
 
         let mut checkpoints = self.checkpoints.write().await;
 
@@ -93,13 +92,11 @@ impl<S: State> Checkpointer<S> for InMemorySaver<S> {
             // Find specific checkpoint
             thread_checkpoints
                 .iter()
-                .find(|cp| {
-                match (cp.checkpoint_id().as_deref(), checkpoint_id) {
+                .find(|cp| match (cp.checkpoint_id().as_deref(), checkpoint_id) {
                     (Some(a), Some(b)) => a == b,
                     (None, None) => true,
                     _ => false,
-                }
-            })
+                })
                 .cloned()
         } else {
             // Return latest checkpoint
@@ -137,9 +134,9 @@ impl<S: State> Checkpointer<S> for InMemorySaver<S> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::config::CheckpointConfig;
     use super::*;
     use crate::langgraph::state::MessagesState;
-    use super::super::config::CheckpointConfig;
 
     #[tokio::test]
     async fn test_in_memory_saver() {

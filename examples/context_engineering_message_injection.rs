@@ -4,7 +4,7 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use langchain_rust::{
+use langchain_rs::{
     agent::{
         context_engineering::middleware::{InjectionPosition, MessageInjectionMiddleware},
         create_agent, AgentState,

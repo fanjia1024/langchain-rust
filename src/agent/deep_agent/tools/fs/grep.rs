@@ -124,9 +124,11 @@ impl Tool for GrepTool {
                 .grep_raw(query, path_str.map(|s| s as &str), file_pattern)
                 .await
                 .map_err(|e| e.to_string())?;
-            let files: std::collections::HashSet<String> = matches.iter().map(|m| m.path.clone()).collect();
+            let files: std::collections::HashSet<String> =
+                matches.iter().map(|m| m.path.clone()).collect();
             let files_with_matches: Vec<String> = files.into_iter().collect();
-            let mut count_per_file: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+            let mut count_per_file: std::collections::HashMap<String, usize> =
+                std::collections::HashMap::new();
             for m in &matches {
                 *count_per_file.entry(m.path.clone()).or_insert(0) += 1;
             }
@@ -188,12 +190,7 @@ impl Tool for GrepTool {
                 if line.contains(query) {
                     count += 1;
                     if matches!(mode, GrepMode::Content) {
-                        content_lines.push(format!(
-                            "{}:{}: {}",
-                            rel,
-                            line_num + 1,
-                            line.trim()
-                        ));
+                        content_lines.push(format!("{}:{}: {}", rel, line_num + 1, line.trim()));
                     }
                 }
             }

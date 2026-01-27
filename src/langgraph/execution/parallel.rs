@@ -3,11 +3,8 @@ use std::collections::HashMap;
 use crate::langgraph::{
     error::LangGraphError,
     node::Node,
+    persistence::{config::RunnableConfig, store::StoreBox},
     state::{State, StateUpdate},
-    persistence::{
-        config::RunnableConfig,
-        store::StoreBox,
-    },
 };
 
 /// Execute multiple nodes in parallel
@@ -35,8 +32,8 @@ pub async fn execute_nodes_parallel<S: State>(
             let store = store.clone();
 
             async move {
-                let node = node_opt
-                    .ok_or_else(|| LangGraphError::NodeNotFound(node_name.clone()))?;
+                let node =
+                    node_opt.ok_or_else(|| LangGraphError::NodeNotFound(node_name.clone()))?;
                 let update = node.invoke_with_context(&state, config, store).await?;
                 Ok::<(String, StateUpdate), LangGraphError>((node_name, update))
             }
@@ -82,26 +79,20 @@ pub fn merge_state_updates<S: State>(
 }
 
 /// Merge a single state update
-fn merge_single_update<S: State>(
-    state: &S,
-    update: &StateUpdate,
-) -> Result<S, LangGraphError> {
+fn merge_single_update<S: State>(state: &S, update: &StateUpdate) -> Result<S, LangGraphError> {
     // Try to handle MessagesState specially
-    let state_json = serde_json::to_value(state)
-        .map_err(LangGraphError::SerializationError)?;
+    let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
 
     if state_json.get("messages").is_some() {
         return merge_messages_state_update(state, update);
     }
 
     // For other state types, create a new state from the update and merge
-    let update_json = serde_json::to_value(update)
-        .map_err(LangGraphError::SerializationError)?;
+    let update_json = serde_json::to_value(update).map_err(LangGraphError::SerializationError)?;
 
-    let update_state: S = serde_json::from_value(update_json.clone())
-        .map_err(|_| LangGraphError::ExecutionError(
-            "Cannot deserialize update as state".to_string()
-        ))?;
+    let update_state: S = serde_json::from_value(update_json.clone()).map_err(|_| {
+        LangGraphError::ExecutionError("Cannot deserialize update as state".to_string())
+    })?;
 
     Ok(state.merge(&update_state))
 }
@@ -111,15 +102,14 @@ fn merge_messages_state_update<S: State>(
     state: &S,
     update: &StateUpdate,
 ) -> Result<S, LangGraphError> {
-    use crate::langgraph::state::{MessagesState, apply_update_to_messages_state};
+    use crate::langgraph::state::{apply_update_to_messages_state, MessagesState};
 
-    let state_json = serde_json::to_value(state)
-        .map_err(LangGraphError::SerializationError)?;
+    let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
 
     let messages_state: MessagesState = if let Some(messages_value) = state_json.get("messages") {
-        if let Ok(messages) = serde_json::from_value::<Vec<crate::schemas::messages::Message>>(
-            messages_value.clone()
-        ) {
+        if let Ok(messages) =
+            serde_json::from_value::<Vec<crate::schemas::messages::Message>>(messages_value.clone())
+        {
             MessagesState::with_messages(messages)
         } else {
             MessagesState::new()
@@ -130,10 +120,9 @@ fn merge_messages_state_update<S: State>(
 
     let updated_state = apply_update_to_messages_state(&messages_state, update);
 
-    let updated_json = serde_json::to_value(&updated_state)
-        .map_err(LangGraphError::SerializationError)?;
-    serde_json::from_value(updated_json)
-        .map_err(LangGraphError::SerializationError)
+    let updated_json =
+        serde_json::to_value(&updated_state).map_err(LangGraphError::SerializationError)?;
+    serde_json::from_value(updated_json).map_err(LangGraphError::SerializationError)
 }
 
 #[cfg(test)]
@@ -150,7 +139,9 @@ mod tests {
                 let mut update = HashMap::new();
                 update.insert(
                     "messages".to_string(),
-                    serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message("Node1")])?,
+                    serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message(
+                        "Node1",
+                    )])?,
                 );
                 Ok(update)
             })),
@@ -161,16 +152,19 @@ mod tests {
                 let mut update = HashMap::new();
                 update.insert(
                     "messages".to_string(),
-                    serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message("Node2")])?,
+                    serde_json::to_value(vec![crate::schemas::messages::Message::new_ai_message(
+                        "Node2",
+                    )])?,
                 );
                 Ok(update)
             })),
         );
 
         let state = MessagesState::new();
-        let results = execute_nodes_parallel(&nodes, &["node1".to_string(), "node2".to_string()], &state)
-            .await
-            .unwrap();
+        let results =
+            execute_nodes_parallel(&nodes, &["node1".to_string(), "node2".to_string()], &state)
+                .await
+                .unwrap();
 
         assert_eq!(results.len(), 2);
     }

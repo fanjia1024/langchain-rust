@@ -9,7 +9,7 @@ use std::{
 use async_stream::stream;
 use async_trait::async_trait;
 use futures::Stream;
-use serde_json::{Value, error::Error as JsonError};
+use serde_json::{error::Error as JsonError, Value};
 
 use crate::{
     document_loaders::{process_doc_stream, Loader, LoaderError},
@@ -170,7 +170,7 @@ fn create_document_from_json_value(
 fn extract_field(value: &Value, spec: &str) -> Option<String> {
     let spec = spec.trim_start_matches('.');
     let parts: Vec<&str> = spec.split('.').collect();
-    
+
     let mut current = value;
     for part in parts {
         match current {
@@ -180,7 +180,7 @@ fn extract_field(value: &Value, spec: &str) -> Option<String> {
             _ => return None,
         }
     }
-    
+
     match current {
         Value::String(s) => Some(s.clone()),
         _ => serde_json::to_string(current).ok(),
@@ -208,10 +208,7 @@ mod tests {
 
         assert_eq!(documents.len(), 1);
         assert!(documents[0].page_content.contains("John"));
-        assert_eq!(
-            documents[0].metadata.get("index").unwrap(),
-            &Value::from(0)
-        );
+        assert_eq!(documents[0].metadata.get("index").unwrap(), &Value::from(0));
     }
 
     #[tokio::test]

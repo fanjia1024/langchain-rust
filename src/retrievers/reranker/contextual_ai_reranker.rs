@@ -57,10 +57,7 @@ pub struct ContextualAIReranker {
 
 impl ContextualAIReranker {
     /// Create a new Contextual AI reranker
-    pub fn new(
-        base_retriever: Arc<dyn Retriever>,
-        api_key: String,
-    ) -> Self {
+    pub fn new(base_retriever: Arc<dyn Retriever>, api_key: String) -> Self {
         Self::with_config(base_retriever, ContextualAIRerankerConfig::new(api_key))
     }
 
@@ -93,14 +90,15 @@ impl ContextualAIReranker {
         }
 
         let texts: Vec<String> = documents.iter().map(|d| d.page_content.clone()).collect();
-        
+
         let request = RerankRequest {
             query: query.to_string(),
             documents: texts.clone(),
             top_k: self.config.top_k,
         };
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.contextual.ai/v1/rerank")
             .header("Authorization", format!("Bearer {}", self.config.api_key))
             .header("Content-Type", "application/json")
@@ -116,7 +114,8 @@ impl ContextualAIReranker {
         let rerank_response: RerankResponse = response.json().await?;
 
         // Sort results by score (descending) and map back to documents
-        let mut indexed_results: Vec<(usize, f64)> = rerank_response.results
+        let mut indexed_results: Vec<(usize, f64)> = rerank_response
+            .results
             .into_iter()
             .map(|r| (r.index, r.score))
             .collect();
@@ -133,13 +132,10 @@ impl ContextualAIReranker {
 
 #[async_trait]
 impl Retriever for ContextualAIReranker {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Get documents from base retriever
         let documents = self.base_retriever.get_relevant_documents(query).await?;
-        
+
         // Rerank documents
         self.rerank(query, documents)
             .await

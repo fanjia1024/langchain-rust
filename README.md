@@ -2,13 +2,13 @@
 
 [![Latest Version]][crates.io]
 
-[Latest Version]: https://img.shields.io/crates/v/langchain-rust.svg
-[crates.io]: https://crates.io/crates/langchain-rust
+[Latest Version]: https://img.shields.io/crates/v/langchain-rs.svg
+[crates.io]: https://crates.io/crates/langchain-rs
 
 ⚡ Building applications with LLMs through composability, with Rust! ⚡
 
 [![Discord](https://dcbadge.vercel.app/api/server/JJFcTFbanu?style=for-the-badge)](https://discord.gg/JJFcTFbanu)
-[![Docs: Tutorial](https://img.shields.io/badge/docs-tutorial-success?style=for-the-badge&logo=appveyor)](https://langchain-rust.sellie.tech/get-started/quickstart)
+[![Docs: Tutorial](https://img.shields.io/badge/docs-tutorial-success?style=for-the-badge&logo=appveyor)](https://langchain-rs.sellie.tech/get-started/quickstart)
 
 ## 🤔 What is this?
 
@@ -41,14 +41,14 @@ First, ensure `serde_json` is added to your Rust project.
 cargo add serde_json
 ```
 
-### Step 2: Add `langchain-rust`
+### Step 2: Add `langchain-rs`
 
-Then, you can add `langchain-rust` to your Rust project.
+Then, you can add `langchain-rs` to your Rust project.
 
 #### Simple install
 
 ```bash
-cargo add langchain-rust
+cargo add langchain-rs
 ```
 
 #### With Vector Stores
@@ -56,13 +56,13 @@ cargo add langchain-rust
 ##### PostgreSQL (pgvector)
 
 ```bash
-cargo add langchain-rust --features postgres
+cargo add langchain-rs --features postgres
 ```
 
 ##### Qdrant
 
 ```bash
-cargo add langchain-rust --features qdrant
+cargo add langchain-rs --features qdrant
 ```
 
 ##### SQLite (VSS)
@@ -70,7 +70,7 @@ cargo add langchain-rust --features qdrant
 Download additional sqlite_vss libraries from <https://github.com/asg017/sqlite-vss>
 
 ```bash
-cargo add langchain-rust --features sqlite-vss
+cargo add langchain-rs --features sqlite-vss
 ```
 
 ##### SQLite (Vec)
@@ -78,55 +78,55 @@ cargo add langchain-rust --features sqlite-vss
 Download additional sqlite_vec libraries from <https://github.com/asg017/sqlite-vec>
 
 ```bash
-cargo add langchain-rust --features sqlite-vec
+cargo add langchain-rs --features sqlite-vec
 ```
 
 ##### SurrealDB
 
 ```bash
-cargo add langchain-rust --features surrealdb
+cargo add langchain-rs --features surrealdb
 ```
 
 ##### OpenSearch
 
 ```bash
-cargo add langchain-rust --features opensearch
+cargo add langchain-rs --features opensearch
 ```
 
 ##### In-Memory
 
 ```bash
-cargo add langchain-rust --features in-memory
+cargo add langchain-rs --features in-memory
 ```
 
 ##### Chroma
 
 ```bash
-cargo add langchain-rust --features chroma
+cargo add langchain-rs --features chroma
 ```
 
 ##### FAISS (hnsw_rs)
 
 ```bash
-cargo add langchain-rust --features faiss
+cargo add langchain-rs --features faiss
 ```
 
 ##### MongoDB Atlas Vector Search
 
 ```bash
-cargo add langchain-rust --features mongodb
+cargo add langchain-rs --features mongodb
 ```
 
 ##### Pinecone
 
 ```bash
-cargo add langchain-rust --features pinecone
+cargo add langchain-rs --features pinecone
 ```
 
 ##### Weaviate
 
 ```bash
-cargo add langchain-rust --features weaviate
+cargo add langchain-rs --features weaviate
 ```
 
 #### With LLM Providers
@@ -134,25 +134,25 @@ cargo add langchain-rust --features weaviate
 ##### Ollama
 
 ```bash
-cargo add langchain-rust --features ollama
+cargo add langchain-rs --features ollama
 ```
 
 ##### MistralAI
 
 ```bash
-cargo add langchain-rust --features mistralai
+cargo add langchain-rs --features mistralai
 ```
 
 ##### Google Gemini
 
 ```bash
-cargo add langchain-rust --features gemini
+cargo add langchain-rs --features gemini
 ```
 
 ##### AWS Bedrock
 
 ```bash
-cargo add langchain-rust --features bedrock
+cargo add langchain-rs --features bedrock
 ```
 
 #### With Document Loaders
@@ -160,19 +160,19 @@ cargo add langchain-rust --features bedrock
 ##### PDF (pdf-extract)
 
 ```bash
-cargo add langchain-rust --features pdf-extract
+cargo add langchain-rs --features pdf-extract
 ```
 
 ##### PDF (lopdf)
 
 ```bash
-cargo add langchain-rust --features lopdf
+cargo add langchain-rs --features lopdf
 ```
 
 ##### HTML to Markdown
 
 ```bash
-cargo add langchain-rust --features html-to-markdown
+cargo add langchain-rs --features html-to-markdown
 ```
 
 #### With Code Parsing
@@ -180,13 +180,13 @@ cargo add langchain-rust --features html-to-markdown
 ##### Tree-sitter (for source code parsing, requires 0.26+)
 
 ```bash
-cargo add langchain-rust --features tree-sitter
+cargo add langchain-rs --features tree-sitter
 ```
 
 #### With FastEmbed (Local Embeddings)
 
 ```bash
-cargo add langchain-rust --features fastembed
+cargo add langchain-rs --features fastembed
 ```
 
 ## 🚀 Quick Start
@@ -194,7 +194,7 @@ cargo add langchain-rust --features fastembed
 ### Simple LLM Invocation
 
 ```rust
-use langchain_rust::llm::openai::{OpenAI, OpenAIModel};
+use langchain_rs::llm::openai::{OpenAI, OpenAIModel};
 
 #[tokio::main]
 async fn main() {
@@ -209,7 +209,7 @@ async fn main() {
 The `init_chat_model` function provides a unified interface to initialize any supported LLM:
 
 ```rust
-use langchain_rust::language_models::init_chat_model;
+use langchain_rs::language_models::init_chat_model;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -237,7 +237,7 @@ Supported model formats:
 ### Conversational Chain
 
 ```rust
-use langchain_rust::{
+use langchain_rs::{
     chain::{Chain, LLMChainBuilder},
     fmt_message, fmt_placeholder, fmt_template,
     llm::openai::{OpenAI, OpenAIModel},
@@ -288,7 +288,7 @@ async fn main() {
 
 ```rust
 use std::sync::Arc;
-use langchain_rust::{
+use langchain_rs::{
     agent::create_agent,
     schemas::messages::Message,
     tools::CommandExecutor,
@@ -542,9 +542,9 @@ export AWS_REGION="us-east-1"
 
 ## 📖 Documentation
 
-- [Official Documentation](https://langchain-rust.sellie.tech/get-started/quickstart)
+- [Official Documentation](https://langchain-rs.sellie.tech/get-started/quickstart)
 - [Examples Directory](examples/)
-- [API Documentation](https://docs.rs/langchain-rust)
+- [API Documentation](https://docs.rs/langchain-rs)
 
 ## 🤝 Contributing
 
@@ -561,7 +561,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🔗 Links
 
-- [Crates.io](https://crates.io/crates/langchain-rust)
-- [Documentation](https://langchain-rust.sellie.tech)
+- [Crates.io](https://crates.io/crates/langchain-rs)
+- [Documentation](https://langchain-rs.sellie.tech)
 - [Discord](https://discord.gg/JJFcTFbanu)
-- [GitHub Repository](https://github.com/Abraxas-365/langchain-rust)
+- [GitHub Repository](https://github.com/Abraxas-365/langchain-rs)

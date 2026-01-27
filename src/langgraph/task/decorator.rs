@@ -12,14 +12,20 @@ use crate::langgraph::task::{FunctionTask, TaskError};
 pub fn task<F, Fut>(
     task_id: impl Into<String>,
     func: F,
-) -> FunctionTask<impl Fn(Value) -> Pin<Box<dyn Future<Output = Result<Value, TaskError>> + Send>> + Send + Sync + 'static>
+) -> FunctionTask<
+    impl Fn(Value) -> Pin<Box<dyn Future<Output = Result<Value, TaskError>> + Send>>
+        + Send
+        + Sync
+        + 'static,
+>
 where
     F: Fn(Value) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = Result<Value, TaskError>> + Send + 'static,
 {
-    let wrapped = move |v: Value| -> Pin<Box<dyn Future<Output = Result<Value, TaskError>> + Send>> {
-        Box::pin(func(v))
-    };
+    let wrapped =
+        move |v: Value| -> Pin<Box<dyn Future<Output = Result<Value, TaskError>> + Send>> {
+            Box::pin(func(v))
+        };
     FunctionTask::new(task_id, wrapped)
 }
 
@@ -28,7 +34,7 @@ where
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_rust::langgraph::task::task;
+/// use langchain_rs::langgraph::task::task;
 ///
 /// let my_task = task("my_task", |input: Value| async move {
 ///     // Task implementation

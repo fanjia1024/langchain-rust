@@ -35,7 +35,7 @@ pub mod two_step;
 pub use agentic::{AgenticRAG, AgenticRAGBuilder, RetrieverInfo, RetrieverTool};
 pub use hybrid::{
     AnswerValidator, HybridRAG, HybridRAGBuilder, HybridRAGConfig, KeywordQueryEnhancer,
-    LLMAnswerValidator, LLMQueryEnhancer, LLMRetrievalValidator, QueryEnhancer,
-    RelevanceValidator, RetrievalValidator, SourceAlignmentValidator,
+    LLMAnswerValidator, LLMQueryEnhancer, LLMRetrievalValidator, QueryEnhancer, RelevanceValidator,
+    RetrievalValidator, SourceAlignmentValidator,
 };
 pub use two_step::{TwoStepRAG, TwoStepRAGBuilder};

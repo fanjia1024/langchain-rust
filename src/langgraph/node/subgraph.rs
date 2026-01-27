@@ -7,12 +7,9 @@ use super::Node;
 use crate::langgraph::{
     compiled::CompiledGraph,
     error::LangGraphError,
+    persistence::{config::RunnableConfig, store::StoreBox},
     state::State,
     StateUpdate,
-    persistence::{
-        config::RunnableConfig,
-        store::StoreBox,
-    },
 };
 
 /// Subgraph node - wraps a CompiledGraph as a node
@@ -23,7 +20,7 @@ use crate::langgraph::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_rust::langgraph::{StateGraph, MessagesState, CompiledGraph};
+/// use langchain_rs::langgraph::{StateGraph, MessagesState, CompiledGraph};
 ///
 /// // Create a subgraph
 /// let mut subgraph = StateGraph::<MessagesState>::new();
@@ -64,19 +61,19 @@ impl<S: State + 'static> Node<S> for SubgraphNode<S> {
     async fn invoke(&self, state: &S) -> Result<StateUpdate, LangGraphError> {
         // Execute the subgraph with the current state
         let final_state = self.subgraph.invoke(state.clone()).await?;
-        
+
         // Convert final state to state update
         // For shared state, we merge the final state back
-        let state_json = serde_json::to_value(final_state)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let state_json =
+            serde_json::to_value(final_state).map_err(LangGraphError::SerializationError)?;
+
         let mut update = HashMap::new();
         if let serde_json::Value::Object(map) = state_json {
             for (key, value) in map {
                 update.insert(key, value);
             }
         }
-        
+
         Ok(update)
     }
 
@@ -89,22 +86,24 @@ impl<S: State + 'static> Node<S> for SubgraphNode<S> {
         // Execute the subgraph with config and store
         // Note: subgraph will inherit checkpointer from parent if provided
         let final_state = if let Some(config) = config {
-            self.subgraph.invoke_with_config(Some(state.clone()), config).await?
+            self.subgraph
+                .invoke_with_config(Some(state.clone()), config)
+                .await?
         } else {
             self.subgraph.invoke(state.clone()).await?
         };
-        
+
         // Convert final state to state update
-        let state_json = serde_json::to_value(final_state)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let state_json =
+            serde_json::to_value(final_state).map_err(LangGraphError::SerializationError)?;
+
         let mut update = HashMap::new();
         if let serde_json::Value::Object(map) = state_json {
             for (key, value) in map {
                 update.insert(key, value);
             }
         }
-        
+
         Ok(update)
     }
 
@@ -155,7 +154,9 @@ pub struct SubgraphNodeWithTransform<ParentState: State + 'static, SubState: Sta
     transform_out: Arc<dyn Fn(&SubState) -> Result<StateUpdate, LangGraphError> + Send + Sync>,
 }
 
-impl<ParentState: State + 'static, SubState: State + 'static> SubgraphNodeWithTransform<ParentState, SubState> {
+impl<ParentState: State + 'static, SubState: State + 'static>
+    SubgraphNodeWithTransform<ParentState, SubState>
+{
     /// Create a new subgraph node with transformation
     pub fn new(
         name: impl Into<String>,
@@ -183,14 +184,16 @@ impl<ParentState: State + 'static, SubState: State + 'static> SubgraphNodeWithTr
 }
 
 #[async_trait]
-impl<ParentState: State + 'static, SubState: State + 'static> Node<ParentState> for SubgraphNodeWithTransform<ParentState, SubState> {
+impl<ParentState: State + 'static, SubState: State + 'static> Node<ParentState>
+    for SubgraphNodeWithTransform<ParentState, SubState>
+{
     async fn invoke(&self, state: &ParentState) -> Result<StateUpdate, LangGraphError> {
         // Transform parent state to subgraph state
         let sub_state = (self.transform_in)(state)?;
-        
+
         // Execute the subgraph
         let final_sub_state = self.subgraph.invoke(sub_state).await?;
-        
+
         // Transform subgraph state back to parent state update
         (self.transform_out)(&final_sub_state)
     }
@@ -203,14 +206,16 @@ impl<ParentState: State + 'static, SubState: State + 'static> Node<ParentState> 
     ) -> Result<StateUpdate, LangGraphError> {
         // Transform parent state to subgraph state
         let sub_state = (self.transform_in)(state)?;
-        
+
         // Execute the subgraph with config
         let final_sub_state = if let Some(config) = config {
-            self.subgraph.invoke_with_config(Some(sub_state), config).await?
+            self.subgraph
+                .invoke_with_config(Some(sub_state), config)
+                .await?
         } else {
             self.subgraph.invoke(sub_state).await?
         };
-        
+
         // Transform subgraph state back to parent state update
         (self.transform_out)(&final_sub_state)
     }

@@ -1,4 +1,4 @@
-use langchain_rust::{
+use langchain_rs::{
     chain::{chain_trait::Chain, llm_chain::LLMChainBuilder},
     language_models::options::CallOptions,
     llm::{Deepseek, DeepseekModel},

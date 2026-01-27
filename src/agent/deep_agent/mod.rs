@@ -27,22 +27,22 @@ pub mod skills;
 pub use backends::{CompositeBackend, FileBackend, FileInfo, StoreBackend, WorkspaceBackend};
 
 pub mod tools;
-pub use tools::{
-    EditFileTool, GlobTool, GrepTool, LsTool, ReadFileTool, TaskTool, WriteFileTool,
-    WriteTodosTool, TodoItem, TodoStatus,
-};
 pub use tools::fs::FileSystemToolError;
+pub use tools::{
+    EditFileTool, GlobTool, GrepTool, LsTool, ReadFileTool, TaskTool, TodoItem, TodoStatus,
+    WriteFileTool, WriteTodosTool,
+};
 
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::agent::middleware::{HumanInTheLoopMiddleware, ToolResultEvictionMiddleware};
+use crate::agent::InterruptConfig;
 use crate::agent::{
     create_agent_with_runtime, create_agent_with_runtime_from_llm, AgentError, Middleware,
     SubagentTool, UnifiedAgent,
 };
-use crate::agent::middleware::{HumanInTheLoopMiddleware, ToolResultEvictionMiddleware};
-use crate::agent::InterruptConfig;
 use crate::language_models::llm::LLM;
 use crate::tools::{InMemoryStore, SimpleContext, Tool, ToolContext, ToolStore};
 
@@ -81,16 +81,19 @@ pub fn build_subagent_spec(
 }
 
 /// Load skill and memory sections from config (paths + inline contents).
-fn load_skills_and_memory_sections(config: &DeepAgentConfig) -> Result<(String, String), AgentError> {
+fn load_skills_and_memory_sections(
+    config: &DeepAgentConfig,
+) -> Result<(String, String), AgentError> {
     let mut skill_parts: Vec<String> = Vec::new();
     for path in &config.skill_paths {
         let content = fs::read_to_string(path).map_err(|e| {
-            AgentError::OtherError(format!("Failed to read skill file {}: {}", path.display(), e))
+            AgentError::OtherError(format!(
+                "Failed to read skill file {}: {}",
+                path.display(),
+                e
+            ))
         })?;
-        let name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("skill");
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("skill");
         skill_parts.push(format!("### {}\n{}", name, content));
     }
     for (name, content) in &config.skill_contents {
@@ -105,7 +108,11 @@ fn load_skills_and_memory_sections(config: &DeepAgentConfig) -> Result<(String, 
     let mut memory_parts: Vec<String> = Vec::new();
     for path in &config.memory_paths {
         let content = fs::read_to_string(path).map_err(|e| {
-            AgentError::OtherError(format!("Failed to read memory file {}: {}", path.display(), e))
+            AgentError::OtherError(format!(
+                "Failed to read memory file {}: {}",
+                path.display(),
+                e
+            ))
         })?;
         let name = path
             .file_name()
@@ -141,7 +148,9 @@ fn build_context(config: &DeepAgentConfig) -> Arc<dyn ToolContext> {
 fn build_middleware(config: &DeepAgentConfig) -> Option<Vec<Arc<dyn Middleware>>> {
     let mut list: Vec<Arc<dyn Middleware>> = Vec::new();
     if !config.skill_dirs.is_empty() {
-        if let Ok(Some(skills_mw)) = crate::agent::middleware::build_skills_middleware(&config.skill_dirs) {
+        if let Ok(Some(skills_mw)) =
+            crate::agent::middleware::build_skills_middleware(&config.skill_dirs)
+        {
             list.push(skills_mw);
         } else {
             log::warn!("Failed to load skill index from skill_dirs");
@@ -242,7 +251,10 @@ fn build_deep_agent_parts(
     ) -> Arc<dyn Tool> {
         let name = tool.name();
         if let Some(desc) = custom_descriptions.get(&name) {
-            Arc::new(tools::ToolWithCustomDescription::with_description(tool, desc.clone()))
+            Arc::new(tools::ToolWithCustomDescription::with_description(
+                tool,
+                desc.clone(),
+            ))
         } else {
             tool
         }
@@ -282,13 +294,7 @@ fn build_deep_agent_parts(
     let context = build_context(config);
     let middleware = build_middleware(config);
 
-    Ok((
-        all_tools,
-        full_system_prompt,
-        context,
-        store,
-        middleware,
-    ))
+    Ok((all_tools, full_system_prompt, context, store, middleware))
 }
 
 /// Create a Deep Agent with planning, optional file system and task tools, and store.

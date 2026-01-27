@@ -14,7 +14,7 @@ use std::future::Future;
 ///
 /// # 示例
 /// ```rust,no_run
-/// use langchain_rust::utils::join_all;
+/// use langchain_rs::utils::join_all;
 ///
 /// # async fn example() {
 /// let futures = vec![
@@ -58,7 +58,7 @@ where
 ///
 /// # 示例
 /// ```rust,no_run
-/// use langchain_rust::utils::batch_process;
+/// use langchain_rs::utils::batch_process;
 ///
 /// # async fn example() {
 /// let items = vec![1, 2, 3, 4, 5];
@@ -68,11 +68,7 @@ where
 /// assert_eq!(results, vec![2, 4, 6, 8, 10]);
 /// # }
 /// ```
-pub async fn batch_process<T, R, F, Fut>(
-    items: Vec<T>,
-    batch_size: usize,
-    processor: F,
-) -> Vec<R>
+pub async fn batch_process<T, R, F, Fut>(items: Vec<T>, batch_size: usize, processor: F) -> Vec<R>
 where
     T: Send + Sync + Clone,
     R: Send,
@@ -80,13 +76,13 @@ where
     Fut: Future<Output = R> + Send,
 {
     let mut results = Vec::with_capacity(items.len());
-    
+
     for chunk in items.chunks(batch_size) {
         let futures: Vec<_> = chunk.iter().map(|item| processor(item.clone())).collect();
         let chunk_results = join_all(futures).await;
         results.extend(chunk_results);
     }
-    
+
     results
 }
 
@@ -104,13 +100,13 @@ where
     Fut: Future<Output = Result<R, E>> + Send,
 {
     let mut results = Vec::with_capacity(items.len());
-    
+
     for chunk in items.chunks(batch_size) {
         let futures: Vec<_> = chunk.iter().map(|item| processor(item.clone())).collect();
         let chunk_results = try_join_all(futures).await?;
         results.extend(chunk_results);
     }
-    
+
     Ok(results)
 }
 
@@ -132,22 +128,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_join_all() {
-        let futures = vec![
-            async { 1 },
-            async { 2 },
-            async { 3 },
-        ];
+        let futures = vec![async { 1 }, async { 2 }, async { 3 }];
         let results = join_all(futures).await;
         assert_eq!(results, vec![1, 2, 3]);
     }
 
     #[tokio::test]
     async fn test_try_join_all() {
-        let futures = vec![
-            async { Ok::<i32, &str>(1) },
-            async { Ok(2) },
-            async { Ok(3) },
-        ];
+        let futures = vec![async { Ok::<i32, &str>(1) }, async { Ok(2) }, async {
+            Ok(3)
+        }];
         let results = try_join_all(futures).await.unwrap();
         assert_eq!(results, vec![1, 2, 3]);
     }
@@ -155,18 +145,17 @@ mod tests {
     #[tokio::test]
     async fn test_batch_process() {
         let items = vec![1, 2, 3, 4, 5];
-        let results = batch_process(items, 2, |item| async move {
-            item * 2
-        }).await;
+        let results = batch_process(items, 2, |item| async move { item * 2 }).await;
         assert_eq!(results, vec![2, 4, 6, 8, 10]);
     }
 
     #[tokio::test]
     async fn test_batch_process_result() {
         let items = vec![1, 2, 3];
-        let results = batch_process_result(items, 2, |item| async move {
-            Ok::<i32, &str>(item * 2)
-        }).await.unwrap();
+        let results =
+            batch_process_result(items, 2, |item| async move { Ok::<i32, &str>(item * 2) })
+                .await
+                .unwrap();
         assert_eq!(results, vec![2, 4, 6]);
     }
 }

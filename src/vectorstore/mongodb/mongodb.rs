@@ -27,10 +27,16 @@ fn bson_to_value(b: &Bson) -> Value {
         Bson::Boolean(x) => Value::Bool(*x),
         Bson::Int32(x) => Value::Number(serde_json::Number::from(*x)),
         Bson::Int64(x) => Value::Number(serde_json::Number::from(*x)),
-        Bson::Double(x) => serde_json::Number::from_f64(*x).map(Value::Number).unwrap_or(Value::Null),
+        Bson::Double(x) => serde_json::Number::from_f64(*x)
+            .map(Value::Number)
+            .unwrap_or(Value::Null),
         Bson::String(s) => Value::String(s.clone()),
         Bson::Array(a) => Value::Array(a.iter().map(bson_to_value).collect()),
-        Bson::Document(d) => Value::Object(d.iter().map(|(k, v)| (k.clone(), bson_to_value(v))).collect()),
+        Bson::Document(d) => Value::Object(
+            d.iter()
+                .map(|(k, v)| (k.clone(), bson_to_value(v)))
+                .collect(),
+        ),
         _ => Value::Null,
     }
 }
@@ -49,12 +55,12 @@ fn value_to_bson(v: &Value) -> Bson {
             }
         }
         Value::String(s) => Bson::String(s.clone()),
-        Value::Array(arr) => {
-            Bson::Array(arr.iter().map(value_to_bson).collect())
-        }
-        Value::Object(obj) => {
-            Bson::Document(obj.iter().map(|(k, v)| (k.clone(), value_to_bson(v))).collect())
-        }
+        Value::Array(arr) => Bson::Array(arr.iter().map(value_to_bson).collect()),
+        Value::Object(obj) => Bson::Document(
+            obj.iter()
+                .map(|(k, v)| (k.clone(), value_to_bson(v)))
+                .collect(),
+        ),
     }
 }
 
@@ -139,10 +145,7 @@ impl VectorStore for Store {
         );
         project_doc.insert("metadata", doc! { "$ifNull": [ "$metadata", {} ] });
 
-        let pipeline = vec![
-            vector_search_stage,
-            doc! { "$project": project_doc },
-        ];
+        let pipeline = vec![vector_search_stage, doc! { "$project": project_doc }];
 
         let mut cursor = self
             .collection
@@ -161,10 +164,18 @@ impl VectorStore for Store {
             let page_content = d.get_str("page_content").unwrap_or("").to_string();
             let metadata: HashMap<String, Value> = d
                 .get_document("metadata")
-                .map(|m| m.iter().map(|(k, v)| (k.clone(), bson_to_value(v))).collect())
+                .map(|m| {
+                    m.iter()
+                        .map(|(k, v)| (k.clone(), bson_to_value(v)))
+                        .collect()
+                })
                 .unwrap_or_default();
             let score = d.get_f64("score").unwrap_or(0.0);
-            result.push(LangchainDocument { page_content, metadata, score });
+            result.push(LangchainDocument {
+                page_content,
+                metadata,
+                score,
+            });
         }
         Ok(result)
     }

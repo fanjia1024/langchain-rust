@@ -72,10 +72,7 @@ impl Tool for LsTool {
         input: Value,
         runtime: &ToolRuntime,
     ) -> Result<ToolResult, Box<dyn Error>> {
-        let path_str = input
-            .get("path")
-            .and_then(Value::as_str)
-            .unwrap_or(".");
+        let path_str = input.get("path").and_then(Value::as_str).unwrap_or(".");
         if let Some(backend) = runtime.file_backend() {
             let infos = backend.ls_info(path_str).await.map_err(|e| e.to_string())?;
             let entries: Vec<Value> = infos

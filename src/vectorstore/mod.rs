@@ -37,12 +37,12 @@ pub mod pinecone;
 #[cfg(feature = "weaviate")]
 pub mod weaviate;
 
-mod vectorstore;
 mod base;
+mod vectorstore;
 
+pub use base::{
+    VectorStoreBaseConfig, VectorStoreBatch, VectorStoreHelpers, VectorStoreInitializable,
+};
 pub use error::*;
 pub use options::*;
 pub use vectorstore::*;
-pub use base::{
-    VectorStoreBaseConfig, VectorStoreHelpers, VectorStoreInitializable, VectorStoreBatch,
-};

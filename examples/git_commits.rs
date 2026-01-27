@@ -7,7 +7,7 @@
 #[cfg(feature = "sqlite-vss")]
 use futures_util::StreamExt;
 #[cfg(feature = "sqlite-vss")]
-use langchain_rust::{
+use langchain_rs::{
     document_loaders::GitCommitLoader,
     document_loaders::Loader,
     embedding::openai::OpenAiEmbedder,

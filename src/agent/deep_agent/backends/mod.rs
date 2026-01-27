@@ -11,7 +11,7 @@ mod composite;
 mod store;
 mod workspace;
 
-pub use composite::CompositeBackend;
 pub use crate::tools::{EditResult, FileBackend, FileInfo, GrepMatch, WriteResult};
+pub use composite::CompositeBackend;
 pub use store::StoreBackend;
 pub use workspace::WorkspaceBackend;

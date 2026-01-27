@@ -55,10 +55,7 @@ impl MergerRetriever {
     }
 
     /// Create a new merger retriever with custom config
-    pub fn with_config(
-        retrievers: Vec<Arc<dyn Retriever>>,
-        config: MergerRetrieverConfig,
-    ) -> Self {
+    pub fn with_config(retrievers: Vec<Arc<dyn Retriever>>, config: MergerRetrieverConfig) -> Self {
         Self { config, retrievers }
     }
 
@@ -68,11 +65,7 @@ impl MergerRetriever {
     }
 
     /// Merge documents using Reciprocal Rank Fusion
-    fn merge_rrf(
-        &self,
-        all_results: &[Vec<Document>],
-        k: f64,
-    ) -> Vec<Document> {
+    fn merge_rrf(&self, all_results: &[Vec<Document>], k: f64) -> Vec<Document> {
         let mut doc_scores: HashMap<String, f64> = HashMap::new();
         let mut doc_map: HashMap<String, Document> = HashMap::new();
 
@@ -96,7 +89,8 @@ impl MergerRetriever {
             .filter_map(|(key, score)| {
                 doc_map.get(&key).map(|doc| {
                     let mut doc = doc.clone();
-                    doc.metadata.insert("rrf_score".to_string(), Value::from(score));
+                    doc.metadata
+                        .insert("rrf_score".to_string(), Value::from(score));
                     doc
                 })
             })
@@ -104,11 +98,7 @@ impl MergerRetriever {
     }
 
     /// Merge documents using weighted scores
-    fn merge_weighted(
-        &self,
-        all_results: &[Vec<Document>],
-        weights: &[f64],
-    ) -> Vec<Document> {
+    fn merge_weighted(&self, all_results: &[Vec<Document>], weights: &[f64]) -> Vec<Document> {
         let mut doc_scores: HashMap<String, f64> = HashMap::new();
         let mut doc_map: HashMap<String, Document> = HashMap::new();
 
@@ -132,7 +122,8 @@ impl MergerRetriever {
             .filter_map(|(key, score)| {
                 doc_map.get(&key).map(|doc| {
                     let mut doc = doc.clone();
-                    doc.metadata.insert("weighted_score".to_string(), Value::from(score));
+                    doc.metadata
+                        .insert("weighted_score".to_string(), Value::from(score));
                     doc
                 })
             })
@@ -165,7 +156,11 @@ impl MergerRetriever {
         // Use content hash as key, or combine source + content
         if !doc.metadata.is_empty() {
             if let Some(source) = doc.metadata.get("source").and_then(|s| s.as_str()) {
-                format!("{}:{}", source, doc.page_content[..doc.page_content.len().min(100)].to_string())
+                format!(
+                    "{}:{}",
+                    source,
+                    doc.page_content[..doc.page_content.len().min(100)].to_string()
+                )
             } else {
                 doc.page_content[..doc.page_content.len().min(100)].to_string()
             }
@@ -177,10 +172,7 @@ impl MergerRetriever {
 
 #[async_trait]
 impl Retriever for MergerRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Retrieve from all retrievers
         let mut all_results = Vec::new();
         for retriever in &self.retrievers {
@@ -195,9 +187,7 @@ impl Retriever for MergerRetriever {
 
         // Merge results based on strategy
         let merged = match &self.config.strategy {
-            MergeStrategy::ReciprocalRankFusion { k } => {
-                self.merge_rrf(&all_results, *k)
-            }
+            MergeStrategy::ReciprocalRankFusion { k } => self.merge_rrf(&all_results, *k),
             MergeStrategy::Weighted { weights } => {
                 if weights.len() == all_results.len() {
                     self.merge_weighted(&all_results, weights)

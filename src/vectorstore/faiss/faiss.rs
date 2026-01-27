@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::{
     embedding::embedder_trait::Embedder,
     schemas::Document,
-    vectorstore::{VectorStore, VectorStoreError, VecStoreOptions},
+    vectorstore::{VecStoreOptions, VectorStore, VectorStoreError},
 };
 
 pub struct Store {
@@ -39,9 +39,18 @@ impl VectorStore for Store {
             ));
         }
         let mut ids = Vec::with_capacity(docs.len());
-        let hnsw = self.hnsw.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
-        let mut docstore = self.docstore.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
-        let mut id_vec = self.ids.write().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let hnsw = self
+            .hnsw
+            .write()
+            .map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let mut docstore = self
+            .docstore
+            .write()
+            .map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let mut id_vec = self
+            .ids
+            .write()
+            .map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         for (doc, vector) in docs.iter().zip(vectors.iter()) {
             let id = uuid::Uuid::new_v4().to_string();
             ids.push(id.clone());
@@ -66,8 +75,14 @@ impl VectorStore for Store {
         let qv = embedder.embed_query(query).await?;
         let qv_f32: Vec<f32> = qv.into_iter().map(|x| x as f32).collect();
         let ef = (limit * 2).max(32);
-        let hnsw = self.hnsw.read().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
-        let docstore = self.docstore.read().map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let hnsw = self
+            .hnsw
+            .read()
+            .map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
+        let docstore = self
+            .docstore
+            .read()
+            .map_err(|e| VectorStoreError::InternalError(e.to_string()))?;
         let neighbours = hnsw.search(qv_f32.as_slice(), limit, ef);
         let score_threshold = opt
             .score_threshold
@@ -89,7 +104,11 @@ impl VectorStore for Store {
                 })
             })
             .collect();
-        result.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        result.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         Ok(result)
     }
 

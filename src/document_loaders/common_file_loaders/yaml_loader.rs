@@ -66,7 +66,7 @@ impl<R: Read + Send + Sync + 'static> Loader for YamlLoader<R> {
                 // For simplicity, parse as single document first
                 let value: serde_yaml::Value = serde_yaml::from_str(&content)
                     .map_err(|e| LoaderError::YamlError(e))?;
-                
+
                 // Check if it's a sequence (array) - treat each item as a document
                 let documents: Vec<serde_yaml::Value> = match value {
                     serde_yaml::Value::Sequence(seq) => seq,
@@ -84,11 +84,11 @@ impl<R: Read + Send + Sync + 'static> Loader for YamlLoader<R> {
                     for (idx, value) in documents.into_iter().enumerate() {
                         let content = serde_yaml::to_string(&value)
                             .map_err(|e| LoaderError::YamlError(e))?;
-                        
+
                         let mut metadata = HashMap::new();
                         metadata.insert("source_type".to_string(), serde_json::Value::from("yaml"));
                         metadata.insert("document_index".to_string(), serde_json::Value::from(idx));
-                        
+
                         let doc = Document::new(content).with_metadata(metadata);
                         yield Ok(doc);
                     }

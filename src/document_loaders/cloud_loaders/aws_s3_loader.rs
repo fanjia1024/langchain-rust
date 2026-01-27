@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    pin::Pin,
-};
+use std::{collections::HashMap, pin::Pin};
 
 use async_stream::stream;
 use async_trait::async_trait;
@@ -193,8 +190,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // Requires AWS credentials
     async fn test_aws_s3_loader() {
-        let config = AwsS3Config::new("test-bucket".to_string())
-            .with_prefix("documents/");
+        let config = AwsS3Config::new("test-bucket".to_string()).with_prefix("documents/");
         let loader = AwsS3Loader::new(config);
 
         let documents = loader

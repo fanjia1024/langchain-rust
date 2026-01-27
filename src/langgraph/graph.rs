@@ -6,11 +6,8 @@ use super::{
     edge::{Edge, EdgeType, END, START},
     error::LangGraphError,
     node::{Node, SubgraphNode, SubgraphNodeWithTransform},
+    persistence::{checkpointer::CheckpointerBox, store::StoreBox},
     state::{State, StateUpdate},
-    persistence::{
-        checkpointer::CheckpointerBox,
-        store::StoreBox,
-    },
 };
 
 /// StateGraph - a builder for creating stateful graphs
@@ -22,7 +19,7 @@ use super::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_rust::langgraph::{StateGraph, MessagesState, function_node};
+/// use langchain_rs::langgraph::{StateGraph, MessagesState, function_node};
 ///
 /// let mut graph = StateGraph::<MessagesState>::new();
 /// graph.add_node("node1", function_node("node1", |state| async move {
@@ -63,7 +60,7 @@ impl<S: State + 'static> StateGraph<S> {
         node: N,
     ) -> Result<&mut Self, LangGraphError> {
         let name = name.into();
-        
+
         if self.nodes.contains_key(&name) {
             return Err(LangGraphError::CompilationError(format!(
                 "Node '{}' already exists",
@@ -99,7 +96,7 @@ impl<S: State + 'static> StateGraph<S> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_rust::langgraph::{StateGraph, MessagesState};
+    /// use langchain_rs::langgraph::{StateGraph, MessagesState};
     ///
     /// // Create a subgraph
     /// let mut subgraph = StateGraph::<MessagesState>::new();
@@ -140,7 +137,7 @@ impl<S: State + 'static> StateGraph<S> {
     ///
     /// ```rust,no_run
     /// use std::collections::HashMap;
-    /// use langchain_rust::langgraph::{StateGraph, StateUpdate};
+    /// use langchain_rs::langgraph::{StateGraph, StateUpdate};
     ///
     /// // Parent state
     /// #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -187,11 +184,7 @@ impl<S: State + 'static> StateGraph<S> {
     ///
     /// * `from` - The source node name (can be START)
     /// * `to` - The target node name (can be END)
-    pub fn add_edge(
-        &mut self,
-        from: impl Into<String>,
-        to: impl Into<String>,
-    ) -> &mut Self {
+    pub fn add_edge(&mut self, from: impl Into<String>, to: impl Into<String>) -> &mut Self {
         let edge = Edge::new(from, to);
         self.edges.push(edge);
         self
@@ -209,7 +202,7 @@ impl<S: State + 'static> StateGraph<S> {
     ///
     /// ```rust,no_run
     /// use std::collections::HashMap;
-    /// use langchain_rust::langgraph::{StateGraph, MessagesState};
+    /// use langchain_rs::langgraph::{StateGraph, MessagesState};
     ///
     /// let mut graph = StateGraph::<MessagesState>::new();
     /// let mut mapping = HashMap::new();
@@ -275,7 +268,8 @@ impl<S: State + 'static> StateGraph<S> {
 
         // Take ownership of nodes so we don't borrow self while moving
         let nodes = self.nodes;
-        let nodes = Self::propagate_persistence_to_subgraphs(nodes, checkpointer.as_ref(), store.as_ref())?;
+        let nodes =
+            Self::propagate_persistence_to_subgraphs(nodes, checkpointer.as_ref(), store.as_ref())?;
 
         CompiledGraph::with_persistence(nodes, adjacency, checkpointer, store)
     }
@@ -425,23 +419,33 @@ mod tests {
         let node = function_node("test", |_state| async move {
             Ok(std::collections::HashMap::new())
         });
-        
+
         assert!(graph.add_node("test", node).is_ok());
-        assert!(graph.add_node("test", function_node("test2", |_state| async move {
-            Ok(std::collections::HashMap::new())
-        })).is_err()); // Duplicate node
+        assert!(graph
+            .add_node(
+                "test",
+                function_node("test2", |_state| async move {
+                    Ok(std::collections::HashMap::new())
+                })
+            )
+            .is_err()); // Duplicate node
     }
 
     #[test]
     fn test_add_edge() {
         let mut graph = StateGraph::<MessagesState>::new();
-        graph.add_node("node1", function_node("node1", |_state| async move {
-            Ok(std::collections::HashMap::new())
-        })).unwrap();
-        
+        graph
+            .add_node(
+                "node1",
+                function_node("node1", |_state| async move {
+                    Ok(std::collections::HashMap::new())
+                }),
+            )
+            .unwrap();
+
         graph.add_edge(START, "node1");
         graph.add_edge("node1", END);
-        
+
         assert!(graph.compile().is_ok());
     }
 
@@ -449,7 +453,7 @@ mod tests {
     fn test_validate() {
         let mut graph = StateGraph::<MessagesState>::new();
         graph.add_edge("nonexistent", "node1");
-        
+
         assert!(graph.compile().is_err());
     }
 }

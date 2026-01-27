@@ -73,7 +73,11 @@ impl EnsembleRetriever {
     fn document_key(doc: &Document) -> String {
         if !doc.metadata.is_empty() {
             if let Some(source) = doc.metadata.get("source").and_then(|s| s.as_str()) {
-                format!("{}:{}", source, doc.page_content[..doc.page_content.len().min(100)].to_string())
+                format!(
+                    "{}:{}",
+                    source,
+                    doc.page_content[..doc.page_content.len().min(100)].to_string()
+                )
             } else {
                 doc.page_content[..doc.page_content.len().min(100)].to_string()
             }
@@ -83,11 +87,7 @@ impl EnsembleRetriever {
     }
 
     /// Vote using weighted strategy
-    fn vote_weighted(
-        &self,
-        all_results: &[Vec<Document>],
-        weights: &[f64],
-    ) -> Vec<Document> {
+    fn vote_weighted(&self, all_results: &[Vec<Document>], weights: &[f64]) -> Vec<Document> {
         let mut doc_votes: HashMap<String, f64> = HashMap::new();
         let mut doc_map: HashMap<String, Document> = HashMap::new();
 
@@ -110,7 +110,8 @@ impl EnsembleRetriever {
             .filter_map(|(key, votes)| {
                 doc_map.get(&key).map(|doc| {
                     let mut doc = doc.clone();
-                    doc.metadata.insert("ensemble_votes".to_string(), Value::from(votes));
+                    doc.metadata
+                        .insert("ensemble_votes".to_string(), Value::from(votes));
                     doc
                 })
             })
@@ -118,11 +119,7 @@ impl EnsembleRetriever {
     }
 
     /// Vote using majority strategy
-    fn vote_majority(
-        &self,
-        all_results: &[Vec<Document>],
-        threshold: f64,
-    ) -> Vec<Document> {
+    fn vote_majority(&self, all_results: &[Vec<Document>], threshold: f64) -> Vec<Document> {
         let mut doc_votes: HashMap<String, usize> = HashMap::new();
         let mut doc_map: HashMap<String, Document> = HashMap::new();
         let total_retrievers = all_results.len();
@@ -150,7 +147,8 @@ impl EnsembleRetriever {
             .filter_map(|(key, votes)| {
                 doc_map.get(&key).map(|doc| {
                     let mut doc = doc.clone();
-                    doc.metadata.insert("ensemble_votes".to_string(), Value::from(votes));
+                    doc.metadata
+                        .insert("ensemble_votes".to_string(), Value::from(votes));
                     doc
                 })
             })
@@ -181,7 +179,8 @@ impl EnsembleRetriever {
             .filter_map(|(key, votes)| {
                 doc_map.get(&key).map(|doc| {
                     let mut doc = doc.clone();
-                    doc.metadata.insert("ensemble_votes".to_string(), Value::from(votes));
+                    doc.metadata
+                        .insert("ensemble_votes".to_string(), Value::from(votes));
                     doc
                 })
             })
@@ -191,10 +190,7 @@ impl EnsembleRetriever {
 
 #[async_trait]
 impl Retriever for EnsembleRetriever {
-    async fn get_relevant_documents(
-        &self,
-        query: &str,
-    ) -> Result<Vec<Document>, RetrieverError> {
+    async fn get_relevant_documents(&self, query: &str) -> Result<Vec<Document>, RetrieverError> {
         // Retrieve from all retrievers
         let mut all_results = Vec::new();
         for retriever in &self.retrievers {
@@ -218,9 +214,7 @@ impl Retriever for EnsembleRetriever {
                     self.vote_weighted(&all_results, &equal_weights)
                 }
             }
-            VotingStrategy::Majority { threshold } => {
-                self.vote_majority(&all_results, *threshold)
-            }
+            VotingStrategy::Majority { threshold } => self.vote_majority(&all_results, *threshold),
             VotingStrategy::Simple => self.vote_simple(&all_results),
         };
 

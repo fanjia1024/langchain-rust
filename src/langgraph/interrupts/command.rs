@@ -29,7 +29,7 @@ impl Command {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_rust::langgraph::interrupts::Command;
+    /// use langchain_rs::langgraph::interrupts::Command;
     ///
     /// let cmd = Command::resume(true);
     /// let cmd = Command::resume("approved");
@@ -39,32 +39,30 @@ impl Command {
             value: value.into(),
         }
     }
-    
+
     /// Create a goto command to route to a specific node
     ///
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_rust::langgraph::interrupts::Command;
+    /// use langchain_rs::langgraph::interrupts::Command;
     ///
     /// let cmd = Command::goto("approve_node");
     /// ```
     pub fn goto(node: impl Into<String>) -> Self {
-        Self::Goto {
-            node: node.into(),
-        }
+        Self::Goto { node: node.into() }
     }
-    
+
     /// Check if this is a resume command
     pub fn is_resume(&self) -> bool {
         matches!(self, Self::Resume { .. })
     }
-    
+
     /// Check if this is a goto command
     pub fn is_goto(&self) -> bool {
         matches!(self, Self::Goto { .. })
     }
-    
+
     /// Get the resume value if this is a resume command
     pub fn resume_value(&self) -> Option<&Value> {
         match self {
@@ -72,7 +70,7 @@ impl Command {
             _ => None,
         }
     }
-    
+
     /// Get the node name if this is a goto command
     pub fn goto_node(&self) -> Option<&str> {
         match self {

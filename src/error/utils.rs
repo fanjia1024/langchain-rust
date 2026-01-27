@@ -177,15 +177,15 @@ impl ErrorContext {
     /// 格式化上下文信息
     pub fn format(&self) -> String {
         let mut parts = Vec::new();
-        
+
         if let Some(ref module) = self.module {
             parts.push(format!("module: {}", module));
         }
-        
+
         if let Some(ref operation) = self.operation {
             parts.push(format!("operation: {}", operation));
         }
-        
+
         if !self.metadata.is_empty() {
             let metadata_str: Vec<String> = self
                 .metadata
@@ -194,7 +194,7 @@ impl ErrorContext {
                 .collect();
             parts.push(format!("metadata: {}", metadata_str.join(", ")));
         }
-        
+
         if parts.is_empty() {
             "no context".to_string()
         } else {
@@ -214,7 +214,7 @@ impl Default for ErrorContext {
 /// # 示例
 ///
 /// ```rust,ignore
-/// use langchain_rust::error::{ErrorContext, LangChainError};
+/// use langchain_rs::error::{ErrorContext, LangChainError};
 ///
 /// let error = LangChainError::ConfigurationError("invalid config".to_string());
 /// let context = ErrorContext::new()
@@ -226,7 +226,7 @@ impl Default for ErrorContext {
 /// ```
 pub fn error_context(error: &LangChainError) -> ErrorContext {
     let mut context = ErrorContext::new();
-    
+
     match error {
         LangChainError::LLMError(_) => {
             context.module = Some("llm".to_string());
@@ -254,7 +254,7 @@ pub fn error_context(error: &LangChainError) -> ErrorContext {
         }
         _ => {}
     }
-    
+
     context
 }
 
@@ -263,7 +263,7 @@ pub fn error_context(error: &LangChainError) -> ErrorContext {
 /// # 示例
 ///
 /// ```rust,ignore
-/// use langchain_rust::error::{error_info, LangChainError};
+/// use langchain_rs::error::{error_info, LangChainError};
 ///
 /// let error = LangChainError::ConfigurationError("invalid config".to_string());
 /// let info = error_info(&error);
@@ -272,13 +272,8 @@ pub fn error_context(error: &LangChainError) -> ErrorContext {
 pub fn error_info(error: &LangChainError) -> String {
     let code = ErrorCode::from_error(error);
     let context = error_context(error);
-    
-    format!(
-        "[{}] {} [{}]",
-        code,
-        error,
-        context.format()
-    )
+
+    format!("[{}] {} [{}]", code, error, context.format())
 }
 
 #[cfg(test)]
@@ -308,7 +303,7 @@ mod tests {
             .with_module("test")
             .with_operation("test_op")
             .with_metadata("key", "value");
-        
+
         let formatted = context.format();
         assert!(formatted.contains("module: test"));
         assert!(formatted.contains("operation: test_op"));

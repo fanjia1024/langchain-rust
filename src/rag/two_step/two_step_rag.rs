@@ -1,4 +1,3 @@
-
 use crate::{
     chain::{Chain, ChainError, ConversationalRetrieverChain},
     language_models::GenerateResult,

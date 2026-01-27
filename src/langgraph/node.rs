@@ -4,22 +4,16 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::{
-    agent::Agent,
-    chain::Chain,
-    language_models::llm::LLM,
-    prompt::PromptArgs,
+    agent::Agent, chain::Chain, language_models::llm::LLM, prompt::PromptArgs,
     schemas::messages::Message,
 };
 
 use super::{
+    compiled::CompiledGraph,
     error::LangGraphError,
+    persistence::{config::RunnableConfig, store::StoreBox},
     state::State,
     StateUpdate,
-    compiled::CompiledGraph,
-    persistence::{
-        config::RunnableConfig,
-        store::StoreBox,
-    },
 };
 
 mod subgraph;
@@ -35,7 +29,7 @@ pub trait Node<S: State>: Send + Sync {
     ///
     /// Returns a state update that will be merged into the current state.
     async fn invoke(&self, state: &S) -> Result<StateUpdate, LangGraphError>;
-    
+
     /// Invoke the node with state, config, and store
     ///
     /// This method allows nodes to access configuration and store for
@@ -61,7 +55,7 @@ pub trait Node<S: State>: Send + Sync {
         // Default implementation calls invoke for backward compatibility
         self.invoke(state).await
     }
-    
+
     /// Get the LLM from this node if it contains one
     ///
     /// Returns None if this node is not an LLM node.
@@ -90,9 +84,48 @@ pub trait Node<S: State>: Send + Sync {
 /// - `Fn(&S, &RunnableConfig, &dyn Store) -> Fut` - state, config, and store
 pub struct FunctionNode<S: State> {
     name: String,
-    func_state_only: Option<Arc<dyn Fn(&S) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
-    func_with_config: Option<Arc<dyn Fn(&S, &RunnableConfig) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
-    func_with_config_store: Option<Arc<dyn Fn(&S, &RunnableConfig, StoreBox) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send>> + Send + Sync>>,
+    func_state_only: Option<
+        Arc<
+            dyn Fn(
+                    &S,
+                ) -> std::pin::Pin<
+                    Box<
+                        dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>>
+                            + Send,
+                    >,
+                > + Send
+                + Sync,
+        >,
+    >,
+    func_with_config: Option<
+        Arc<
+            dyn Fn(
+                    &S,
+                    &RunnableConfig,
+                ) -> std::pin::Pin<
+                    Box<
+                        dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>>
+                            + Send,
+                    >,
+                > + Send
+                + Sync,
+        >,
+    >,
+    func_with_config_store: Option<
+        Arc<
+            dyn Fn(
+                    &S,
+                    &RunnableConfig,
+                    StoreBox,
+                ) -> std::pin::Pin<
+                    Box<
+                        dyn std::future::Future<Output = Result<StateUpdate, LangGraphError>>
+                            + Send,
+                    >,
+                > + Send
+                + Sync,
+        >,
+    >,
 }
 
 impl<S: State> FunctionNode<S> {
@@ -104,9 +137,7 @@ impl<S: State> FunctionNode<S> {
     {
         Self {
             name,
-            func_state_only: Some(Arc::new(move |state| {
-                Box::pin(func(state))
-            })),
+            func_state_only: Some(Arc::new(move |state| Box::pin(func(state)))),
             func_with_config: None,
             func_with_config_store: None,
         }
@@ -121,9 +152,7 @@ impl<S: State> FunctionNode<S> {
         Self {
             name,
             func_state_only: None,
-            func_with_config: Some(Arc::new(move |state, config| {
-                Box::pin(func(state, config))
-            })),
+            func_with_config: Some(Arc::new(move |state, config| Box::pin(func(state, config)))),
             func_with_config_store: None,
         }
     }
@@ -158,7 +187,7 @@ impl<S: State> Node<S> for FunctionNode<S> {
         } else {
             // If node requires config/store, invoke_with_context should be used
             Err(LangGraphError::ExecutionError(
-                "Node requires config or store, use invoke_with_context".to_string()
+                "Node requires config or store, use invoke_with_context".to_string(),
             ))
         }
     }
@@ -175,7 +204,7 @@ impl<S: State> Node<S> for FunctionNode<S> {
                 return func(state, config, store.clone()).await;
             } else {
                 return Err(LangGraphError::ExecutionError(
-                    "Node requires both config and store".to_string()
+                    "Node requires both config and store".to_string(),
                 ));
             }
         }
@@ -186,7 +215,7 @@ impl<S: State> Node<S> for FunctionNode<S> {
                 return func(state, config).await;
             } else {
                 return Err(LangGraphError::ExecutionError(
-                    "Node requires config".to_string()
+                    "Node requires config".to_string(),
                 ));
             }
         }
@@ -196,7 +225,7 @@ impl<S: State> Node<S> for FunctionNode<S> {
             func(state).await
         } else {
             Err(LangGraphError::ExecutionError(
-                "No valid function signature found".to_string()
+                "No valid function signature found".to_string(),
             ))
         }
     }
@@ -219,7 +248,11 @@ impl ChainNode {
     /// * `chain` - The chain to execute
     /// * `input_key` - The key in the state to use as input (default: "input")
     /// * `output_key` - The key in the state to store the output (default: "output")
-    pub fn new(chain: Arc<dyn Chain>, input_key: Option<String>, output_key: Option<String>) -> Self {
+    pub fn new(
+        chain: Arc<dyn Chain>,
+        input_key: Option<String>,
+        output_key: Option<String>,
+    ) -> Self {
         Self {
             chain,
             input_key: input_key.unwrap_or_else(|| "input".to_string()),
@@ -233,11 +266,10 @@ impl<S: State> Node<S> for ChainNode {
     async fn invoke(&self, state: &S) -> Result<StateUpdate, LangGraphError> {
         // Convert state to PromptArgs
         // For MessagesState, we extract the last message as input
-        let state_json = serde_json::to_value(state)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
+
         let mut prompt_args = PromptArgs::new();
-        
+
         // Try to extract input from state
         if let Some(input_value) = state_json.get(&self.input_key) {
             prompt_args.insert(self.input_key.clone(), input_value.clone());
@@ -254,11 +286,14 @@ impl<S: State> Node<S> for ChainNode {
 
         // Execute the chain
         let result = self.chain.call(prompt_args).await?;
-        
+
         // Create state update
         let mut update = HashMap::new();
-        update.insert(self.output_key.clone(), serde_json::to_value(result.generation)?);
-        
+        update.insert(
+            self.output_key.clone(),
+            serde_json::to_value(result.generation)?,
+        );
+
         Ok(update)
     }
 }
@@ -281,12 +316,11 @@ impl LLMNode {
 impl<S: State> Node<S> for LLMNode {
     // invoke_with_context uses default implementation (calls invoke)
     // LLM nodes don't typically need config or store
-    
+
     async fn invoke(&self, state: &S) -> Result<StateUpdate, LangGraphError> {
         // Convert state to messages
-        let state_json = serde_json::to_value(state)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
+
         let messages: Vec<Message> = if let Some(messages_value) = state_json.get("messages") {
             serde_json::from_value(messages_value.clone())
                 .map_err(LangGraphError::SerializationError)?
@@ -297,7 +331,7 @@ impl<S: State> Node<S> for LLMNode {
 
         // Generate response
         let result = self.llm.generate(&messages).await?;
-        
+
         // Create state update with new AI message
         let ai_message = Message::new_ai_message(&result.generation);
         let mut update = HashMap::new();
@@ -305,10 +339,10 @@ impl<S: State> Node<S> for LLMNode {
             "messages".to_string(),
             serde_json::to_value(vec![ai_message])?,
         );
-        
+
         Ok(update)
     }
-    
+
     fn get_llm(&self) -> Option<Arc<dyn LLM>> {
         Some(self.llm.clone())
     }
@@ -332,14 +366,13 @@ impl AgentNode {
 impl<S: State> Node<S> for AgentNode {
     // invoke_with_context uses default implementation (calls invoke)
     // Agent nodes can be extended later if needed
-    
+
     async fn invoke(&self, state: &S) -> Result<StateUpdate, LangGraphError> {
         // Convert state to PromptArgs
-        let state_json = serde_json::to_value(state)
-            .map_err(LangGraphError::SerializationError)?;
-        
+        let state_json = serde_json::to_value(state).map_err(LangGraphError::SerializationError)?;
+
         let mut prompt_args = PromptArgs::new();
-        
+
         // Extract input from state
         if let Some(input_value) = state_json.get("input") {
             prompt_args.insert("input".to_string(), input_value.clone());
@@ -360,10 +393,10 @@ impl<S: State> Node<S> for AgentNode {
         // For now, we'll use the agent's plan method
         let intermediate_steps = vec![];
         let event = self.agent.plan(&intermediate_steps, prompt_args).await?;
-        
+
         // Create state update based on agent event
         let mut update = HashMap::new();
-        
+
         match event {
             crate::schemas::agent::AgentEvent::Finish(finish) => {
                 update.insert(
@@ -377,7 +410,7 @@ impl<S: State> Node<S> for AgentNode {
                 }
             }
         }
-        
+
         Ok(update)
     }
 }
@@ -398,7 +431,10 @@ where
 ///
 /// Supports function signatures:
 /// - `Fn(&S, &RunnableConfig) -> Fut` - state and config
-pub fn function_node_with_config<S: State, F, Fut>(name: impl Into<String>, func: F) -> FunctionNode<S>
+pub fn function_node_with_config<S: State, F, Fut>(
+    name: impl Into<String>,
+    func: F,
+) -> FunctionNode<S>
 where
     F: Fn(&S, &RunnableConfig) -> Fut + Send + Sync + 'static,
     Fut: std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send + 'static,
@@ -410,7 +446,10 @@ where
 ///
 /// Supports function signatures:
 /// - `Fn(&S, &RunnableConfig, StoreBox) -> Fut` - state, config, and store (owned Arc)
-pub fn function_node_with_store<S: State, F, Fut>(name: impl Into<String>, func: F) -> FunctionNode<S>
+pub fn function_node_with_store<S: State, F, Fut>(
+    name: impl Into<String>,
+    func: F,
+) -> FunctionNode<S>
 where
     F: Fn(&S, &RunnableConfig, StoreBox) -> Fut + Send + Sync + 'static,
     Fut: std::future::Future<Output = Result<StateUpdate, LangGraphError>> + Send + 'static,

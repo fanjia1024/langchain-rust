@@ -25,8 +25,8 @@ impl WorkspaceBackend {
 #[async_trait]
 impl FileBackend for WorkspaceBackend {
     async fn ls_info(&self, path: &str) -> Result<Vec<FileInfo>, String> {
-        let path_buf = resolve_in_workspace(&self.workspace_root, path)
-            .map_err(|e| e.to_string())?;
+        let path_buf =
+            resolve_in_workspace(&self.workspace_root, path).map_err(|e| e.to_string())?;
         if !path_buf.is_dir() {
             return Err(format!("Not a directory: {}", path));
         }
@@ -55,14 +55,9 @@ impl FileBackend for WorkspaceBackend {
         Ok(out)
     }
 
-    async fn read(
-        &self,
-        file_path: &str,
-        offset: u32,
-        limit: u32,
-    ) -> Result<String, String> {
-        let path = resolve_in_workspace(&self.workspace_root, file_path)
-            .map_err(|e| e.to_string())?;
+    async fn read(&self, file_path: &str, offset: u32, limit: u32) -> Result<String, String> {
+        let path =
+            resolve_in_workspace(&self.workspace_root, file_path).map_err(|e| e.to_string())?;
         let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
         let lines: Vec<&str> = content.lines().collect();
         let start = if offset > 0 {
@@ -86,8 +81,8 @@ impl FileBackend for WorkspaceBackend {
     }
 
     async fn write(&self, file_path: &str, content: &str) -> Result<WriteResult, String> {
-        let path = resolve_in_workspace(&self.workspace_root, file_path)
-            .map_err(|e| e.to_string())?;
+        let path =
+            resolve_in_workspace(&self.workspace_root, file_path).map_err(|e| e.to_string())?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
@@ -108,8 +103,8 @@ impl FileBackend for WorkspaceBackend {
         new_string: &str,
         replace_all: bool,
     ) -> Result<EditResult, String> {
-        let path = resolve_in_workspace(&self.workspace_root, file_path)
-            .map_err(|e| e.to_string())?;
+        let path =
+            resolve_in_workspace(&self.workspace_root, file_path).map_err(|e| e.to_string())?;
         let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
         let (new_content, occurrences) = if replace_all {
             let count = content.matches(old_string).count();
@@ -144,7 +139,8 @@ impl FileBackend for WorkspaceBackend {
             return Err(format!("Not a directory: {}", path));
         }
         let pat = glob::Pattern::new(pattern).map_err(|e| e.to_string())?;
-        let all = list_files_under_workspace(&self.workspace_root, &base).map_err(|e| e.to_string())?;
+        let all =
+            list_files_under_workspace(&self.workspace_root, &base).map_err(|e| e.to_string())?;
         let mut out = Vec::new();
         for rel in all {
             if !pat.matches(&rel) {
@@ -174,7 +170,8 @@ impl FileBackend for WorkspaceBackend {
         glob_pattern: Option<&str>,
     ) -> Result<Vec<GrepMatch>, String> {
         let path_str = path.unwrap_or(".");
-        let base = resolve_in_workspace(&self.workspace_root, path_str).map_err(|e| e.to_string())?;
+        let base =
+            resolve_in_workspace(&self.workspace_root, path_str).map_err(|e| e.to_string())?;
         let candidates: Vec<String> = if base.is_file() {
             let rel = base
                 .strip_prefix(&self.workspace_root)
@@ -183,7 +180,8 @@ impl FileBackend for WorkspaceBackend {
                 .replace('\\', "/");
             vec![rel]
         } else {
-            let all = list_files_under_workspace(&self.workspace_root, &base).map_err(|e| e.to_string())?;
+            let all = list_files_under_workspace(&self.workspace_root, &base)
+                .map_err(|e| e.to_string())?;
             if let Some(gp) = glob_pattern {
                 let pat = glob::Pattern::new(gp).map_err(|e| e.to_string())?;
                 all.into_iter().filter(|p| pat.matches(p)).collect()

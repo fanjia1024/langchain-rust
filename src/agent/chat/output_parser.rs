@@ -30,17 +30,24 @@ impl ChatOutputParser {
         match parse_json_markdown(text) {
             Some(value) => {
                 // Extract action and action_input from the parsed JSON
-                let action = value.get("action")
+                let action = value
+                    .get("action")
                     .and_then(|v| v.as_str())
-                    .ok_or_else(|| AgentError::OtherError("Missing or invalid 'action' field".to_string()))?
+                    .ok_or_else(|| {
+                        AgentError::OtherError("Missing or invalid 'action' field".to_string())
+                    })?
                     .to_string();
-                
+
                 // Handle action_input: it can be a string or an object
                 // If it's an object, serialize it to a string
                 let action_input = match value.get("action_input") {
                     Some(v) if v.is_string() => v.as_str().unwrap().to_string(),
                     Some(v) => serde_json::to_string(v)?,
-                    None => return Err(AgentError::OtherError("Missing 'action_input' field".to_string())),
+                    None => {
+                        return Err(AgentError::OtherError(
+                            "Missing 'action_input' field".to_string(),
+                        ))
+                    }
                 };
 
                 if action == "Final Answer" {

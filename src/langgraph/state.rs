@@ -33,8 +33,8 @@ pub type StateUpdate = HashMap<String, Value>;
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_rust::langgraph::{MessagesState, State};
-/// use langchain_rust::schemas::messages::Message;
+/// use langchain_rs::langgraph::{MessagesState, State};
+/// use langchain_rs::schemas::messages::Message;
 ///
 /// let state = MessagesState {
 ///     messages: vec![Message::new_human_message("Hello")],
@@ -84,9 +84,7 @@ pub fn extract_messages_from_update(update: &StateUpdate) -> Vec<Message> {
         .and_then(|v| {
             if let Some(arr) = v.as_array() {
                 arr.iter()
-                    .filter_map(|item| {
-                        serde_json::from_value::<Message>(item.clone()).ok()
-                    })
+                    .filter_map(|item| serde_json::from_value::<Message>(item.clone()).ok())
                     .collect::<Vec<_>>()
                     .into()
             } else {

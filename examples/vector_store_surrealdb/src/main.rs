@@ -1,6 +1,6 @@
 // To run this example execute: `cargo run` in the folder.
 
-use langchain_rust::{
+use langchain_rs::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     schemas::Document,
     vectorstore::{surrealdb::StoreBuilder, VecStoreOptions, VectorStore},
@@ -54,7 +54,7 @@ async fn main() {
 
     // Add documents to the database
     let doc1 = Document::new(
-        "langchain-rust is a port of the langchain python library to rust and was written in 2024.",
+        "langchain-rs is a port of the langchain python library to rust and was written in 2024.",
     );
     let doc2 = Document::new(
         "langchaingo is a port of the langchain python library to go language and was written in 2023."

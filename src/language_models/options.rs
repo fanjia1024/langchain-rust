@@ -41,7 +41,10 @@ impl std::fmt::Debug for CallOptions {
             .field("max_tokens", &self.max_tokens)
             .field("temperature", &self.temperature)
             .field("stop_words", &self.stop_words)
-            .field("streaming_func", &self.streaming_func.as_ref().map(|_| "..."))
+            .field(
+                "streaming_func",
+                &self.streaming_func.as_ref().map(|_| "..."),
+            )
             .field("top_k", &self.top_k)
             .field("top_p", &self.top_p)
             .field("seed", &self.seed)

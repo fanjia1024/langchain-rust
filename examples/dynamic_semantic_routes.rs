@@ -1,4 +1,4 @@
-use langchain_rust::{
+use langchain_rs::{
     embedding::openai::OpenAiEmbedder,
     semantic_router::{AggregationMethod, RouteLayerBuilder, Router},
     tools::{SerpApi, Tool},

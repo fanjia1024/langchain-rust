@@ -53,11 +53,10 @@ impl VectorStoreBaseConfig {
             Ok(dims)
         } else {
             // 通过 embedding 一个测试文本来获取维度
-            let test_embedding = self
-                .embedder
-                .embed_query("test")
-                .await
-                .map_err(|e| VectorStoreError::InternalError(format!("Embedding error: {}", e)))?;
+            let test_embedding =
+                self.embedder.embed_query("test").await.map_err(|e| {
+                    VectorStoreError::InternalError(format!("Embedding error: {}", e))
+                })?;
             Ok(test_embedding.len())
         }
     }
@@ -96,10 +95,7 @@ impl VectorStoreHelpers {
     }
 
     /// 应用分数阈值过滤
-    pub fn apply_score_threshold(
-        mut docs: Vec<Document>,
-        threshold: Option<f32>,
-    ) -> Vec<Document> {
+    pub fn apply_score_threshold(mut docs: Vec<Document>, threshold: Option<f32>) -> Vec<Document> {
         if let Some(threshold) = threshold {
             docs.retain(|doc| doc.score >= threshold as f64);
         }
@@ -168,10 +164,7 @@ mod tests {
 
     #[test]
     fn test_extract_texts() {
-        let docs = vec![
-            Document::new("text1"),
-            Document::new("text2"),
-        ];
+        let docs = vec![Document::new("text1"), Document::new("text2")];
         let texts = VectorStoreHelpers::extract_texts(&docs);
         assert_eq!(texts, vec!["text1", "text2"]);
     }

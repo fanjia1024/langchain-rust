@@ -31,11 +31,7 @@ pub struct StateSnapshot<S: State> {
 
 impl<S: State> StateSnapshot<S> {
     /// Create a new StateSnapshot
-    pub fn new(
-        values: S,
-        next: Vec<String>,
-        config: CheckpointConfig,
-    ) -> Self {
+    pub fn new(values: S, next: Vec<String>, config: CheckpointConfig) -> Self {
         Self {
             values,
             next,

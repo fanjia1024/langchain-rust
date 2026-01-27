@@ -12,7 +12,7 @@
 ///
 /// # 示例
 /// ```rust
-/// use langchain_rust::utils::mean_embedding_f64;
+/// use langchain_rs::utils::mean_embedding_f64;
 ///
 /// let embeddings = vec![
 ///     vec![1.0, 2.0],
@@ -52,7 +52,7 @@ pub fn mean_embedding_f64(embeddings: &[Vec<f64>]) -> Vec<f64> {
 ///
 /// # 示例
 /// ```rust
-/// use langchain_rust::utils::sum_vectors_f64;
+/// use langchain_rs::utils::sum_vectors_f64;
 ///
 /// let vectors = vec![
 ///     vec![1.0, 2.0],

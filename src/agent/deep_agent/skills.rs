@@ -106,7 +106,9 @@ pub fn match_skills(index: &[SkillMeta], user_message: &str) -> Vec<SkillMeta> {
                 score += 1;
             }
         }
-        if msg_lower.len() <= 100 && (desc_lower.contains(&msg_lower) || name_lower.contains(&msg_lower)) {
+        if msg_lower.len() <= 100
+            && (desc_lower.contains(&msg_lower) || name_lower.contains(&msg_lower))
+        {
             score += 5;
         }
         if score > 0 {

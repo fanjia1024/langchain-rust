@@ -1,8 +1,8 @@
 use async_trait::async_trait;
-use langchain_rust::agent::{create_agent, Middleware, MiddlewareContext, MiddlewareError};
-use langchain_rust::prompt::PromptArgs;
-use langchain_rust::schemas::agent::AgentAction;
-use langchain_rust::schemas::Message;
+use langchain_rs::agent::{create_agent, Middleware, MiddlewareContext, MiddlewareError};
+use langchain_rs::prompt::PromptArgs;
+use langchain_rs::schemas::agent::AgentAction;
+use langchain_rs::schemas::Message;
 use std::sync::Arc;
 
 /// Custom guardrail: Block requests with excessive length

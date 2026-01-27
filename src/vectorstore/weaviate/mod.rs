@@ -1,5 +1,5 @@
-mod weaviate;
 mod builder;
+mod weaviate;
 
-pub use weaviate::*;
 pub use builder::*;
+pub use weaviate::*;

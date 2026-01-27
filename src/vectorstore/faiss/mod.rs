@@ -1,5 +1,5 @@
-mod faiss;
 mod builder;
+mod faiss;
 
-pub use faiss::*;
 pub use builder::*;
+pub use faiss::*;

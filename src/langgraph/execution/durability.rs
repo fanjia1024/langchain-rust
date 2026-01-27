@@ -1,10 +1,6 @@
-
 use crate::langgraph::{
     error::LangGraphError,
-    persistence::{
-        checkpointer::CheckpointerBox,
-        snapshot::StateSnapshot,
-    },
+    persistence::{checkpointer::CheckpointerBox, snapshot::StateSnapshot},
     state::State,
 };
 
@@ -71,13 +67,13 @@ pub async fn save_checkpoint<S: State + 'static>(
                 let checkpointer = checkpointer.clone();
                 let snapshot = snapshot.clone();
                 let thread_id = snapshot.thread_id().to_string();
-                
+
                 tokio::spawn(async move {
                     if let Err(e) = checkpointer.put(&thread_id, &snapshot).await {
                         log::error!("Failed to save checkpoint asynchronously: {}", e);
                     }
                 });
-                
+
                 Ok(())
             }
             DurabilityMode::Sync => {
@@ -102,9 +98,18 @@ mod tests {
 
     #[test]
     fn test_durability_mode_from_str() {
-        assert_eq!(DurabilityMode::from_str("exit").unwrap(), DurabilityMode::Exit);
-        assert_eq!(DurabilityMode::from_str("async").unwrap(), DurabilityMode::Async);
-        assert_eq!(DurabilityMode::from_str("sync").unwrap(), DurabilityMode::Sync);
+        assert_eq!(
+            DurabilityMode::from_str("exit").unwrap(),
+            DurabilityMode::Exit
+        );
+        assert_eq!(
+            DurabilityMode::from_str("async").unwrap(),
+            DurabilityMode::Async
+        );
+        assert_eq!(
+            DurabilityMode::from_str("sync").unwrap(),
+            DurabilityMode::Sync
+        );
         assert!(DurabilityMode::from_str("invalid").is_err());
     }
 }

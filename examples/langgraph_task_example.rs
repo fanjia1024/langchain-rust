@@ -1,8 +1,8 @@
-use langchain_rust::langgraph::{
+use langchain_rs::langgraph::{
     execute_task_with_cache, function_node, FunctionTask, InMemorySaver, LangGraphError,
     MessagesState, RunnableConfig, StateGraph, Task, TaskCache, END, START,
 };
-use langchain_rust::schemas::messages::Message;
+use langchain_rs::schemas::messages::Message;
 use serde_json::Value;
 use std::sync::Arc;
 

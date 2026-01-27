@@ -4,6 +4,9 @@ use async_trait::async_trait;
 use serde_json::json;
 use tokio::sync::Mutex;
 
+use super::middleware::human_in_loop::{
+    CURRENT_BATCH_ACTIONS_KEY, RESUME_DECISIONS_KEY, RESUME_DECISION_INDEX_KEY,
+};
 use super::{
     agent::Agent,
     checkpoint::{AgentCheckpointState, AgentCheckpointer},
@@ -15,9 +18,6 @@ use super::{
     runtime::{Runtime, RuntimeRequest},
     state::AgentState,
     AgentError,
-};
-use super::middleware::human_in_loop::{
-    CURRENT_BATCH_ACTIONS_KEY, RESUME_DECISION_INDEX_KEY, RESUME_DECISIONS_KEY,
 };
 use crate::schemas::{LogTools, Message, MessageType};
 use crate::{
@@ -219,12 +219,7 @@ where
     A: Agent + Send + Sync,
 {
     async fn call(&self, input_variables: PromptArgs) -> Result<GenerateResult, ChainError> {
-        self.run_loop(
-            input_variables,
-            None,
-            None,
-        )
-        .await
+        self.run_loop(input_variables, None, None).await
     }
 
     async fn invoke(&self, input_variables: PromptArgs) -> Result<String, ChainError> {
@@ -262,12 +257,15 @@ where
         let mut first_normal_after_resume = had_resume;
         let mut middleware_context = MiddlewareContext::new();
         if resume_batch.is_none() {
-            middleware_context.set_custom_data(RESUME_DECISION_INDEX_KEY.to_string(), serde_json::json!(0));
+            middleware_context
+                .set_custom_data(RESUME_DECISION_INDEX_KEY.to_string(), serde_json::json!(0));
         }
         if let Some((_, ref decisions)) = resume_batch {
             if let Some(decisions_arr) = decisions.get("decisions") {
-                middleware_context.set_custom_data(RESUME_DECISIONS_KEY.to_string(), decisions_arr.clone());
-                middleware_context.set_custom_data(RESUME_DECISION_INDEX_KEY.to_string(), serde_json::json!(0));
+                middleware_context
+                    .set_custom_data(RESUME_DECISIONS_KEY.to_string(), decisions_arr.clone());
+                middleware_context
+                    .set_custom_data(RESUME_DECISION_INDEX_KEY.to_string(), serde_json::json!(0));
             }
         }
         log::debug!("steps: {:?}", steps);
@@ -301,7 +299,11 @@ where
                     let mut reject_this_tool = false;
                     for mw in &self.middleware {
                         let res = mw
-                            .before_tool_call_with_runtime(&action, Some(&*runtime), &mut middleware_context)
+                            .before_tool_call_with_runtime(
+                                &action,
+                                Some(&*runtime),
+                                &mut middleware_context,
+                            )
                             .await;
                         match &res {
                             Err(MiddlewareError::Interrupt(p)) => {
@@ -367,7 +369,9 @@ where
                     middleware_context.increment_tool_call_count();
                     let tool = name_to_tools
                         .get(&action.tool.trim().replace(" ", "_"))
-                        .ok_or_else(|| AgentError::ToolError(format!("Tool {} not found", action.tool)))
+                        .ok_or_else(|| {
+                            AgentError::ToolError(format!("Tool {} not found", action.tool))
+                        })
                         .map_err(|e| ChainError::AgentError(e.to_string()))?;
                     let tool_call_id = format!("call_{}", steps.len());
                     let mut tool_runtime = ToolRuntime::new(
@@ -403,15 +407,24 @@ where
                     };
                     for mw in &self.middleware {
                         let modified = mw
-                            .after_tool_call_with_runtime(&action, &observation, Some(&*runtime), &mut middleware_context)
+                            .after_tool_call_with_runtime(
+                                &action,
+                                &observation,
+                                Some(&*runtime),
+                                &mut middleware_context,
+                            )
                             .await
-                            .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?;
+                            .map_err(|e| {
+                                ChainError::AgentError(format!("Middleware error: {}", e))
+                            })?;
                         if let Some(mo) = modified {
                             observation = mo;
                         } else if let Some(mo) = mw
                             .after_tool_call(&action, &observation, &mut middleware_context)
                             .await
-                            .map_err(|e| ChainError::AgentError(format!("Middleware error: {}", e)))?
+                            .map_err(|e| {
+                                ChainError::AgentError(format!("Middleware error: {}", e))
+                            })?
                         {
                             observation = mo;
                         }
@@ -429,9 +442,8 @@ where
             middleware_context.increment_iteration();
 
             // Create runtime request
-            let runtime_request =
-                RuntimeRequest::new(plan_input.clone(), Arc::clone(&self.state))
-                    .with_runtime(Arc::clone(&runtime));
+            let runtime_request = RuntimeRequest::new(plan_input.clone(), Arc::clone(&self.state))
+                .with_runtime(Arc::clone(&runtime));
 
             // Apply before_agent_plan hooks (try runtime-aware version first)
             for mw in &self.middleware {
@@ -522,9 +534,8 @@ where
             }
 
             // Apply after_agent_plan hooks (try runtime-aware version first)
-            let runtime_request =
-                RuntimeRequest::new(plan_input.clone(), Arc::clone(&self.state))
-                    .with_runtime(Arc::clone(&runtime));
+            let runtime_request = RuntimeRequest::new(plan_input.clone(), Arc::clone(&self.state))
+                .with_runtime(Arc::clone(&runtime));
 
             for mw in &self.middleware {
                 // Try runtime-aware hook first
@@ -595,9 +606,7 @@ where
                             if matches!(res, Ok(Some(_))) {
                                 continue;
                             }
-                            let res2 = mw
-                                .before_tool_call(&action, &mut middleware_context)
-                                .await;
+                            let res2 = mw.before_tool_call(&action, &mut middleware_context).await;
                             match res2 {
                                 Err(MiddlewareError::Interrupt(p)) => {
                                     if let (Some(cp), Some(tid)) = (
@@ -823,7 +832,11 @@ where
             .checkpointer
             .as_ref()
             .and_then(|cp| cp.get(&thread_id))
-            .ok_or_else(|| ChainError::OtherError("No checkpoint found for thread (use same thread_id as interrupt)".to_string()))?;
+            .ok_or_else(|| {
+                ChainError::OtherError(
+                    "No checkpoint found for thread (use same thread_id as interrupt)".to_string(),
+                )
+            })?;
         self.run_loop(
             state.input_variables.clone(),
             Some(config),

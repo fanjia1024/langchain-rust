@@ -2,12 +2,12 @@
 //!
 //! Tests to verify architectural patterns and module organization.
 
-use langchain_rust::error::{error_info, ErrorCode, LangChainError};
+use langchain_rs::error::{error_info, ChainError, ErrorCode, LangChainError};
 
 #[test]
 fn test_error_unification() {
     // Test that all error types can be converted to LangChainError
-    let chain_error = langchain_rust::ChainError::OtherError("test".to_string());
+    let chain_error = ChainError::OtherError("test".to_string());
     let langchain_error: LangChainError = chain_error.into();
 
     match langchain_error {
@@ -34,7 +34,7 @@ fn test_error_info() {
 
 #[test]
 fn test_utils_similarity() {
-    use langchain_rust::utils::{cosine_similarity_f64, text_similarity};
+    use langchain_rs::utils::{cosine_similarity_f64, text_similarity};
 
     // Test cosine similarity
     let vec1 = vec![1.0, 0.0];
@@ -51,7 +51,7 @@ fn test_utils_similarity() {
 
 #[test]
 fn test_utils_vectors() {
-    use langchain_rust::utils::{mean_embedding_f64, sum_vectors_f64};
+    use langchain_rs::utils::{mean_embedding_f64, sum_vectors_f64};
 
     let vectors = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
 
@@ -64,7 +64,7 @@ fn test_utils_vectors() {
 
 #[test]
 fn test_type_aliases() {
-    use langchain_rust::{Messages, Tools};
+    use langchain_rs::{Messages, Tools};
 
     // Verify type aliases are accessible
     let _tools: Tools = vec![];

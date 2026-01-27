@@ -53,7 +53,7 @@ impl CharacterTextSplitterOptions {
 }
 
 /// CharacterTextSplitter splits text using a single separator character
-/// 
+///
 /// This is a simple splitter that splits text on a specified separator.
 /// It's useful when you need a straightforward character-based split.
 pub struct CharacterTextSplitter {
@@ -212,11 +212,9 @@ impl CharacterTextSplitter {
             } else {
                 // Add overlap from previous chunk
                 let prev_chunk = &chunks[i - 1];
-                let overlap_start = prev_chunk
-                    .len()
-                    .saturating_sub(self.options.chunk_overlap);
+                let overlap_start = prev_chunk.len().saturating_sub(self.options.chunk_overlap);
                 let overlap_text = &prev_chunk[overlap_start..];
-                
+
                 let mut new_chunk = String::new();
                 if !overlap_text.is_empty() {
                     new_chunk.push_str(overlap_text);
