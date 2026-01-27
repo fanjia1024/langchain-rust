@@ -28,6 +28,8 @@ This is the Rust language implementation of [LangChain](https://github.com/langc
 - 🔧 **Middleware**: Logging, PII detection, content filtering, rate limiting, retry, and custom middleware
 - 🎨 **Structured Output**: JSON schema validation and structured response generation
 - ⚙️ **Runtime Context**: Dynamic prompts, typed context, and runtime-aware middleware
+- 📊 **LangGraph**: State graphs, streaming, persistence (SQLite/memory), interrupts, subgraphs, and time-travel debugging
+- 🤖 **Deep Agent**: Planning (write_todos), filesystem tools (ls, read_file, write_file, edit_file), skills, long-term memory, and human-in-the-loop
 
 ## 📦 Installation
 
@@ -317,6 +319,72 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### LangGraph (Hello World)
+
+Build a state graph with `MessagesState`, add a node with `function_node`, connect START to the node and the node to END, then compile and invoke:
+
+```rust
+use langchain_ai_rs::langgraph::{function_node, MessagesState, StateGraph, END, START};
+use langchain_ai_rs::schemas::messages::Message;
+
+let mock_llm = function_node("mock_llm", |_state: &MessagesState| async move {
+    use std::collections::HashMap;
+    let mut update = HashMap::new();
+    update.insert(
+        "messages".to_string(),
+        serde_json::to_value(vec![Message::new_ai_message("hello world")])?,
+    );
+    Ok(update)
+});
+
+let mut graph = StateGraph::<MessagesState>::new();
+graph.add_node("mock_llm", mock_llm)?;
+graph.add_edge(START, "mock_llm");
+graph.add_edge("mock_llm", END);
+
+let compiled = graph.compile()?;
+let initial_state = MessagesState::with_messages(vec![Message::new_human_message("hi!")]);
+let final_state = compiled.invoke(initial_state).await?;
+```
+
+See [LangGraph Hello World](examples/langgraph_hello_world.rs) and [LangGraph Streaming](examples/langgraph_streaming.rs) for more.
+
+### Deep Agent (Basic)
+
+Use `create_deep_agent` with planning and filesystem enabled; the agent gets a workspace and built-in tools (write_todos, ls, read_file, write_file, edit_file):
+
+```rust
+use langchain_ai_rs::{
+    agent::{create_deep_agent, DeepAgentConfig},
+    chain::Chain,
+    prompt_args,
+    schemas::messages::Message,
+};
+
+let workspace = std::env::temp_dir().join("my_agent_workspace");
+std::fs::create_dir_all(&workspace)?;
+
+let config = DeepAgentConfig::new()
+    .with_planning(true)
+    .with_filesystem(true)
+    .with_workspace_root(workspace);
+
+let agent = create_deep_agent(
+    "gpt-4o-mini",
+    &[],
+    Some("You are a helpful assistant with planning and file tools."),
+    config,
+)?;
+
+let result = agent
+    .invoke(prompt_args! {
+        "messages" => vec![Message::new_human_message("List files in the workspace.")]
+    })
+    .await?;
+```
+
+See [Deep Agent Basic](examples/deep_agent_basic.rs) and [Deep Agent Customization](examples/deep_agent_customization.rs) for more.
+
 ## 📚 Current Features
 
 ### LLMs
@@ -376,6 +444,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] [Multi-Agent Subagents](examples/multi_agent_subagents.rs)
 - [x] [Multi-Agent Skills](examples/multi_agent_skills.rs)
 - [x] [Multi-Agent Handoffs](examples/multi_agent_handoffs.rs)
+
+### LangGraph
+
+- [x] [Hello World](examples/langgraph_hello_world.rs)
+- [x] [Streaming](examples/langgraph_streaming.rs)
+- [x] [Persistence Basic](examples/langgraph_persistence_basic.rs), [Persistence SQLite](examples/langgraph_persistence_sqlite.rs), [Persistence Replay](examples/langgraph_persistence_replay.rs)
+- [x] [Interrupts](examples/langgraph_interrupts.rs), [Interrupts Approval](examples/langgraph_interrupts_approval.rs), [Interrupts Review](examples/langgraph_interrupts_review.rs)
+- [x] [Subgraph Shared State](examples/langgraph_subgraph_shared_state.rs), [Subgraph Streaming](examples/langgraph_subgraph_streaming.rs)
+- [x] [Memory Store](examples/langgraph_memory_store.rs), [Memory Basic](examples/langgraph_memory_basic.rs)
+- [x] [Agent Workflow](examples/langgraph_agent_workflow.rs), [Parallel Execution](examples/langgraph_parallel_execution.rs), [Time Travel](examples/langgraph_time_travel.rs), [Task Example](examples/langgraph_task_example.rs)
+
+### Deep Agent
+
+- [x] [Basic (planning + filesystem)](examples/deep_agent_basic.rs)
+- [x] [Customization](examples/deep_agent_customization.rs)
+- [x] [Skills](examples/deep_agent_skills.rs)
+- [x] [Planning](examples/deep_agent_planning.rs)
+- [x] [Filesystem](examples/deep_agent_filesystem.rs)
+- [x] [Human-in-the-Loop](examples/deep_agent_human_in_the_loop.rs)
+- [x] [Long-term Memory](examples/deep_agent_long_term_memory.rs)
+- [x] [With Task Tool](examples/deep_agent_with_task.rs)
 
 ### Text Splitters
 

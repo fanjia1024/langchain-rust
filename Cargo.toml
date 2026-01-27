@@ -1,7 +1,7 @@
 workspace = { members = ["examples/vector_store_surrealdb"] }
 [package]
 name = "langchain-ai-rs"
-version = "4.6.2"
+version = "5.0.0"
 edition = "2021"
 publish = true
 repository = "https://github.com/fanjia1024/langchain-rust"

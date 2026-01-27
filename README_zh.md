@@ -28,6 +28,8 @@
 - 🔧 **中间件**：日志记录、PII 检测、内容过滤、速率限制、重试和自定义中间件
 - 🎨 **结构化输出**：JSON 模式验证和结构化响应生成
 - ⚙️ **运行时上下文**：动态提示、类型化上下文和运行时感知中间件
+- 📊 **LangGraph**：状态图、流式、持久化（SQLite/内存）、中断、子图与时间旅行调试
+- 🤖 **Deep Agent**：规划（write_todos）、文件系统工具（ls、read_file、write_file、edit_file）、技能、长期记忆与人机协同
 
 ## 📦 安装
 
@@ -317,6 +319,72 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### LangGraph（Hello World）
+
+使用 `MessagesState` 构建状态图，用 `function_node` 添加节点，连接 START → 节点 → END，编译后调用：
+
+```rust
+use langchain_ai_rs::langgraph::{function_node, MessagesState, StateGraph, END, START};
+use langchain_ai_rs::schemas::messages::Message;
+
+let mock_llm = function_node("mock_llm", |_state: &MessagesState| async move {
+    use std::collections::HashMap;
+    let mut update = HashMap::new();
+    update.insert(
+        "messages".to_string(),
+        serde_json::to_value(vec![Message::new_ai_message("hello world")])?,
+    );
+    Ok(update)
+});
+
+let mut graph = StateGraph::<MessagesState>::new();
+graph.add_node("mock_llm", mock_llm)?;
+graph.add_edge(START, "mock_llm");
+graph.add_edge("mock_llm", END);
+
+let compiled = graph.compile()?;
+let initial_state = MessagesState::with_messages(vec![Message::new_human_message("hi!")]);
+let final_state = compiled.invoke(initial_state).await?;
+```
+
+更多见 [LangGraph Hello World](examples/langgraph_hello_world.rs) 与 [LangGraph 流式](examples/langgraph_streaming.rs)。
+
+### Deep Agent（基础）
+
+使用 `create_deep_agent` 开启规划与文件系统；智能体获得工作区及内置工具（write_todos、ls、read_file、write_file、edit_file）：
+
+```rust
+use langchain_ai_rs::{
+    agent::{create_deep_agent, DeepAgentConfig},
+    chain::Chain,
+    prompt_args,
+    schemas::messages::Message,
+};
+
+let workspace = std::env::temp_dir().join("my_agent_workspace");
+std::fs::create_dir_all(&workspace)?;
+
+let config = DeepAgentConfig::new()
+    .with_planning(true)
+    .with_filesystem(true)
+    .with_workspace_root(workspace);
+
+let agent = create_deep_agent(
+    "gpt-4o-mini",
+    &[],
+    Some("You are a helpful assistant with planning and file tools."),
+    config,
+)?;
+
+let result = agent
+    .invoke(prompt_args! {
+        "messages" => vec![Message::new_human_message("List files in the workspace.")]
+    })
+    .await?;
+```
+
+更多见 [Deep Agent 基础](examples/deep_agent_basic.rs) 与 [Deep Agent 自定义](examples/deep_agent_customization.rs)。
+
 ## 📚 当前功能
 
 ### LLM 模型
@@ -376,6 +444,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - [x] [多智能体子智能体](examples/multi_agent_subagents.rs)
 - [x] [多智能体技能](examples/multi_agent_skills.rs)
 - [x] [多智能体交接](examples/multi_agent_handoffs.rs)
+
+### LangGraph
+
+- [x] [Hello World](examples/langgraph_hello_world.rs)
+- [x] [流式](examples/langgraph_streaming.rs)
+- [x] [持久化基础](examples/langgraph_persistence_basic.rs)、[持久化 SQLite](examples/langgraph_persistence_sqlite.rs)、[持久化回放](examples/langgraph_persistence_replay.rs)
+- [x] [中断](examples/langgraph_interrupts.rs)、[中断审批](examples/langgraph_interrupts_approval.rs)、[中断审核](examples/langgraph_interrupts_review.rs)
+- [x] [子图共享状态](examples/langgraph_subgraph_shared_state.rs)、[子图流式](examples/langgraph_subgraph_streaming.rs)
+- [x] [记忆存储](examples/langgraph_memory_store.rs)、[记忆基础](examples/langgraph_memory_basic.rs)
+- [x] [智能体工作流](examples/langgraph_agent_workflow.rs)、[并行执行](examples/langgraph_parallel_execution.rs)、[时间旅行](examples/langgraph_time_travel.rs)、[任务示例](examples/langgraph_task_example.rs)
+
+### Deep Agent
+
+- [x] [基础（规划 + 文件系统）](examples/deep_agent_basic.rs)
+- [x] [自定义](examples/deep_agent_customization.rs)
+- [x] [技能](examples/deep_agent_skills.rs)
+- [x] [规划](examples/deep_agent_planning.rs)
+- [x] [文件系统](examples/deep_agent_filesystem.rs)
+- [x] [人机协同](examples/deep_agent_human_in_the_loop.rs)
+- [x] [长期记忆](examples/deep_agent_long_term_memory.rs)
+- [x] [任务工具](examples/deep_agent_with_task.rs)
 
 ### 文本分割器 (Text Splitters)
 
