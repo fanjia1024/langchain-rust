@@ -15,16 +15,9 @@ structured output, and multi-agent (Deep Agent) workflows.
 keywords = [
     "langchain",
     "llm",
-    "chain",
     "agent",
     "rag",
-    "embeddings",
-    "vector-store",
-    "openai",
-    "langgraph",
     "deep-agent",
-    "chatgpt",
-    "prompts",
 ]
 categories = [
     "development-tools",
