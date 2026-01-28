@@ -764,14 +764,26 @@ where
 
                         let mut tools_ai_message_seen: HashMap<String, ()> = HashMap::default();
                         for (action, observation) in steps {
-                            let LogTools { tool_id, tools } = serde_json::from_str(&action.log)?;
-                            let tools_value: serde_json::Value = serde_json::from_str(&tools)?;
-                            if tools_ai_message_seen.insert(tools, ()).is_none() {
-                                memory.add_message(
-                                    Message::new_ai_message("").with_tool_calls(tools_value),
-                                );
+                            match serde_json::from_str::<LogTools>(&action.log) {
+                                Ok(LogTools { tool_id, tools }) => {
+                                    let tools_value: serde_json::Value =
+                                        serde_json::from_str(&tools).map_err(ChainError::from)?;
+                                    if tools_ai_message_seen.insert(tools.clone(), ()).is_none() {
+                                        memory.add_message(
+                                            Message::new_ai_message("").with_tool_calls(tools_value),
+                                        );
+                                    }
+                                    memory.add_message(Message::new_tool_message(observation, tool_id));
+                                }
+                                Err(_) => {
+                                    // Conversational agent: action.log is raw model text, not LogTools
+                                    memory.add_message(Message::new_ai_message(&action.log));
+                                    memory.add_message(Message::new_tool_message(
+                                        observation,
+                                        &action.tool,
+                                    ));
+                                }
                             }
-                            memory.add_message(Message::new_tool_message(observation, tool_id));
                         }
 
                         memory.add_ai_message(&finish.output);

@@ -216,7 +216,10 @@ impl MessageFormatterStruct {
                     result.extend(tmpl.format_messages(input_variables.clone())?)
                 }
                 MessageOrTemplate::MessagesPlaceholder(placeholder) => {
-                    let messages = input_variables[placeholder].clone();
+                    let messages = input_variables
+                        .get(placeholder)
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Array(vec![]));
                     result.extend(Message::messages_from_value(&messages)?);
                 }
             }
