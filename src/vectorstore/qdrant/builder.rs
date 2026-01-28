@@ -49,7 +49,7 @@ impl StoreBuilder {
 
     /// Name of the collection in Qdrant. REQUIRED.
     /// It is recommended to create a collection in advance, with the required configurations.
-    /// https://qdrant.tech/documentation/concepts/collections/#create-a-collection
+    /// <https://qdrant.tech/documentation/concepts/collections/#create-a-collection>
     ///
     /// If the collection doesn't exist, it will be created with the embedding provider's dimension
     /// and Cosine similarity metric.
@@ -80,7 +80,7 @@ impl StoreBuilder {
     }
 
     /// Filter to be applied to the search results.
-    /// https://qdrant.tech/documentation/concepts/filtering/
+    /// <https://qdrant.tech/documentation/concepts/filtering/>
     /// Instance of use `qdrant_client::qdrant::Filter`
     pub fn search_filter(mut self, search_filter: Filter) -> Self {
         self.search_filter = Some(search_filter);

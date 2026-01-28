@@ -21,7 +21,7 @@ impl<C: Connection> StoreBuilder<C> {
     /// you are looking to connect to store created by python version of langchain.
     /// * table is singular - "document" instead of "documents"
     /// * uses single table instead of multiple tables
-    /// * creates a schemafull table required for faster indexing. https://github.com/surrealdb/surrealdb/issues/2013
+    /// * creates a schemafull table required for faster indexing. <https://github.com/surrealdb/surrealdb/issues/2013>
     pub fn new() -> Self {
         StoreBuilder {
             db: None,

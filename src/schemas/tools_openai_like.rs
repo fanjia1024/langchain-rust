@@ -48,7 +48,7 @@ impl FunctionDefinition {
         }
     }
 
-    /// Generic function that can be used with both Arc<Tool>, Box<Tool>, and direct references
+    /// Generic function that can be used with both `Arc<Tool>`, `Box<Tool>`, and direct references
     pub fn from_langchain_tool<T>(tool: &T) -> FunctionDefinition
     where
         T: Deref<Target = dyn Tool> + ?Sized,
