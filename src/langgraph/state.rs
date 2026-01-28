@@ -33,8 +33,8 @@ pub type StateUpdate = HashMap<String, Value>;
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_ai_rs::langgraph::{MessagesState, State};
-/// use langchain_ai_rs::schemas::messages::Message;
+/// use langchain_ai_rust::langgraph::{MessagesState, State};
+/// use langchain_ai_rust::schemas::messages::Message;
 ///
 /// let state = MessagesState {
 ///     messages: vec![Message::new_human_message("Hello")],

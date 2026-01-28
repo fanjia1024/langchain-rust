@@ -1,6 +1,6 @@
 //! 统一的错误处理模块
 //!
-//! 提供 langchain-ai-rs 项目所有模块的错误类型定义。
+//! 提供 langchain-ai-rust 项目所有模块的错误类型定义。
 //! 使用 thiserror 库，提供类型安全且易于理解的错误类型。
 
 pub use crate::chain::ChainError;
@@ -26,7 +26,7 @@ pub use utils::{error_context, error_info, ErrorCode, ErrorContext};
 /// # 使用示例
 ///
 /// ```rust,ignore
-/// use langchain_ai_rs::error::LangChainError;
+/// use langchain_ai_rust::error::LangChainError;
 ///
 /// async fn example() -> Result<(), LangChainError> {
 ///     // 所有子模块错误都可以自动转换

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::{AgentExecutor, OpenAiToolAgentBuilder},
     chain::{options::ChainCallOptions, Chain},
     error::ToolError,

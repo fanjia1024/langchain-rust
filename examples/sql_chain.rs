@@ -1,7 +1,7 @@
 // To run this example execute: cargo run --example sql_chain --features postgres
 
 #[cfg(feature = "postgres")]
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     chain::{options::ChainCallOptions, Chain, SQLDatabaseChainBuilder},
     llm::openai::OpenAI,
     tools::{postgres::PostgreSQLEngine, SQLDatabaseBuilder},

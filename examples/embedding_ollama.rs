@@ -1,5 +1,5 @@
 #[cfg(feature = "ollama")]
-use langchain_ai_rs::embedding::{embedder_trait::Embedder, ollama::ollama_embedder::OllamaEmbedder};
+use langchain_ai_rust::embedding::{embedder_trait::Embedder, ollama::ollama_embedder::OllamaEmbedder};
 
 #[cfg(feature = "ollama")]
 #[tokio::main]

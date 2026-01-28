@@ -1,8 +1,8 @@
 use futures::StreamExt;
-use langchain_ai_rs::langgraph::{
+use langchain_ai_rust::langgraph::{
     function_node, MessagesState, StateGraph, StreamChunk, StreamMode, END, START,
 };
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::schemas::messages::Message;
 
 /// Streaming example for LangGraph
 ///

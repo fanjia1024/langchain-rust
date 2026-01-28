@@ -3,7 +3,7 @@
 //! This example demonstrates how to use the JsonSplitter to split JSON documents
 //! based on JSON structure (objects, arrays, etc.).
 
-use langchain_ai_rs::text_splitter::{JsonSplitMode, JsonSplitter, TextSplitter};
+use langchain_ai_rust::text_splitter::{JsonSplitMode, JsonSplitter, TextSplitter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

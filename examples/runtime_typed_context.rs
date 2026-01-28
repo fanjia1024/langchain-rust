@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::{create_agent, ContextAdapter, TypedContext, TypedContextFields},
     schemas::messages::Message,
     tools::ToolContext,

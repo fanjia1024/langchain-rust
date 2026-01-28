@@ -108,7 +108,7 @@ impl<S: State + 'static> CompiledGraph<S> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_ai_rs::langgraph::{CompiledGraph, MessagesState};
+    /// use langchain_ai_rust::langgraph::{CompiledGraph, MessagesState};
     ///
     /// let graph: CompiledGraph<MessagesState> = // ... create graph
     /// let initial_state = MessagesState::new();

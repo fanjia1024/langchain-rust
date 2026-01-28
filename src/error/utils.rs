@@ -214,7 +214,7 @@ impl Default for ErrorContext {
 /// # 示例
 ///
 /// ```rust,ignore
-/// use langchain_ai_rs::error::{ErrorContext, LangChainError};
+/// use langchain_ai_rust::error::{ErrorContext, LangChainError};
 ///
 /// let error = LangChainError::ConfigurationError("invalid config".to_string());
 /// let context = ErrorContext::new()
@@ -263,7 +263,7 @@ pub fn error_context(error: &LangChainError) -> ErrorContext {
 /// # 示例
 ///
 /// ```rust,ignore
-/// use langchain_ai_rs::error::{error_info, LangChainError};
+/// use langchain_ai_rust::error::{error_info, LangChainError};
 ///
 /// let error = LangChainError::ConfigurationError("invalid config".to_string());
 /// let info = error_info(&error);

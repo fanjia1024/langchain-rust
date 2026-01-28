@@ -2,7 +2,7 @@
 //!
 //! Tests to verify architectural patterns and module organization.
 
-use langchain_ai_rs::error::{error_info, ChainError, ErrorCode, LangChainError};
+use langchain_ai_rust::error::{error_info, ChainError, ErrorCode, LangChainError};
 
 #[test]
 fn test_error_unification() {
@@ -34,7 +34,7 @@ fn test_error_info() {
 
 #[test]
 fn test_utils_similarity() {
-    use langchain_ai_rs::utils::{cosine_similarity_f64, text_similarity};
+    use langchain_ai_rust::utils::{cosine_similarity_f64, text_similarity};
 
     // Test cosine similarity
     let vec1 = vec![1.0, 0.0];
@@ -51,7 +51,7 @@ fn test_utils_similarity() {
 
 #[test]
 fn test_utils_vectors() {
-    use langchain_ai_rs::utils::{mean_embedding_f64, sum_vectors_f64};
+    use langchain_ai_rust::utils::{mean_embedding_f64, sum_vectors_f64};
 
     let vectors = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
 
@@ -64,7 +64,7 @@ fn test_utils_vectors() {
 
 #[test]
 fn test_type_aliases() {
-    use langchain_ai_rs::{Messages, Tools};
+    use langchain_ai_rust::{Messages, Tools};
 
     // Verify type aliases are accessible
     let _tools: Tools = vec![];

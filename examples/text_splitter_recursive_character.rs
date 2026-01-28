@@ -3,7 +3,7 @@
 //! This example demonstrates how to use the RecursiveCharacterTextSplitter,
 //! which is the recommended text splitter for most use cases.
 
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     schemas::Document,
     text_splitter::{RecursiveCharacterTextSplitter, TextSplitter},
 };

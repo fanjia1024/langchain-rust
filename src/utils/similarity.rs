@@ -13,7 +13,7 @@
 ///
 /// # 示例
 /// ```rust
-/// use langchain_ai_rs::utils::cosine_similarity_f64;
+/// use langchain_ai_rust::utils::cosine_similarity_f64;
 ///
 /// let vec1 = vec![1.0, 2.0, 3.0];
 /// let vec2 = vec![1.0, 2.0, 3.0];
@@ -47,7 +47,7 @@ pub fn cosine_similarity_f64(vec1: &[f64], vec2: &[f64]) -> f64 {
 ///
 /// # 示例
 /// ```rust
-/// use langchain_ai_rs::utils::cosine_similarity_f32;
+/// use langchain_ai_rust::utils::cosine_similarity_f32;
 ///
 /// let vec1 = vec![1.0f32, 2.0, 3.0];
 /// let vec2 = vec![1.0f32, 2.0, 3.0];
@@ -83,7 +83,7 @@ pub fn cosine_similarity_f32(vec1: &[f32], vec2: &[f32]) -> f64 {
 ///
 /// # 示例
 /// ```rust
-/// use langchain_ai_rs::utils::batch_cosine_similarity_f64;
+/// use langchain_ai_rust::utils::batch_cosine_similarity_f64;
 ///
 /// let query = vec![1.0, 0.0];
 /// let targets = vec![
@@ -122,7 +122,7 @@ pub fn batch_cosine_similarity_f32(query: &[f32], targets: &[Vec<f32>]) -> Vec<f
 ///
 /// # 示例
 /// ```rust
-/// use langchain_ai_rs::utils::text_similarity;
+/// use langchain_ai_rust::utils::text_similarity;
 ///
 /// let text1 = "hello world";
 /// let text2 = "world hello";

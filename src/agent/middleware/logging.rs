@@ -13,7 +13,7 @@ use crate::schemas::agent::{AgentAction, AgentEvent, AgentFinish};
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::agent::middleware::LoggingMiddleware;
+/// use langchain_ai_rust::agent::middleware::LoggingMiddleware;
 ///
 /// let middleware = LoggingMiddleware::new()
 ///     .with_log_level(LogLevel::Info)

@@ -1,4 +1,4 @@
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     language_models::{llm::LLM, options::CallOptions},
     llm::{Deepseek, DeepseekModel},
     schemas::Message,

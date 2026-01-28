@@ -36,8 +36,8 @@ pub use types::*;
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_ai_rs::langgraph::interrupts::interrupt;
-/// use langchain_ai_rs::langgraph::error::LangGraphError;
+/// use langchain_ai_rust::langgraph::interrupts::interrupt;
+/// use langchain_ai_rust::langgraph::error::LangGraphError;
 ///
 /// async fn approval_node(state: &MessagesState) -> Result<StateUpdate, LangGraphError> {
 ///     let approved = interrupt("Do you approve this action?").await

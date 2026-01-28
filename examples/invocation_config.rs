@@ -1,4 +1,4 @@
-use langchain_ai_rs::language_models::{init_chat_model, InvocationConfig};
+use langchain_ai_rust::language_models::{init_chat_model, InvocationConfig};
 use serde_json::json;
 
 #[tokio::main]

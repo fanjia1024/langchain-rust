@@ -12,7 +12,7 @@ use crate::schemas::agent::AgentAction;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::agent::middleware::ContentFilterMiddleware;
+/// use langchain_ai_rust::agent::middleware::ContentFilterMiddleware;
 ///
 /// let middleware = ContentFilterMiddleware::new()
 ///     .with_banned_keywords(vec!["hack", "exploit", "malware"]);

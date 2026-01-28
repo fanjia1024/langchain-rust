@@ -37,7 +37,7 @@ impl PIIStrategy {
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::agent::middleware::{PIIMiddleware, PIIStrategy};
+/// use langchain_ai_rust::agent::middleware::{PIIMiddleware, PIIStrategy};
 ///
 /// let middleware = PIIMiddleware::new(PIIType::Email, PIIStrategy::Redact)
 ///     .with_apply_to_input(true)

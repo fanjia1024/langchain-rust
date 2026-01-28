@@ -3,7 +3,7 @@
 #[cfg(feature = "postgres")]
 use futures_util::StreamExt;
 #[cfg(feature = "postgres")]
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     add_documents,
     chain::{Chain, ConversationalRetrieverChainBuilder},
     embedding::openai::openai_embedder::OpenAiEmbedder,
@@ -17,7 +17,7 @@ use langchain_ai_rs::{
 #[cfg(feature = "postgres")]
 #[tokio::main]
 async fn main() {
-    use langchain_ai_rs::{
+    use langchain_ai_rust::{
         fmt_message, fmt_template, message_formatter, prompt::HumanMessagePromptTemplate,
         schemas::Message, template_jinja2,
     };

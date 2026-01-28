@@ -1,4 +1,4 @@
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::create_agent_with_structured_output,
     schemas::structured_output::{StructuredOutputSchema, ToolStrategy},
 };
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Use the agent to extract structured information
     let result = agent
-        .invoke_messages(vec![langchain_ai_rs::schemas::Message::new_human_message(
+        .invoke_messages(vec![langchain_ai_rust::schemas::Message::new_human_message(
             "Extract contact info from: John Doe, [email protected], (555) 123-4567",
         )])
         .await?;

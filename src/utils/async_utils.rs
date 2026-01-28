@@ -14,7 +14,7 @@ use std::future::Future;
 ///
 /// # 示例
 /// ```rust,no_run
-/// use langchain_ai_rs::utils::join_all;
+/// use langchain_ai_rust::utils::join_all;
 ///
 /// # async fn example() {
 /// let futures = vec![
@@ -58,7 +58,7 @@ where
 ///
 /// # 示例
 /// ```rust,no_run
-/// use langchain_ai_rs::utils::batch_process;
+/// use langchain_ai_rust::utils::batch_process;
 ///
 /// # async fn example() {
 /// let items = vec![1, 2, 3, 4, 5];

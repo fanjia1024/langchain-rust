@@ -1,7 +1,7 @@
-use langchain_ai_rs::langgraph::{
+use langchain_ai_rust::langgraph::{
     function_node, InMemorySaver, MessagesState, RunnableConfig, StateGraph, END, START,
 };
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::schemas::messages::Message;
 use std::collections::HashMap;
 
 /// Time-travel fork exploration example

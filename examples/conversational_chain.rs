@@ -1,7 +1,7 @@
 use std::io::{stdout, Write};
 
 use futures_util::StreamExt;
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     chain::{builder::ConversationalChainBuilder, Chain},
     // fmt_message, fmt_template,
     llm::openai::{OpenAI, OpenAIModel},

@@ -85,8 +85,8 @@ use crate::{
 ///
 /// ```rust,no_run
 /// use std::sync::Arc;
-/// use langchain_ai_rs::agent::create_agent;
-/// use langchain_ai_rs::agent::middleware::LoggingMiddleware;
+/// use langchain_ai_rust::agent::create_agent;
+/// use langchain_ai_rust::agent::middleware::LoggingMiddleware;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let middleware = vec![Arc::new(LoggingMiddleware::new())];
@@ -98,7 +98,7 @@ use crate::{
 /// )?;
 ///
 /// let result = agent.invoke_messages(
-///     vec![langchain_ai_rs::schemas::Message::new_human_message("Hello")]
+///     vec![langchain_ai_rust::schemas::Message::new_human_message("Hello")]
 /// ).await?;
 /// # Ok(())
 /// # }

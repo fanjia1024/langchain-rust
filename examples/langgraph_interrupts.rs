@@ -1,8 +1,8 @@
-use langchain_ai_rs::langgraph::{
+use langchain_ai_rust::langgraph::{
     function_node, interrupt, Command, InMemorySaver, MessagesState, RunnableConfig, StateGraph,
     StateOrCommand, END, START,
 };
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::schemas::messages::Message;
 use std::collections::HashMap;
 
 /// Interrupt example for LangGraph
@@ -15,7 +15,7 @@ use std::collections::HashMap;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create an approval node that uses interrupt
     let approval_node = function_node("approval", |_state: &MessagesState| async move {
-        use langchain_ai_rs::langgraph::LangGraphError;
+        use langchain_ai_rust::langgraph::LangGraphError;
 
         // Pause and ask for approval
         let approved = interrupt("Do you approve this action?")

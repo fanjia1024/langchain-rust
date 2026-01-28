@@ -21,7 +21,7 @@ use std::pin::Pin;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::language_models::{init_chat_model, ConfigurableModel};
+/// use langchain_ai_rust::language_models::{init_chat_model, ConfigurableModel};
 ///
 /// let base_model = init_chat_model("gpt-4o-mini", None, None, None, None, None, None, None)?;
 /// let configurable = ConfigurableModel::new(base_model)

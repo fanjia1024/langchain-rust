@@ -1,4 +1,4 @@
-use langchain_ai_rs::language_models::init_chat_model;
+use langchain_ai_rust::language_models::init_chat_model;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

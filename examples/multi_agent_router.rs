@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::{create_agent, RouterAgentBuilder},
     llm::openai::{OpenAI, OpenAIModel},
     schemas::messages::Message,
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?);
 
     // Create LLM for routing
-    let routing_llm: Box<dyn langchain_ai_rs::language_models::llm::LLM> =
+    let routing_llm: Box<dyn langchain_ai_rust::language_models::llm::LLM> =
         Box::new(OpenAI::default().with_model(OpenAIModel::Gpt4oMini.to_string()));
 
     // Create router agent with LLM-based routing

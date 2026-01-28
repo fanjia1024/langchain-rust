@@ -1,14 +1,41 @@
 workspace = { members = ["examples/vector_store_surrealdb"] }
 [package]
-name = "langchain-ai-rs"
+name = "langchain-ai-rust"
 version = "5.0.0"
 edition = "2021"
 publish = true
 repository = "https://github.com/fanjia1024/langchain-rust"
 license = "MIT"
-description = "LangChain for Rust, the easiest way to write LLM-based programs in Rust"
-keywords = ["chain", "chatgpt", "llm", "langchain","deepagent"]
-documentation = "https://docs.rs/langchain-ai-rs"
+description = """
+Build LLM applications in Rust with type safety: chains, agents, RAG, LangGraph,
+embeddings, vector stores, and 20+ document loaders. A LangChain port supporting
+OpenAI, Claude, Gemini, Mistral, Bedrock, Ollama, and more. Includes streaming,
+structured output, and multi-agent (Deep Agent) workflows.
+"""
+keywords = [
+    "langchain",
+    "llm",
+    "chain",
+    "agent",
+    "rag",
+    "embeddings",
+    "vector-store",
+    "openai",
+    "langgraph",
+    "deep-agent",
+    "chatgpt",
+    "prompts",
+]
+categories = [
+    "development-tools",
+    "asynchronous",
+    "data-structures",
+    "text-processing",
+    "api-bindings",
+]
+readme = "README.md"
+homepage = "https://github.com/fanjia1024/langchain-rust"
+documentation = "https://docs.rs/langchain-ai-rust"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

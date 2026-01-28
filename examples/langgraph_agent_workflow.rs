@@ -1,5 +1,5 @@
-use langchain_ai_rs::langgraph::{function_node, MessagesState, StateGraph, END, START};
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::langgraph::{function_node, MessagesState, StateGraph, END, START};
+use langchain_ai_rust::schemas::messages::Message;
 use std::collections::HashMap;
 
 /// Complex agent workflow example for LangGraph
@@ -152,20 +152,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     while let Some(event) = stream.next().await {
         match event {
-            langchain_ai_rs::langgraph::StreamEvent::NodeStart { node, .. } => {
+            langchain_ai_rust::langgraph::StreamEvent::NodeStart { node, .. } => {
                 println!("  → Starting node: {}", node);
             }
-            langchain_ai_rs::langgraph::StreamEvent::NodeEnd { node, .. } => {
+            langchain_ai_rust::langgraph::StreamEvent::NodeEnd { node, .. } => {
                 println!("  ← Completed node: {}", node);
             }
-            langchain_ai_rs::langgraph::StreamEvent::GraphEnd { .. } => {
+            langchain_ai_rust::langgraph::StreamEvent::GraphEnd { .. } => {
                 println!("  ✓ Graph completed");
             }
-            langchain_ai_rs::langgraph::StreamEvent::Error { error } => {
+            langchain_ai_rust::langgraph::StreamEvent::Error { error } => {
                 eprintln!("  ✗ Error: {:?}", error);
             }
-            langchain_ai_rs::langgraph::StreamEvent::MessageChunk { .. }
-            | langchain_ai_rs::langgraph::StreamEvent::CustomData { .. } => {}
+            langchain_ai_rust::langgraph::StreamEvent::MessageChunk { .. }
+            | langchain_ai_rust::langgraph::StreamEvent::CustomData { .. } => {}
         }
     }
 

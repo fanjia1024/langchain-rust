@@ -34,7 +34,7 @@ where
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_ai_rs::langgraph::task::task;
+/// use langchain_ai_rust::langgraph::task::task;
 ///
 /// let my_task = task("my_task", |input: Value| async move {
 ///     // Task implementation

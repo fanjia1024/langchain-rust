@@ -1,4 +1,4 @@
-use langchain_ai_rs::tools::{Tool, Wolfram};
+use langchain_ai_rust::tools::{Tool, Wolfram};
 
 #[tokio::main]
 async fn main() {

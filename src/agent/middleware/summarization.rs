@@ -17,7 +17,7 @@ use crate::schemas::Message;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::agent::middleware::SummarizationMiddleware;
+/// use langchain_ai_rust::agent::middleware::SummarizationMiddleware;
 ///
 /// let middleware = SummarizationMiddleware::new()
 ///     .with_token_threshold(4000)

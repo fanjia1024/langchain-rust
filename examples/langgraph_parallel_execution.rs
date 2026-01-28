@@ -1,8 +1,8 @@
-use langchain_ai_rs::langgraph::{
+use langchain_ai_rust::langgraph::{
     function_node, DurabilityMode, InMemorySaver, MessagesState, RunnableConfig, StateGraph, END,
     START,
 };
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::schemas::messages::Message;
 
 /// Parallel execution example for LangGraph
 ///

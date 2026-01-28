@@ -1,4 +1,4 @@
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     chain::{chain_trait::Chain, llm_chain::LLMChainBuilder},
     language_models::options::CallOptions,
     llm::{Qwen, QwenModel},

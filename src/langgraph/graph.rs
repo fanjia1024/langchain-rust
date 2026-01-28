@@ -19,7 +19,7 @@ use super::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use langchain_ai_rs::langgraph::{StateGraph, MessagesState, function_node};
+/// use langchain_ai_rust::langgraph::{StateGraph, MessagesState, function_node};
 ///
 /// let mut graph = StateGraph::<MessagesState>::new();
 /// graph.add_node("node1", function_node("node1", |state| async move {
@@ -96,7 +96,7 @@ impl<S: State + 'static> StateGraph<S> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use langchain_ai_rs::langgraph::{StateGraph, MessagesState};
+    /// use langchain_ai_rust::langgraph::{StateGraph, MessagesState};
     ///
     /// // Create a subgraph
     /// let mut subgraph = StateGraph::<MessagesState>::new();
@@ -137,7 +137,7 @@ impl<S: State + 'static> StateGraph<S> {
     ///
     /// ```rust,no_run
     /// use std::collections::HashMap;
-    /// use langchain_ai_rs::langgraph::{StateGraph, StateUpdate};
+    /// use langchain_ai_rust::langgraph::{StateGraph, StateUpdate};
     ///
     /// // Parent state
     /// #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -202,7 +202,7 @@ impl<S: State + 'static> StateGraph<S> {
     ///
     /// ```rust,no_run
     /// use std::collections::HashMap;
-    /// use langchain_ai_rs::langgraph::{StateGraph, MessagesState};
+    /// use langchain_ai_rust::langgraph::{StateGraph, MessagesState};
     ///
     /// let mut graph = StateGraph::<MessagesState>::new();
     /// let mut mapping = HashMap::new();

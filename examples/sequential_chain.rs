@@ -1,4 +1,4 @@
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     chain::{Chain, LLMChainBuilder},
     llm::openai::{OpenAI, OpenAIModel},
     prompt::HumanMessagePromptTemplate,

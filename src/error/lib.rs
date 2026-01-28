@@ -1,11 +1,11 @@
-//! langchain-ai-rs 错误处理模块
+//! langchain-ai-rust 错误处理模块
 //!
 //! 提供统一的错误类型定义和处理模式。
 //! 
 //! # 使用示例
 //!
 //! ```rust
-//! use langchain_ai_rs::error::LangChainError;
+//! use langchain_ai_rust::error::LangChainError;
 //!
 //! async fn example() -> Result<(), LangChainError> {
 //!     // 使用 ? 操作符传播错误

@@ -2,8 +2,8 @@
 
 [![Latest Version]][crates.io]
 
-[Latest Version]: https://img.shields.io/crates/v/langchain-ai-rs.svg
-[crates.io]: https://crates.io/crates/langchain-ai-rs
+[Latest Version]: https://img.shields.io/crates/v/langchain-ai-rust.svg
+[crates.io]: https://crates.io/crates/langchain-ai-rust
 
 ⚡ Building applications with LLMs through composability, with Rust! ⚡
 
@@ -42,14 +42,14 @@ First, ensure `serde_json` is added to your Rust project.
 cargo add serde_json
 ```
 
-### Step 2: Add `langchain-ai-rs`
+### Step 2: Add `langchain-ai-rust`
 
-Then, you can add `langchain-ai-rs` to your Rust project.
+Then, you can add `langchain-ai-rust` to your Rust project.
 
 #### Simple install
 
 ```bash
-cargo add langchain-ai-rs
+cargo add langchain-ai-rust
 ```
 
 #### With Vector Stores
@@ -57,13 +57,13 @@ cargo add langchain-ai-rs
 ##### PostgreSQL (pgvector)
 
 ```bash
-cargo add langchain-ai-rs --features postgres
+cargo add langchain-ai-rust --features postgres
 ```
 
 ##### Qdrant
 
 ```bash
-cargo add langchain-ai-rs --features qdrant
+cargo add langchain-ai-rust --features qdrant
 ```
 
 ##### SQLite (VSS)
@@ -71,7 +71,7 @@ cargo add langchain-ai-rs --features qdrant
 Download additional sqlite_vss libraries from <https://github.com/asg017/sqlite-vss>
 
 ```bash
-cargo add langchain-ai-rs --features sqlite-vss
+cargo add langchain-ai-rust --features sqlite-vss
 ```
 
 ##### SQLite (Vec)
@@ -79,55 +79,55 @@ cargo add langchain-ai-rs --features sqlite-vss
 Download additional sqlite_vec libraries from <https://github.com/asg017/sqlite-vec>
 
 ```bash
-cargo add langchain-ai-rs --features sqlite-vec
+cargo add langchain-ai-rust --features sqlite-vec
 ```
 
 ##### SurrealDB
 
 ```bash
-cargo add langchain-ai-rs --features surrealdb
+cargo add langchain-ai-rust --features surrealdb
 ```
 
 ##### OpenSearch
 
 ```bash
-cargo add langchain-ai-rs --features opensearch
+cargo add langchain-ai-rust --features opensearch
 ```
 
 ##### In-Memory
 
 ```bash
-cargo add langchain-ai-rs --features in-memory
+cargo add langchain-ai-rust --features in-memory
 ```
 
 ##### Chroma
 
 ```bash
-cargo add langchain-ai-rs --features chroma
+cargo add langchain-ai-rust --features chroma
 ```
 
 ##### FAISS (hnsw_rs)
 
 ```bash
-cargo add langchain-ai-rs --features faiss
+cargo add langchain-ai-rust --features faiss
 ```
 
 ##### MongoDB Atlas Vector Search
 
 ```bash
-cargo add langchain-ai-rs --features mongodb
+cargo add langchain-ai-rust --features mongodb
 ```
 
 ##### Pinecone
 
 ```bash
-cargo add langchain-ai-rs --features pinecone
+cargo add langchain-ai-rust --features pinecone
 ```
 
 ##### Weaviate
 
 ```bash
-cargo add langchain-ai-rs --features weaviate
+cargo add langchain-ai-rust --features weaviate
 ```
 
 #### With LLM Providers
@@ -135,25 +135,25 @@ cargo add langchain-ai-rs --features weaviate
 ##### Ollama
 
 ```bash
-cargo add langchain-ai-rs --features ollama
+cargo add langchain-ai-rust --features ollama
 ```
 
 ##### MistralAI
 
 ```bash
-cargo add langchain-ai-rs --features mistralai
+cargo add langchain-ai-rust --features mistralai
 ```
 
 ##### Google Gemini
 
 ```bash
-cargo add langchain-ai-rs --features gemini
+cargo add langchain-ai-rust --features gemini
 ```
 
 ##### AWS Bedrock
 
 ```bash
-cargo add langchain-ai-rs --features bedrock
+cargo add langchain-ai-rust --features bedrock
 ```
 
 #### With Document Loaders
@@ -161,19 +161,19 @@ cargo add langchain-ai-rs --features bedrock
 ##### PDF (pdf-extract)
 
 ```bash
-cargo add langchain-ai-rs --features pdf-extract
+cargo add langchain-ai-rust --features pdf-extract
 ```
 
 ##### PDF (lopdf)
 
 ```bash
-cargo add langchain-ai-rs --features lopdf
+cargo add langchain-ai-rust --features lopdf
 ```
 
 ##### HTML to Markdown
 
 ```bash
-cargo add langchain-ai-rs --features html-to-markdown
+cargo add langchain-ai-rust --features html-to-markdown
 ```
 
 #### With Code Parsing
@@ -181,13 +181,13 @@ cargo add langchain-ai-rs --features html-to-markdown
 ##### Tree-sitter (for source code parsing, requires 0.26+)
 
 ```bash
-cargo add langchain-ai-rs --features tree-sitter
+cargo add langchain-ai-rust --features tree-sitter
 ```
 
 #### With FastEmbed (Local Embeddings)
 
 ```bash
-cargo add langchain-ai-rs --features fastembed
+cargo add langchain-ai-rust --features fastembed
 ```
 
 ## 🚀 Quick Start
@@ -195,7 +195,7 @@ cargo add langchain-ai-rs --features fastembed
 ### Simple LLM Invocation
 
 ```rust
-use langchain_ai_rs::llm::openai::{OpenAI, OpenAIModel};
+use langchain_ai_rust::llm::openai::{OpenAI, OpenAIModel};
 
 #[tokio::main]
 async fn main() {
@@ -210,7 +210,7 @@ async fn main() {
 The `init_chat_model` function provides a unified interface to initialize any supported LLM:
 
 ```rust
-use langchain_ai_rs::language_models::init_chat_model;
+use langchain_ai_rust::language_models::init_chat_model;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -239,7 +239,7 @@ Supported model formats:
 ### Conversational Chain
 
 ```rust
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     chain::{Chain, LLMChainBuilder},
     fmt_message, fmt_placeholder, fmt_template,
     llm::openai::{OpenAI, OpenAIModel},
@@ -290,7 +290,7 @@ async fn main() {
 
 ```rust
 use std::sync::Arc;
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::create_agent,
     schemas::messages::Message,
     tools::CommandExecutor,
@@ -323,8 +323,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 Build a state graph with `MessagesState`, add a node with `function_node`, connect START to the node and the node to END, then compile and invoke:
 
 ```rust
-use langchain_ai_rs::langgraph::{function_node, MessagesState, StateGraph, END, START};
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::langgraph::{function_node, MessagesState, StateGraph, END, START};
+use langchain_ai_rust::schemas::messages::Message;
 
 let mock_llm = function_node("mock_llm", |_state: &MessagesState| async move {
     use std::collections::HashMap;
@@ -353,7 +353,7 @@ See [LangGraph Hello World](examples/langgraph_hello_world.rs) and [LangGraph St
 Use `create_deep_agent` with planning and filesystem enabled; the agent gets a workspace and built-in tools (write_todos, ls, read_file, write_file, edit_file):
 
 ```rust
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::{create_deep_agent, DeepAgentConfig},
     chain::Chain,
     prompt_args,
@@ -651,7 +651,7 @@ export AWS_REGION="us-east-1"
 ## 📖 Documentation
 
 - [Examples Directory](examples/)
-- [API Documentation](https://docs.rs/langchain-ai-rs)
+- [API Documentation](https://docs.rs/langchain-ai-rust)
 
 ## 🤝 Contributing
 
@@ -668,6 +668,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🔗 Links
 
-- [Crates.io](https://crates.io/crates/langchain-ai-rs)
+- [Crates.io](https://crates.io/crates/langchain-ai-rust)
 - [Discord](https://discord.gg/JJFcTFbanu)
 - [GitHub Repository](https://github.com/fanjia1024/langchain-rust)

@@ -14,12 +14,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use langchain_ai_rs::agent::{
+use langchain_ai_rust::agent::{
     create_deep_agent, AgentInput, AgentInvokeResult, DeepAgentConfig, HitlDecision,
     InMemoryAgentSaver, InterruptConfig, InterruptPayload,
 };
-use langchain_ai_rs::langgraph::RunnableConfig;
-use langchain_ai_rs::schemas::messages::Message;
+use langchain_ai_rust::langgraph::RunnableConfig;
+use langchain_ai_rust::schemas::messages::Message;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_allowed_decisions(vec!["approve".to_string(), "reject".to_string()]),
     );
 
-    let checkpointer: Arc<dyn langchain_ai_rs::agent::AgentCheckpointer> =
+    let checkpointer: Arc<dyn langchain_ai_rust::agent::AgentCheckpointer> =
         Arc::new(InMemoryAgentSaver::new());
     let config = DeepAgentConfig::new()
         .with_planning(false)
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Deep Agent Human-in-the-Loop ===\n");
     println!("Request: write a new file and edit readme.txt\n");
 
-    let prompt_args = langchain_ai_rs::prompt_args! {
+    let prompt_args = langchain_ai_rust::prompt_args! {
         "messages" => vec![
             Message::new_human_message(
                 "Write a file called hello.txt with content 'Hello HILP' and add a line to readme.txt saying 'Edited by HILP'."

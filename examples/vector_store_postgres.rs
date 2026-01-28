@@ -2,7 +2,7 @@
 // To start pgvector docker run ./scripts/run-pgvector
 
 #[cfg(feature = "postgres")]
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     add_documents,
     embedding::openai::openai_embedder::OpenAiEmbedder,
     schemas::Document,
@@ -24,7 +24,7 @@ async fn main() {
     let store = StoreBuilder::new()
         .embedder(embedder)
         .pre_delete_collection(true)
-        .connection_url("postgresql://username:password@localhost:5432/langchain-ai-rs")
+        .connection_url("postgresql://username:password@localhost:5432/langchain-ai-rust")
         .vector_dimensions(1536)
         .build()
         .await

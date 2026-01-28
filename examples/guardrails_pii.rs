@@ -1,5 +1,5 @@
-use langchain_ai_rs::agent::{create_agent, PIIMiddleware, PIIStrategy, PIIType};
-use langchain_ai_rs::schemas::Message;
+use langchain_ai_rust::agent::{create_agent, PIIMiddleware, PIIStrategy, PIIType};
+use langchain_ai_rust::schemas::Message;
 use std::sync::Arc;
 
 #[tokio::main]

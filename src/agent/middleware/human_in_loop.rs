@@ -24,8 +24,8 @@ pub const CURRENT_BATCH_ACTIONS_KEY: &str = "current_batch_actions";
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::agent::middleware::HumanInTheLoopMiddleware;
-/// use langchain_ai_rs::agent::InterruptConfig;
+/// use langchain_ai_rust::agent::middleware::HumanInTheLoopMiddleware;
+/// use langchain_ai_rust::agent::InterruptConfig;
 ///
 /// let middleware = HumanInTheLoopMiddleware::new()
 ///     .with_interrupt_on("send_email".to_string(), true)

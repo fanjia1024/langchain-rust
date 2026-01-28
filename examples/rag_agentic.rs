@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 #[cfg(feature = "postgres")]
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     embedding::openai::openai_embedder::OpenAiEmbedder,
     rag::{AgenticRAGBuilder, RetrieverInfo},
     schemas::{Document, Message},
@@ -39,13 +39,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Add documents to store
-    use langchain_ai_rs::vectorstore::{pgvector::PgOptions, VectorStore};
+    use langchain_ai_rust::vectorstore::{pgvector::PgOptions, VectorStore};
     let _ = store
         .add_documents(&documents, &PgOptions::default())
         .await?;
 
     // Create retriever
-    let retriever: Arc<dyn langchain_ai_rs::schemas::Retriever> = Arc::new(Retriever::new(store, 3));
+    let retriever: Arc<dyn langchain_ai_rust::schemas::Retriever> = Arc::new(Retriever::new(store, 3));
 
     // Build Agentic RAG
     let agentic_rag = AgenticRAGBuilder::new()

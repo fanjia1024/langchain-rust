@@ -15,7 +15,7 @@ use crate::schemas::agent::AgentAction;
 ///
 /// # Example
 /// ```rust,ignore
-/// use langchain_ai_rs::agent::middleware::RateLimitMiddleware;
+/// use langchain_ai_rust::agent::middleware::RateLimitMiddleware;
 /// use std::time::Duration;
 ///
 /// let middleware = RateLimitMiddleware::new()

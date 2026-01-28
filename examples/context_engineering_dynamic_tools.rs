@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use langchain_ai_rs::{
+use langchain_ai_rust::{
     agent::{context_engineering::middleware::DynamicToolsMiddleware, create_agent},
     error::ToolError,
     schemas::messages::Message,
