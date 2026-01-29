@@ -20,7 +20,7 @@
 - 🤖 **智能体**：带工具的聊天智能体、多智能体系统（路由器、子智能体、技能、交接）
 - 📚 **RAG**：智能体 RAG、混合 RAG 和两步 RAG 实现
 - 🧠 **记忆**：简单记忆、对话记忆和带元数据的长期记忆
-- 🛠️ **工具**：搜索工具、命令行、Wolfram Alpha、文本转语音等
+- 🛠️ **工具**：搜索工具、命令行、Wolfram Alpha、文本转语音、SequentialThinking（链式思考）、BrowserUse（浏览器自动化，需 `browser-use` 特性）等
 - 📄 **文档加载器**：PDF、HTML、CSV、Git 提交、源代码等
 - 🗄️ **向量存储**：PostgreSQL (pgvector)、Qdrant、SQLite (VSS/Vec)、SurrealDB、OpenSearch、In-Memory、Chroma、FAISS (hnsw_rs)、MongoDB Atlas、Pinecone、Weaviate
 - 🎯 **嵌入模型**：OpenAI、Azure OpenAI、Ollama、FastEmbed、MistralAI
@@ -188,6 +188,14 @@ cargo add langchain-ai-rust --features tree-sitter
 
 ```bash
 cargo add langchain-ai-rust --features fastembed
+```
+
+#### 使用浏览器自动化（BrowserUse）
+
+需要安装 Chrome/Chromium（或在支持平台使用 headless_chrome 自带的 Chromium）。
+
+```bash
+cargo add langchain-ai-rust --features browser-use
 ```
 
 ## 🚀 快速开始
@@ -529,6 +537,8 @@ let result = agent
 - [x] 命令行执行器
 - [x] [文本转语音](examples/text_to_speech.rs)
 - [x] [语音转文本](examples/speech2text_openai.rs)
+- [x] **SequentialThinking** – 通过 LLM 进行链式思考推理（内置；向工具传入 `Arc<dyn LLM>`）
+- [x] **BrowserUse** – 浏览器自动化（导航、点击、输入、滚动、获取内容），需启用 `browser-use` 特性
 - [x] [高级工具](examples/advanced_tools.rs)
 
 ### 中间件

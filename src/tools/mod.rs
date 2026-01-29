@@ -45,3 +45,11 @@ pub use text2speech::*;
 
 mod long_term_memory;
 pub use long_term_memory::*;
+
+mod sequential_thinking;
+pub use sequential_thinking::*;
+
+#[cfg(feature = "browser-use")]
+mod browser_use;
+#[cfg(feature = "browser-use")]
+pub use browser_use::*;

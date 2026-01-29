@@ -20,7 +20,7 @@ This is the Rust language implementation of [LangChain](https://github.com/langc
 - 🤖 **Agents**: Chat agents with tools, multi-agent systems (router, subagents, skills, handoffs)
 - 📚 **RAG**: Agentic RAG, Hybrid RAG, and two-step RAG implementations
 - 🧠 **Memory**: Simple memory, conversational memory, and long-term memory with metadata
-- 🛠️ **Tools**: Search tools, command line, Wolfram Alpha, text-to-speech, and more
+- 🛠️ **Tools**: Search tools, command line, Wolfram Alpha, text-to-speech, SequentialThinking (chain-of-thought), BrowserUse (browser automation with `browser-use` feature), and more
 - 📄 **Document Loaders**: PDF, HTML, CSV, Git commits, source code, and more
 - 🗄️ **Vector Stores**: PostgreSQL (pgvector), Qdrant, SQLite (VSS/Vec), SurrealDB, OpenSearch, In-Memory, Chroma, FAISS (hnsw_rs), MongoDB Atlas, Pinecone, Weaviate
 - 🎯 **Embeddings**: OpenAI, Azure OpenAI, Ollama, FastEmbed, MistralAI
@@ -188,6 +188,14 @@ cargo add langchain-ai-rust --features tree-sitter
 
 ```bash
 cargo add langchain-ai-rust --features fastembed
+```
+
+#### With Browser Automation (BrowserUse)
+
+Requires Chrome/Chromium installed (or use headless_chrome's bundled Chromium where available).
+
+```bash
+cargo add langchain-ai-rust --features browser-use
 ```
 
 ## 🚀 Quick Start
@@ -529,6 +537,8 @@ See [Deep Agent Basic](examples/deep_agent_basic.rs) and [Deep Agent Customizati
 - [x] Command Line Executor
 - [x] [Text-to-Speech](examples/text_to_speech.rs)
 - [x] [Speech-to-Text](examples/speech2text_openai.rs)
+- [x] **SequentialThinking** – Chain-of-thought reasoning via an LLM (built-in; pass an `Arc<dyn LLM>` to the tool)
+- [x] **BrowserUse** – Browser automation (navigate, click, type, scroll, get content) with `browser-use` feature
 - [x] [Advanced Tools](examples/advanced_tools.rs)
 
 ### Middleware
