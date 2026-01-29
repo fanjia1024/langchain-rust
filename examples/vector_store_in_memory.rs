@@ -13,7 +13,8 @@ async fn main() {
     let embedder = OpenAiEmbedder::default();
     let store = StoreBuilder::new().embedder(embedder).build().unwrap();
 
-    let doc1 = Document::new("langchain-ai-rust is a port of the langchain python library to rust.");
+    let doc1 =
+        Document::new("langchain-ai-rust is a port of the langchain python library to rust.");
     let doc2 = Document::new("langchaingo is a port of langchain to the go language.");
     let doc3 = Document::new("Capital of USA is Washington D.C. Capital of France is Paris.");
 

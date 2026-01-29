@@ -159,7 +159,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     // Create enhanced store
-    let _store: Arc<dyn langchain_ai_rust::tools::ToolStore> = Arc::new(EnhancedInMemoryStore::new());
+    let _store: Arc<dyn langchain_ai_rust::tools::ToolStore> =
+        Arc::new(EnhancedInMemoryStore::new());
 
     // Pre-populate with some data
     // Note: We need to use EnhancedInMemoryStore directly to use enhanced features

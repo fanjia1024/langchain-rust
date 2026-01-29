@@ -770,10 +770,14 @@ where
                                         serde_json::from_str(&tools).map_err(ChainError::from)?;
                                     if tools_ai_message_seen.insert(tools.clone(), ()).is_none() {
                                         memory.add_message(
-                                            Message::new_ai_message("").with_tool_calls(tools_value),
+                                            Message::new_ai_message("")
+                                                .with_tool_calls(tools_value),
                                         );
                                     }
-                                    memory.add_message(Message::new_tool_message(observation, tool_id));
+                                    memory.add_message(Message::new_tool_message(
+                                        observation,
+                                        tool_id,
+                                    ));
                                 }
                                 Err(_) => {
                                     // Conversational agent: action.log is raw model text, not LogTools

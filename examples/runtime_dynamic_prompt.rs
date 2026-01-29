@@ -31,7 +31,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create agent with dynamic prompt middleware
     // DynamicPromptMiddleware implements Middleware trait
-    let middleware: Vec<Arc<dyn langchain_ai_rust::agent::Middleware>> = vec![Arc::new(dynamic_prompt)];
+    let middleware: Vec<Arc<dyn langchain_ai_rust::agent::Middleware>> =
+        vec![Arc::new(dynamic_prompt)];
 
     let agent = create_agent(
         "gpt-4o-mini",

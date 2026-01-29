@@ -82,7 +82,9 @@ impl Tool for SequentialThinking {
     async fn run(&self, input: Value) -> Result<String, crate::error::ToolError> {
         let thought = input
             .as_str()
-            .ok_or_else(|| crate::error::ToolError::InvalidInputError("input must be a string".into()))?
+            .ok_or_else(|| {
+                crate::error::ToolError::InvalidInputError("input must be a string".into())
+            })?
             .trim();
         if thought.is_empty() {
             return Err(crate::error::ToolError::InvalidInputError(
@@ -120,10 +122,7 @@ mod tests {
 
     #[async_trait]
     impl crate::language_models::llm::LLM for MockLLM {
-        async fn generate(
-            &self,
-            _messages: &[Message],
-        ) -> Result<GenerateResult, LLMError> {
+        async fn generate(&self, _messages: &[Message]) -> Result<GenerateResult, LLMError> {
             Ok(GenerateResult {
                 generation: self.response.clone(),
                 ..Default::default()

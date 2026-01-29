@@ -3,7 +3,9 @@ use langchain_ai_rust::chain::{Chain, LLMChainBuilder};
 use langchain_ai_rust::llm::OpenAI;
 use langchain_ai_rust::prompt::HumanMessagePromptTemplate;
 use langchain_ai_rust::schemas::Message;
-use langchain_ai_rust::{fmt_message, fmt_template, message_formatter, prompt_args, template_fstring};
+use langchain_ai_rust::{
+    fmt_message, fmt_template, message_formatter, prompt_args, template_fstring,
+};
 
 #[tokio::main]
 async fn main() {

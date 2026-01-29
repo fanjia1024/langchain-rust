@@ -43,7 +43,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Create retriever
-    let retriever: Arc<dyn langchain_ai_rust::schemas::Retriever> = Arc::new(Retriever::new(store, 3));
+    let retriever: Arc<dyn langchain_ai_rust::schemas::Retriever> =
+        Arc::new(Retriever::new(store, 3));
 
     // Create LLM
     let llm = OpenAI::default().with_model(OpenAIModel::Gpt4oMini.to_string());

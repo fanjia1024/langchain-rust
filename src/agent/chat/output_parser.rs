@@ -28,15 +28,14 @@ impl ChatOutputParser {
     pub fn parse(&self, text: &str) -> Result<AgentEvent, AgentError> {
         log::debug!("Parsing to Agent Action: {}", text);
         // Try markdown code block first, then raw JSON object (e.g. model returns plain JSON)
-        let value = parse_json_markdown(text)
-            .or_else(|| {
-                let trimmed = text.trim();
-                if trimmed.starts_with('{') {
-                    parse_partial_json(trimmed, false)
-                } else {
-                    None
-                }
-            });
+        let value = parse_json_markdown(text).or_else(|| {
+            let trimmed = text.trim();
+            if trimmed.starts_with('{') {
+                parse_partial_json(trimmed, false)
+            } else {
+                None
+            }
+        });
         match value {
             Some(value) => {
                 // Extract action and action_input from the parsed JSON

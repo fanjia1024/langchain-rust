@@ -1,5 +1,7 @@
 #[cfg(feature = "fastembed")]
-use langchain_ai_rust::embedding::{Embedder, EmbeddingModel, FastEmbed, InitOptions, TextEmbedding};
+use langchain_ai_rust::embedding::{
+    Embedder, EmbeddingModel, FastEmbed, InitOptions, TextEmbedding,
+};
 
 #[cfg(feature = "fastembed")]
 #[tokio::main]
