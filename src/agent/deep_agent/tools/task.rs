@@ -128,6 +128,8 @@ impl Tool for TaskTool {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
     use crate::agent::create_agent;
 

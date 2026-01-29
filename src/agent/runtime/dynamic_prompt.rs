@@ -103,8 +103,11 @@ impl Middleware for DynamicPromptMiddleware {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
-    use crate::tools::context::SimpleContext;
+    use crate::agent::Runtime;
+    use crate::tools::SimpleContext;
 
     #[tokio::test]
     async fn test_dynamic_prompt_middleware() {

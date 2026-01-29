@@ -232,13 +232,12 @@ impl Chain for ConversationalRetrieverChain {
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
-
     use crate::{
         chain::ConversationalRetrieverChainBuilder,
         llm::openai::{OpenAI, OpenAIModel},
         memory::SimpleMemory,
         prompt_args,
+        retrievers::RetrieverError,
         schemas::Document,
     };
 
@@ -250,7 +249,7 @@ mod tests {
         async fn get_relevant_documents(
             &self,
             _question: &str,
-        ) -> Result<Vec<Document>, Box<dyn Error>> {
+        ) -> Result<Vec<Document>, RetrieverError> {
             Ok(vec![
                 Document::new(format!(
                     "\nQuestion: {}\nAnswer: {}\n",

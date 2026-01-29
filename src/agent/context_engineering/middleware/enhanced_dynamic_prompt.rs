@@ -164,7 +164,7 @@ impl Clone for EnhancedDynamicPromptMiddleware {
 mod tests {
     use super::*;
     use crate::schemas::Message;
-    use crate::tools::{context::SimpleContext, InMemoryStore};
+    use crate::tools::{InMemoryStore, SimpleContext};
 
     #[tokio::test]
     async fn test_enhanced_dynamic_prompt_from_runtime() {

@@ -123,10 +123,13 @@ mod tests {
     use crate::language_models::llm::LLM;
     use crate::language_models::GenerateResult;
     use crate::schemas::messages::Message;
+    use crate::schemas::StreamData;
     use async_trait::async_trait;
+    use futures::Stream;
     use std::sync::Arc;
 
     // Mock LLM for testing
+    #[derive(Clone)]
     struct MockSafetyModel {
         response: String,
     }
@@ -158,15 +161,10 @@ mod tests {
         > {
             use futures::stream;
             use std::pin::Pin;
-            Ok(Box::pin(stream::once(async {
-                Ok(StreamData::Text(self.response.clone()))
-            }))
-                as Pin<
-                    Box<
-                        dyn Stream<Item = Result<StreamData, crate::language_models::LLMError>>
-                            + Send,
-                    >,
-                >)
+            let response = self.response.clone();
+            Ok(Box::pin(stream::once(async move {
+                Ok(StreamData::new(serde_json::Value::Null, None, response))
+            })))
         }
 
         fn add_options(&mut self, _options: crate::language_models::options::CallOptions) {}

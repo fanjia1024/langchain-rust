@@ -140,8 +140,9 @@ mod tests {
             Pin<Box<dyn futures::Stream<Item = Result<StreamData, LLMError>> + Send>>,
             LLMError,
         > {
-            Ok(Box::pin(stream::once(async {
-                Ok(StreamData::Text(self.response.clone()))
+            let response = self.response.clone();
+            Ok(Box::pin(stream::once(async move {
+                Ok(StreamData::new(serde_json::Value::Null, None, response))
             })))
         }
     }
