@@ -102,7 +102,7 @@ impl Chain for LLMChain {
 
     async fn call(&self, input_variables: PromptArgs) -> Result<GenerateResult, ChainError> {
         let prompt = self.prompt.format_prompt(input_variables.clone())?;
-        log::debug!("Prompt: {:?}", prompt);
+        log::debug!("Processing LLMChain with {} input variables", prompt.get_input_variables().len());
         let mut output = self.llm.generate(&prompt.to_chat_messages()).await?;
         output.generation = self.output_parser.parse(&output.generation).await?;
 
@@ -110,8 +110,8 @@ impl Chain for LLMChain {
     }
 
     async fn invoke(&self, input_variables: PromptArgs) -> Result<String, ChainError> {
-        let prompt = self.prompt.format_prompt(input_variables.clone())?;
-        log::debug!("Prompt: {:?}", prompt);
+        let prompt = self.prompt.format_prompt(input_variables)?;
+        log::debug!("Processing LLMChain invoke");
         let output = self
             .llm
             .generate(&prompt.to_chat_messages())
@@ -125,8 +125,8 @@ impl Chain for LLMChain {
         input_variables: PromptArgs,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<StreamData, ChainError>> + Send>>, ChainError>
     {
-        let prompt = self.prompt.format_prompt(input_variables.clone())?;
-        log::debug!("Prompt: {:?}", prompt);
+        let prompt = self.prompt.format_prompt(input_variables)?;
+        log::debug!("Processing LLMChain stream");
         let llm_stream = self.llm.stream(&prompt.to_chat_messages()).await?;
 
         // Map the errors from LLMError to ChainError

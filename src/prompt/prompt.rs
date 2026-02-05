@@ -67,7 +67,7 @@ impl PromptFromatter for PromptTemplate {
             prompt = prompt.replace(&key, &value_str);
         }
 
-        log::debug!("Formatted prompt: {}", prompt);
+        log::debug!("Formatted prompt ({} variables)", template_vars.len());
         Ok(prompt)
     }
 }

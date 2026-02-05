@@ -125,9 +125,10 @@ impl<C: Config + Send + Sync + 'static> LLM for OpenAI<C> {
                                 }
                             }
                         }
-                        Err(err) => {
-                            eprintln!("Error from streaming response: {:?}", err);
-                        }
+                            Err(err) => {
+                                log::warn!("Error from streaming response");
+                                return Err(LLMError::ApiError(err.to_string()));
+                            }
                     }
                 }
                 Ok(generate_result)

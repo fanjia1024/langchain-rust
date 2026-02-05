@@ -197,7 +197,7 @@ impl Retriever for EnsembleRetriever {
             match retriever.get_relevant_documents(query).await {
                 Ok(results) => all_results.push(results),
                 Err(e) => {
-                    eprintln!("Error in retriever: {}", e);
+                    log::warn!("EnsembleRetriever: One retriever failed, continuing with others");
                     all_results.push(Vec::new());
                 }
             }
