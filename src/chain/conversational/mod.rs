@@ -144,7 +144,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires OPENAI_API_KEY environment variable - run with: cargo test --features openai test_invoke_conversational -- --ignored"]
     async fn test_invoke_conversational() {
         let llm = OpenAI::default().with_model(OpenAIModel::Gpt35.to_string());
         let chain = ConversationalChainBuilder::new()

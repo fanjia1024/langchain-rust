@@ -91,8 +91,11 @@ mod tests {
 
     use super::*;
 
+    /// Integration test requiring valid git repository path
+    ///
+    /// Run with: cargo test --features git git_commit_loader -- --ignored
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires valid git repository path - run with: cargo test --features git git_commit_loader -- --ignored"]
     async fn git_commit_loader() {
         let git_commit_loader = GitCommitLoader::from_path("/code/langchain-ai-rust").unwrap();
 

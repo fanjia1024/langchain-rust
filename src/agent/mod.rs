@@ -53,6 +53,10 @@ pub mod deep_agent;
 #[allow(ambiguous_glob_reexports)]
 pub use deep_agent::*;
 
+// Integration tests module (requires external services/API keys)
+#[cfg(test)]
+mod integration_tests;
+
 use std::sync::Arc;
 
 use crate::{

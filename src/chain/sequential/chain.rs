@@ -94,7 +94,7 @@ mod tests {
     };
 
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires OPENAI_API_KEY environment variable - run with: cargo test --features openai test_sequential -- --ignored"]
     async fn test_sequential() {
         let llm = OpenAI::default();
         let chain1 = LLMChainBuilder::new()

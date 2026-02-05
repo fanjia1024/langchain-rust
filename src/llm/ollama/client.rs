@@ -153,16 +153,24 @@ mod tests {
     use tokio::io::AsyncWriteExt;
     use tokio_stream::StreamExt;
 
+    /// Integration test requiring running Ollama instance
+    ///
+    /// Requires: `ollama serve` running with llama3.2 model
+    /// Run with: cargo test --features ollama test_generate -- --ignored
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires running Ollama instance (ollama serve) with llama3.2 model - run with: cargo test --features ollama test_generate -- --ignored"]
     async fn test_generate() {
         let ollama = Ollama::default().with_model("llama3.2");
         let response = ollama.invoke("Hey Macarena, ay").await.unwrap();
         println!("{}", response);
     }
 
+    /// Integration test requiring running Ollama instance - tests streaming
+    ///
+    /// Requires: `ollama serve` running with llama3.2 model
+    /// Run with: cargo test --features ollama test_stream -- --ignored
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires running Ollama instance (ollama serve) with llama3.2 model - run with: cargo test --features ollama test_stream -- --ignored"]
     async fn test_stream() {
         let ollama = Ollama::default().with_model("llama3.2");
 

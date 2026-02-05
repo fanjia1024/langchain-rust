@@ -143,8 +143,11 @@ mod tests {
 
     use super::*;
 
+    /// Integration test requiring network access
+    ///
+    /// Run with: cargo test test_web_base_loader -- --ignored
     #[tokio::test]
-    #[ignore] // Requires network access
+    #[ignore = "Requires network access and may timeout - run with: cargo test test_web_base_loader -- --ignored"]
     async fn test_web_base_loader() {
         let loader =
             WebBaseLoader::from_url_str("https://example.com").expect("Failed to create loader");

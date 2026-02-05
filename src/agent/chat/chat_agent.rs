@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires OPENAI_API_KEY environment variable - run with: cargo test --features openai test_invoke_agent -- --ignored"]
     async fn test_invoke_agent() {
         let llm = OpenAI::default().with_model(OpenAIModel::Gpt4.to_string());
         let memory = SimpleMemory::new();

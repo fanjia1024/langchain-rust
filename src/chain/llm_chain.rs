@@ -149,7 +149,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Requires OpenAI API key - run with: cargo test --features openai test_invoke_chain -- --ignored"]
     async fn test_invoke_chain() {
         // Create an AI message prompt template
         let human_message_prompt = HumanMessagePromptTemplate::new(template_fstring!(
