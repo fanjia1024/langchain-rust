@@ -12,6 +12,9 @@ mod message_repair;
 mod executor;
 pub use executor::*;
 
+mod utils;
+pub use utils::*;
+
 mod chat;
 pub use chat::*;
 

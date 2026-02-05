@@ -33,50 +33,8 @@ use crate::{
     tools::{FileBackend, Tool, ToolContext, ToolRuntime, ToolStore},
 };
 
-/// Convert message-based input format to standard prompt args.
-fn convert_messages_to_prompt_args(input_variables: PromptArgs) -> Result<PromptArgs, ChainError> {
-    let messages_value = input_variables
-        .get("messages")
-        .ok_or_else(|| ChainError::OtherError("Missing 'messages' key".to_string()))?;
-
-    let messages: Vec<Message> = serde_json::from_value(messages_value.clone())
-        .map_err(|e| ChainError::OtherError(format!("Failed to parse messages: {}", e)))?;
-
-    // Extract the last user/human message as input
-    let input = messages
-        .iter()
-        .rev()
-        .find(|m| matches!(m.message_type, MessageType::HumanMessage))
-        .map(|m| m.content.clone())
-        .unwrap_or_else(|| {
-            messages
-                .last()
-                .map(|m| m.content.clone())
-                .unwrap_or_default()
-        });
-
-    let mut prompt_args = PromptArgs::new();
-    prompt_args.insert("input".to_string(), json!(input));
-
-    // Preserve chat history if it exists, otherwise use messages
-    if input_variables.contains_key("chat_history") {
-        prompt_args.insert(
-            "chat_history".to_string(),
-            input_variables["chat_history"].clone(),
-        );
-    } else {
-        prompt_args.insert("chat_history".to_string(), json!(messages));
-    }
-
-    // Copy any other keys
-    for (key, value) in input_variables {
-        if key != "messages" && key != "chat_history" {
-            prompt_args.insert(key, value);
-        }
-    }
-
-    Ok(prompt_args)
-}
+// Re-export the shared utility function
+pub use super::utils::convert_messages_to_prompt_args;
 
 pub struct AgentExecutor<A>
 where
